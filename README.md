@@ -408,7 +408,7 @@ Admin Dashboard
 ## Clone Repository
 
 ```bash
-git clone https://github.com/your-username/hireai.git
+git clone https://github.com/justmemohit052002/hireai
 ```
 
 ---
