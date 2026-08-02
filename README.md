@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Java](https://img.shields.io/badge/Java-24-orange?style=for-the-badge&logo=openjdk)
+![Java](https://img.shields.io/badge/Java-21-orange?style=for-the-badge&logo=openjdk)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-6DB33F?style=for-the-badge&logo=springboot)
 ![React](https://img.shields.io/badge/React.js-19-61DAFB?style=for-the-badge&logo=react)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?style=for-the-badge&logo=postgresql)
