@@ -11,53 +11,68 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ErrorResponse> handleBadCredentials(
-            BadCredentialsException ex,
-            HttpServletRequest request) {
+	@ExceptionHandler(BadCredentialsException.class)
+	public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
 
-        ErrorResponse response = new ErrorResponse(
-                HttpStatus.UNAUTHORIZED.value(),
-                "Unauthorized",
-                "Invalid email or password",
-                request.getRequestURI()
-        );
+		ErrorResponse response = new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Unauthorized",
+				"Invalid email or password", request.getRequestURI());
 
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(response);
-    }
-    
-    
-    @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleUserAlreadyExists(
-            UserAlreadyExistsException ex,
-            HttpServletRequest request) {
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+	}
 
-        ErrorResponse response = new ErrorResponse(
-                HttpStatus.CONFLICT.value(),
-                "Conflict",
-                ex.getMessage(),
-                request.getRequestURI()
-        );
+	@ExceptionHandler(UserAlreadyExistsException.class)
+	public ResponseEntity<ErrorResponse> handleUserAlreadyExists(UserAlreadyExistsException ex,
+			HttpServletRequest request) {
 
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(response);
-    }
-    
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleUserNotFound(
-            UserNotFoundException ex,
-            HttpServletRequest request) {
+		ErrorResponse response = new ErrorResponse(HttpStatus.CONFLICT.value(), "Conflict", ex.getMessage(),
+				request.getRequestURI());
 
-        ErrorResponse response = new ErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                "Not Found",
-                ex.getMessage(),
-                request.getRequestURI()
-        );
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+	}
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(response);
-    }
+	@ExceptionHandler(UserNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handleUserNotFound(UserNotFoundException ex, HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(HttpStatus.NOT_FOUND.value(), "Not Found", ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+	}
+
+	@ExceptionHandler(RecruiterProfileNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handleRecruiterProfileNotFound(RecruiterProfileNotFoundException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(HttpStatus.NOT_FOUND.value(), "Not Found", ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+	}
+
+	@ExceptionHandler(RecruiterProfileAlreadyExistsException.class)
+	public ResponseEntity<ErrorResponse> handleRecruiterProfileAlreadyExists(RecruiterProfileAlreadyExistsException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(HttpStatus.CONFLICT.value(), "Conflict", ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+	}
+	
+	@ExceptionHandler(RoleNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handleRoleNotFound(
+	        RoleNotFoundException ex,
+	        HttpServletRequest request) {
+
+	    ErrorResponse response = new ErrorResponse(
+	            HttpStatus.NOT_FOUND.value(),
+	            "Not Found",
+	            ex.getMessage(),
+	            request.getRequestURI()
+	    );
+
+	    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	            .body(response);
+	}
 
 }

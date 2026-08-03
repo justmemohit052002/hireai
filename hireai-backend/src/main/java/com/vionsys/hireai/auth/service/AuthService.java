@@ -9,14 +9,15 @@ import com.vionsys.hireai.auth.dto.AuthResponse;
 import com.vionsys.hireai.auth.dto.LoginRequest;
 import com.vionsys.hireai.auth.dto.RegisterRequest;
 import com.vionsys.hireai.common.enums.RoleType;
+import com.vionsys.hireai.exception.RoleNotFoundException;
 import com.vionsys.hireai.exception.UserAlreadyExistsException;
-import com.vionsys.hireai.role.repository.RoleRepository;
-import com.vionsys.hireai.security.jwt.JwtService;
-import com.vionsys.hireai.user.repository.UserRepository;
+import com.vionsys.hireai.exception.UserNotFoundException;
 import com.vionsys.hireai.role.entity.Role;
+import com.vionsys.hireai.role.repository.RoleRepository;
 import com.vionsys.hireai.security.CustomUserDetails;
+import com.vionsys.hireai.security.jwt.JwtService;
 import com.vionsys.hireai.user.entity.User;
-
+import com.vionsys.hireai.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,65 +25,94 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthService {
 
-	private final UserRepository userRepository;
-	private final RoleRepository roleRepository;
-	private final PasswordEncoder passwordEncoder;
-	private final AuthenticationManager authenticationManager;
-	private final JwtService jwtService;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
 
-	public AuthResponse register(RegisterRequest request) {
+    public AuthResponse registerCandidate(RegisterRequest request) {
+        return register(request, RoleType.ROLE_CANDIDATE);
+    }
 
-		if (userRepository.existsByEmail(request.getEmail())) {
-			throw new UserAlreadyExistsException("Email already exists");
-		}
+    public AuthResponse registerRecruiter(RegisterRequest request) {
+        return register(request, RoleType.ROLE_RECRUITER);
+    }
 
-		Role candidateRole = roleRepository.findByName(RoleType.ROLE_CANDIDATE)
-				.orElseThrow(() -> new RuntimeException("User not found"));
+    private AuthResponse register(
+            RegisterRequest request,
+            RoleType roleType) {
 
-		User user = User.builder().firstName(request.getFirstName()).lastName(request.getLastName())
-				.email(request.getEmail()).password(passwordEncoder.encode(request.getPassword()))
-				.phoneNumber(request.getPhoneNumber()).enabled(true).accountNonLocked(true).role(candidateRole).build();
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new UserAlreadyExistsException("Email already exists");
+        }
 
-		User savedUser = userRepository.save(user);
+        Role role = roleRepository.findByName(roleType)
+                .orElseThrow(() ->
+                        new RoleNotFoundException("Role not found"));
 
-		CustomUserDetails userDetails = CustomUserDetails.fromUser(savedUser);
+        User user = User.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .phoneNumber(request.getPhoneNumber())
+                .enabled(true)
+                .accountNonLocked(true)
+                .role(role)
+                .build();
 
-		String accessToken = jwtService.generateAccessToken(userDetails);
+        User savedUser = userRepository.save(user);
 
-		String refreshToken = jwtService.generateRefreshToken(userDetails);
+        CustomUserDetails userDetails =
+                CustomUserDetails.fromUser(savedUser);
 
-		return AuthResponse.builder().userId(savedUser.getId()).firstName(savedUser.getFirstName())
-				.lastName(savedUser.getLastName()).email(savedUser.getEmail())
-				.role(savedUser.getRole().getName().name()).accessToken(accessToken).refreshToken(refreshToken).build();
-	}
-	
-	public AuthResponse login(LoginRequest request) {
+        String accessToken =
+                jwtService.generateAccessToken(userDetails);
 
-	    authenticationManager.authenticate(
-	            new UsernamePasswordAuthenticationToken(
-	                    request.getEmail(),
-	                    request.getPassword()
-	            )
-	    );
+        String refreshToken =
+                jwtService.generateRefreshToken(userDetails);
 
-	    User user = userRepository.findByEmail(request.getEmail())
-	            .orElseThrow(() -> new RuntimeException("User not found"));
+        return AuthResponse.builder()
+                .userId(savedUser.getId())
+                .firstName(savedUser.getFirstName())
+                .lastName(savedUser.getLastName())
+                .email(savedUser.getEmail())
+                .role(savedUser.getRole().getName().name())
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
+    }
 
-	    CustomUserDetails userDetails = CustomUserDetails.fromUser(user);
+    public AuthResponse login(LoginRequest request) {
 
-	    String accessToken = jwtService.generateAccessToken(userDetails);
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getEmail(),
+                        request.getPassword()));
 
-	    String refreshToken = jwtService.generateRefreshToken(userDetails);
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() ->
+                        new UserNotFoundException("User not found"));
 
-	    return AuthResponse.builder()
-	            .userId(user.getId())
-	            .firstName(user.getFirstName())
-	            .lastName(user.getLastName())
-	            .email(user.getEmail())
-	            .role(user.getRole().getName().name())
-	            .accessToken(accessToken)
-	            .refreshToken(refreshToken)
-	            .build();
-	}
+        CustomUserDetails userDetails =
+                CustomUserDetails.fromUser(user);
+
+        String accessToken =
+                jwtService.generateAccessToken(userDetails);
+
+        String refreshToken =
+                jwtService.generateRefreshToken(userDetails);
+
+        return AuthResponse.builder()
+                .userId(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(user.getRole().getName().name())
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
+    }
 
 }
