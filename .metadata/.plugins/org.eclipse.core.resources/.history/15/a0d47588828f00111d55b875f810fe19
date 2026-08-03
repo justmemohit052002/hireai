@@ -1,0 +1,34 @@
+package com.vionsys.hireai.recruiter.service.impl;
+
+import java.util.UUID;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.vionsys.hireai.exception.RecruiterProfileAlreadyExistsException;
+import com.vionsys.hireai.exception.RecruiterProfileNotFoundException;
+import com.vionsys.hireai.exception.UserNotFoundException;
+import com.vionsys.hireai.recruiter.dto.RecruiterProfileRequest;
+import com.vionsys.hireai.recruiter.dto.RecruiterProfileResponse;
+import com.vionsys.hireai.recruiter.entity.RecruiterProfile;
+import com.vionsys.hireai.recruiter.mapper.RecruiterProfileMapper;
+import com.vionsys.hireai.recruiter.repository.RecruiterProfileRepository;
+import com.vionsys.hireai.recruiter.service.RecruiterProfileService;
+import com.vionsys.hireai.security.CustomUserDetails;
+import com.vionsys.hireai.user.entity.User;
+import com.vionsys.hireai.user.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class RecruiterProfileServiceImpl
+        implements RecruiterProfileService {
+
+    private final RecruiterProfileRepository recruiterProfileRepository;
+    private final UserRepository userRepository;
+
+}

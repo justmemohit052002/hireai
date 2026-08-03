@@ -21,11 +21,22 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(
+    @PostMapping("/register/candidate")
+    public ResponseEntity<AuthResponse> registerCandidate(
             @Valid @RequestBody RegisterRequest request) {
 
-        AuthResponse response = authService.register(request);
+        AuthResponse response = authService.registerCandidate(request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+    }
+
+    @PostMapping("/register/recruiter")
+    public ResponseEntity<AuthResponse> registerRecruiter(
+            @Valid @RequestBody RegisterRequest request) {
+
+        AuthResponse response = authService.registerRecruiter(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -40,5 +51,5 @@ public class AuthController {
 
         return ResponseEntity.ok(response);
     }
-    
+
 }
