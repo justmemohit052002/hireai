@@ -1,8 +1,11 @@
 package com.vionsys.hireai.job.mapper;
 
+import java.util.ArrayList;
+
 import com.vionsys.hireai.job.dto.JobRequest;
 import com.vionsys.hireai.job.dto.JobResponse;
 import com.vionsys.hireai.job.entity.Job;
+
 
 public final class JobMapper {
 
@@ -51,7 +54,9 @@ public final class JobMapper {
                 .salaryMin(job.getSalaryMin())
                 .salaryMax(job.getSalaryMax())
                 .currency(job.getCurrency())
-                .skills(job.getSkills())
+                .skills(job.getSkills() != null
+                        ? new ArrayList<>(job.getSkills())
+                        : null)
                 .education(job.getEducation())
                 .openings(job.getOpenings())
                 .applicationDeadline(job.getApplicationDeadline())
