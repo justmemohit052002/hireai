@@ -15,6 +15,10 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+	// =========================================================
+	// DUPLICATE RESOURCE
+	// =========================================================
+
 	@ExceptionHandler(DuplicateResourceException.class)
 	public ResponseEntity<ErrorResponse> handleDuplicateResource(
 			DuplicateResourceException ex,
@@ -32,6 +36,11 @@ public class GlobalExceptionHandler {
 				.status(HttpStatus.CONFLICT)
 				.body(response);
 	}
+
+
+	// =========================================================
+	// FILE STORAGE
+	// =========================================================
 
 	@ExceptionHandler(FileStorageException.class)
 	public ResponseEntity<ErrorResponse> handleFileStorageException(
@@ -51,6 +60,11 @@ public class GlobalExceptionHandler {
 				.body(response);
 	}
 
+
+	// =========================================================
+	// VALIDATION
+	// =========================================================
+
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ErrorResponse> handleValidationException(
 			MethodArgumentNotValidException ex,
@@ -61,7 +75,9 @@ public class GlobalExceptionHandler {
 				.stream()
 				.findFirst()
 				.map(error ->
-						error.getField() + " : " + error.getDefaultMessage())
+						error.getField()
+								+ " : "
+								+ error.getDefaultMessage())
 				.orElse("Validation failed.");
 
 		ErrorResponse response = new ErrorResponse(
@@ -76,6 +92,11 @@ public class GlobalExceptionHandler {
 				.status(HttpStatus.BAD_REQUEST)
 				.body(response);
 	}
+
+
+	// =========================================================
+	// BAD CREDENTIALS
+	// =========================================================
 
 	@ExceptionHandler(BadCredentialsException.class)
 	public ResponseEntity<ErrorResponse> handleBadCredentials(
@@ -95,6 +116,11 @@ public class GlobalExceptionHandler {
 				.body(response);
 	}
 
+
+	// =========================================================
+	// USER ALREADY EXISTS
+	// =========================================================
+
 	@ExceptionHandler(UserAlreadyExistsException.class)
 	public ResponseEntity<ErrorResponse> handleUserAlreadyExists(
 			UserAlreadyExistsException ex,
@@ -112,6 +138,11 @@ public class GlobalExceptionHandler {
 				.status(HttpStatus.CONFLICT)
 				.body(response);
 	}
+
+
+	// =========================================================
+	// USER NOT FOUND
+	// =========================================================
 
 	@ExceptionHandler(UserNotFoundException.class)
 	public ResponseEntity<ErrorResponse> handleUserNotFound(
@@ -131,6 +162,11 @@ public class GlobalExceptionHandler {
 				.body(response);
 	}
 
+
+	// =========================================================
+	// RECRUITER PROFILE NOT FOUND
+	// =========================================================
+
 	@ExceptionHandler(RecruiterProfileNotFoundException.class)
 	public ResponseEntity<ErrorResponse> handleRecruiterProfileNotFound(
 			RecruiterProfileNotFoundException ex,
@@ -148,6 +184,11 @@ public class GlobalExceptionHandler {
 				.status(HttpStatus.NOT_FOUND)
 				.body(response);
 	}
+
+
+	// =========================================================
+	// RECRUITER PROFILE ALREADY EXISTS
+	// =========================================================
 
 	@ExceptionHandler(RecruiterProfileAlreadyExistsException.class)
 	public ResponseEntity<ErrorResponse> handleRecruiterProfileAlreadyExists(
@@ -167,6 +208,11 @@ public class GlobalExceptionHandler {
 				.body(response);
 	}
 
+
+	// =========================================================
+	// ROLE NOT FOUND
+	// =========================================================
+
 	@ExceptionHandler(RoleNotFoundException.class)
 	public ResponseEntity<ErrorResponse> handleRoleNotFound(
 			RoleNotFoundException ex,
@@ -184,6 +230,11 @@ public class GlobalExceptionHandler {
 				.status(HttpStatus.NOT_FOUND)
 				.body(response);
 	}
+
+
+	// =========================================================
+	// JOB NOT FOUND
+	// =========================================================
 
 	@ExceptionHandler(JobNotFoundException.class)
 	public ResponseEntity<ErrorResponse> handleJobNotFound(
@@ -203,6 +254,11 @@ public class GlobalExceptionHandler {
 				.body(response);
 	}
 
+
+	// =========================================================
+	// CANDIDATE NOT FOUND
+	// =========================================================
+
 	@ExceptionHandler(CandidateNotFoundException.class)
 	public ResponseEntity<ErrorResponse> handleCandidateNotFound(
 			CandidateNotFoundException ex,
@@ -221,6 +277,11 @@ public class GlobalExceptionHandler {
 				.body(response);
 	}
 
+
+	// =========================================================
+	// SKILL NOT FOUND
+	// =========================================================
+
 	@ExceptionHandler(SkillNotFoundException.class)
 	public ResponseEntity<ErrorResponse> handleSkillNotFound(
 			SkillNotFoundException ex,
@@ -238,6 +299,11 @@ public class GlobalExceptionHandler {
 				.status(HttpStatus.NOT_FOUND)
 				.body(response);
 	}
+
+
+	// =========================================================
+	// GENERIC EXCEPTION
+	// =========================================================
 
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ErrorResponse> handleException(
