@@ -7,6 +7,8 @@ import java.util.UUID;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
+import com.vionsys.hireai.common.base.BaseEntity;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -28,27 +30,45 @@ import lombok.Setter;
 @AllArgsConstructor
 @Entity
 @Table(
-        name = "skills",
-        indexes = {
-                @Index(name = "idx_skill_name", columnList = "name")
-        }
+		name = "skills",
+		indexes = {
+				@Index(
+						name = "idx_skill_name",
+						columnList = "name"
+				)
+		}
 )
-@SQLDelete(sql = "UPDATE skills SET deleted = true WHERE id=?")
+@SQLDelete(sql = "UPDATE skills SET deleted = true WHERE id = ?")
 @Where(clause = "deleted = false")
 public class Skill extends BaseEntity {
 
-	    @Id
-	    @GeneratedValue
-	    @Column(name = "id", nullable = false, updatable = false)
-	    private UUID id;
+	@Id
+	@GeneratedValue
+	@Column(
+			name = "id",
+			nullable = false,
+			updatable = false
+	)
+	private UUID id;
 
-	    @Column(name = "name", nullable = false, unique = true, length = 100)
-	    private String name;
+	@Column(
+			name = "name",
+			nullable = false,
+			unique = true,
+			length = 100
+	)
+	private String name;
 
-	    @Column(name = "description", length = 255)
-	    private String description;
+	@Column(
+			name = "description",
+			length = 255
+	)
+	private String description;
 
-	    @Builder.Default
-	    @ManyToMany(mappedBy = "skills", fetch = FetchType.LAZY)
-	    private Set<Candidate> candidates = new HashSet<>();
+	@Builder.Default
+	@ManyToMany(
+			mappedBy = "skills",
+			fetch = FetchType.LAZY
+	)
+	private Set<Candidate> candidates = new HashSet<>();
 }

@@ -5,24 +5,44 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.stereotype.Repository;
 
 import com.vionsys.hireai.candidate.entity.Candidate;
 
-@Repository
-public interface CandidateRepository extends JpaRepository<Candidate, UUID>,JpaSpecificationExecutor<Candidate>{
-	
-	    boolean existsByEmail(String email);
+public interface CandidateRepository
+		extends JpaRepository<Candidate, UUID>,
+		JpaSpecificationExecutor<Candidate> {
 
-	    boolean existsByPhone(String phone);
+	Optional<Candidate> findByCandidateId(
+			String candidateId
+	);
 
-	    boolean existsByCandidateId(String candidateId);
+	Optional<Candidate> findByEmail(
+			String email
+	);
 
-	    Optional<Candidate> findByCandidateId(String candidateId);
+	Optional<Candidate> findByPhone(
+			String phone
+	);
 
-	    Optional<Candidate> findByEmail(String email);
-	    
-	    Optional<Candidate> findByPhone(String phone);
-	    
-	    Optional<Candidate> findTopByOrderByCreatedAtDesc();
+	boolean existsByEmail(
+			String email
+	);
+
+	boolean existsByPhone(
+			String phone
+	);
+
+	boolean existsByCandidateId(
+			String candidateId
+	);
+
+	Optional<Candidate> findTopByOrderByCreatedAtDesc();
+
+	Optional<Candidate> findByUserId(
+			UUID userId
+	);
+
+	boolean existsByUserId(
+			UUID userId
+	);
 }

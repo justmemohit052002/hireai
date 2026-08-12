@@ -4,26 +4,34 @@ import java.math.BigDecimal;
 
 import com.vionsys.hireai.candidate.enums.CandidateStatus;
 
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CandidateFilter {
 
-	  private String candidateId;
+	private String candidateId;
 
-	    private String firstName;
+	private String firstName;
 
-	    private String lastName;
+	private String lastName;
 
-	    private String email;
+	private String email;
 
-	    private String phone;
+	private String phone;
 
-	    private String location;
+	private String location;
 
-	    private CandidateStatus candidateStatus;
+	private CandidateStatus candidateStatus;
 
-	    private BigDecimal experience;
+	private BigDecimal experience;
 
-	    private String skill;
+	private String skill;
 }

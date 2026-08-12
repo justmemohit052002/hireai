@@ -1,18 +1,26 @@
 package com.vionsys.hireai.candidate.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 import com.vionsys.hireai.candidate.enums.CandidateStatus;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CandidateResponse {
 
-	private UUID id;
+    private UUID id;
 
     private String candidateId;
 
@@ -45,4 +53,12 @@ public class CandidateResponse {
     private String location;
 
     private CandidateStatus candidateStatus;
+
+    private UUID resumeId;
+
+    private Set<UUID> skillIds;
+
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
 }

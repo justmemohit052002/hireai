@@ -2,7 +2,8 @@ package com.vionsys.hireai.candidate.enums;
 
 public enum ResumeStatus {
 
-    NOT_UPLOADED,
-
-    UPLOADED
+    UPLOADED,
+    PROCESSING,
+    PROCESSED,
+    FAILED
 }

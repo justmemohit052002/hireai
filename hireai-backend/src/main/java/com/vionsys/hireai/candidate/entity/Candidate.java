@@ -9,6 +9,8 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
 import com.vionsys.hireai.candidate.enums.CandidateStatus;
+import com.vionsys.hireai.common.base.BaseEntity;
+import com.vionsys.hireai.user.entity.User;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -24,8 +26,8 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -40,33 +42,79 @@ import lombok.experimental.SuperBuilder;
 @Table(
         name = "candidates",
         indexes = {
-                @Index(name = "idx_candidate_candidate_id", columnList = "candidate_id"),
-                @Index(name = "idx_candidate_email", columnList = "email"),
-                @Index(name = "idx_candidate_phone", columnList = "phone"),
-                @Index(name = "idx_candidate_status", columnList = "candidate_status")
+                @Index(
+                        name = "idx_candidate_candidate_id",
+                        columnList = "candidate_id"
+                ),
+                @Index(
+                        name = "idx_candidate_email",
+                        columnList = "email"
+                ),
+                @Index(
+                        name = "idx_candidate_phone",
+                        columnList = "phone"
+                ),
+                @Index(
+                        name = "idx_candidate_status",
+                        columnList = "candidate_status"
+                ),
+                @Index(
+                        name = "idx_candidate_user",
+                        columnList = "user_id"
+                )
         }
 )
-@SQLDelete(sql = "UPDATE candidates SET deleted = true WHERE id=?")
+@SQLDelete(
+        sql = "UPDATE candidates SET deleted = true WHERE id = ?"
+)
 @Where(clause = "deleted = false")
-public class Candidate extends BaseEntity{
-	@Id
+public class Candidate extends BaseEntity {
+
+    @Id
     @GeneratedValue
-    @Column(name = "id", nullable = false, updatable = false)
+    @Column(
+            name = "id",
+            nullable = false,
+            updatable = false
+    )
     private UUID id;
 
-    @Column(name = "candidate_id", nullable = false, unique = true, length = 20)
+    @Column(
+            name = "candidate_id",
+            nullable = false,
+            unique = true,
+            length = 20
+    )
     private String candidateId;
 
-    @Column(name = "first_name", nullable = false, length = 50)
+    @Column(
+            name = "first_name",
+            nullable = false,
+            length = 50
+    )
     private String firstName;
 
-    @Column(name = "last_name", nullable =false, length = 50)
+    @Column(
+            name = "last_name",
+            nullable = false,
+            length = 50
+    )
     private String lastName;
 
-    @Column(name = "email", nullable = false, unique = true, length = 100)
+    @Column(
+            name = "email",
+            nullable = false,
+            unique = true,
+            length = 100
+    )
     private String email;
 
-    @Column(name = "phone", nullable = false, unique = true, length = 10)
+    @Column(
+            name = "phone",
+            nullable = false,
+            unique = true,
+            length = 10
+    )
     private String phone;
 
     @Column(name = "linkedin_url")
@@ -84,13 +132,25 @@ public class Candidate extends BaseEntity{
     @Column(name = "current_designation")
     private String currentDesignation;
 
-    @Column(name = "experience", precision = 4, scale = 1)
+    @Column(
+            name = "experience",
+            precision = 4,
+            scale = 1
+    )
     private BigDecimal experience;
 
-    @Column(name = "current_ctc", precision = 10, scale = 2)
+    @Column(
+            name = "current_ctc",
+            precision = 10,
+            scale = 2
+    )
     private BigDecimal currentCtc;
 
-    @Column(name = "expected_ctc", precision = 10, scale = 2)
+    @Column(
+            name = "expected_ctc",
+            precision = 10,
+            scale = 2
+    )
     private BigDecimal expectedCtc;
 
     @Column(name = "notice_period")
@@ -100,9 +160,35 @@ public class Candidate extends BaseEntity{
     private String location;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "candidate_status", nullable = false)
+    @Column(
+            name = "candidate_status",
+            nullable = false
+    )
     private CandidateStatus candidateStatus;
 
+    /*
+     * Authenticated User ↔ Candidate Profile
+     */
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "user_id",
+            nullable = false,
+            unique = true
+    )
+    private User user;
+
+    /*
+     * Soft delete
+     */
+    @Column(
+            name = "deleted",
+            nullable = false
+    )
+    private boolean deleted = false;
+
+    /*
+     * Candidate ↔ Resume
+     */
     @OneToOne(
             mappedBy = "candidate",
             cascade = CascadeType.ALL,
@@ -111,14 +197,18 @@ public class Candidate extends BaseEntity{
     )
     private Resume resume;
 
-    @Builder.Default
+    /*
+     * Candidate ↔ Skills
+     */
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "candidate_skills",
-            joinColumns = @JoinColumn(name = "candidate_uuid"),
-            inverseJoinColumns = @JoinColumn(name = "skill_uuid")
+            joinColumns = @JoinColumn(
+                    name = "candidate_uuid"
+            ),
+            inverseJoinColumns = @JoinColumn(
+                    name = "skill_uuid"
+            )
     )
     private Set<Skill> skills = new HashSet<>();
-
 }
-

@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CandidateIdGenerator {
 
-	private final CandidateRepository candidateRepository;
+    private final CandidateRepository candidateRepository;
 
     public String generateCandidateId() {
 
@@ -25,11 +25,13 @@ public class CandidateIdGenerator {
 
         if (latestCandidate.isPresent()) {
 
-            String lastCandidateId = latestCandidate.get().getCandidateId();
+            String lastCandidateId =
+                    latestCandidate.get().getCandidateId();
 
             String[] parts = lastCandidateId.split("-");
 
-            nextSequence = Integer.parseInt(parts[2]) + 1;
+            nextSequence =
+                    Integer.parseInt(parts[2]) + 1;
         }
 
         return String.format(

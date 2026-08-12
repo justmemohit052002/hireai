@@ -3,28 +3,57 @@ package com.vionsys.hireai.candidate.service;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
+import com.vionsys.hireai.candidate.dto.CandidateProfileRequest;
+import com.vionsys.hireai.candidate.dto.CandidateRequest;
 import com.vionsys.hireai.candidate.dto.CandidateResponse;
-import com.vionsys.hireai.candidate.dto.CreateCandidateRequest;
-import com.vionsys.hireai.candidate.dto.UpdateCandidateRequest;
 import com.vionsys.hireai.candidate.filter.CandidateFilter;
 
 public interface CandidateService {
 
-	CandidateResponse createCandidate(CreateCandidateRequest request);
+    // =========================================================
+    // GENERAL CANDIDATE MANAGEMENT
+    // =========================================================
 
-    CandidateResponse getCandidateById(UUID id);
-
-    Page<CandidateResponse> getAllCandidates(
-    		CandidateFilter filter,
-            int page,
-            int size,
-            String sortBy,
-            String sortDir
+    CandidateResponse createCandidate(
+            CandidateRequest request
     );
 
-    CandidateResponse updateCandidate(UUID id,
-                                      UpdateCandidateRequest request);
+    CandidateResponse getCandidateById(
+            UUID candidateId
+    );
 
-    String deleteCandidate(UUID id);
+    Page<CandidateResponse> getAllCandidates(
+            CandidateFilter filter,
+            Pageable pageable
+    );
+
+    CandidateResponse updateCandidate(
+            UUID candidateId,
+            CandidateRequest request
+    );
+
+    void deleteCandidate(
+            UUID candidateId
+    );
+
+
+    // =========================================================
+    // AUTHENTICATED CANDIDATE PROFILE
+    // =========================================================
+
+    CandidateResponse createMyProfile(
+            UUID userId,
+            CandidateProfileRequest request
+    );
+
+    CandidateResponse getMyProfile(
+            UUID userId
+    );
+
+    CandidateResponse updateMyProfile(
+            UUID userId,
+            CandidateProfileRequest request
+    );
 }

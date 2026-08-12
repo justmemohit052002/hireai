@@ -1,181 +1,255 @@
 package com.vionsys.hireai.candidate.controller;
 
-import java.net.URI;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.vionsys.hireai.candidate.dto.ApiResponse;
+import com.vionsys.hireai.candidate.dto.CandidateProfileRequest;
+import com.vionsys.hireai.candidate.dto.CandidateRequest;
 import com.vionsys.hireai.candidate.dto.CandidateResponse;
-import com.vionsys.hireai.candidate.dto.CreateCandidateRequest;
-import com.vionsys.hireai.candidate.dto.UpdateCandidateRequest;
+import com.vionsys.hireai.candidate.enums.CandidateStatus;
 import com.vionsys.hireai.candidate.filter.CandidateFilter;
 import com.vionsys.hireai.candidate.service.CandidateService;
+import com.vionsys.hireai.security.CustomUserDetails;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1/candidates")
 @RequiredArgsConstructor
-@Validated
 public class CandidateController {
 
-	 private final CandidateService candidateService;
+	private final CandidateService candidateService;
 
-	    /**
-	     * Create a new candidate.
-	     */
-	    @PostMapping
-	    public ResponseEntity<ApiResponse<CandidateResponse>> createCandidate(
-	            @Valid @RequestBody CreateCandidateRequest request) {
 
-	        CandidateResponse response = candidateService.createCandidate(request);
+	// =========================================================
+	// AUTHENTICATED CANDIDATE PROFILE
+	// =========================================================
 
-	        URI location = ServletUriComponentsBuilder
-	                .fromCurrentRequest()
-	                .path("/{id}")
-	                .buildAndExpand(response.getId())
-	                .toUri();
+	@PostMapping("/candidate/profile")
+	public ResponseEntity<CandidateResponse> createMyProfile(
+			Authentication authentication,
+			@Valid @RequestBody CandidateProfileRequest request) {
 
-	        ApiResponse<CandidateResponse> apiResponse = ApiResponse.<CandidateResponse>builder()
-	                .success(true)
-	                .message("Candidate created successfully")
-	                .data(response)
-	                .build();
+		CustomUserDetails userDetails =
+				getAuthenticatedUser(authentication);
 
-	        return ResponseEntity
-	                .created(location)
-	                .body(apiResponse);
-	    }
+		CandidateResponse response =
+				candidateService.createMyProfile(
+						userDetails.getId(),
+						request
+				);
 
-	    /**
-	     * Get candidate by UUID.
-	     */
-	    @GetMapping("/{id}")
-	    public ResponseEntity<ApiResponse<CandidateResponse>> getCandidateById(
-	            @PathVariable UUID id) {
+		return ResponseEntity
+				.status(HttpStatus.CREATED)
+				.body(response);
+	}
 
-	        CandidateResponse response = candidateService.getCandidateById(id);
 
-	        ApiResponse<CandidateResponse> apiResponse = ApiResponse.<CandidateResponse>builder()
-	                .success(true)
-	                .message("Candidate retrieved successfully")
-	                .data(response)
-	                .build();
+	@GetMapping("/candidate/profile")
+	public ResponseEntity<CandidateResponse> getMyProfile(
+			Authentication authentication) {
 
-	        return ResponseEntity.ok(apiResponse);
-	    }
+		CustomUserDetails userDetails =
+				getAuthenticatedUser(authentication);
 
-	    /**
-	     * Get candidates with pagination, sorting and dynamic filtering.
-	     */
-	    @GetMapping
-	    public ResponseEntity<ApiResponse<Page<CandidateResponse>>> getAllCandidates(
+		CandidateResponse response =
+				candidateService.getMyProfile(
+						userDetails.getId()
+				);
 
-	            @RequestParam(required = false) String candidateId,
+		return ResponseEntity.ok(response);
+	}
 
-	            @RequestParam(required = false) String firstName,
 
-	            @RequestParam(required = false) String lastName,
+	@PutMapping("/candidate/profile")
+	public ResponseEntity<CandidateResponse> updateMyProfile(
+			Authentication authentication,
+			@Valid @RequestBody CandidateProfileRequest request) {
 
-	            @RequestParam(required = false) String email,
+		CustomUserDetails userDetails =
+				getAuthenticatedUser(authentication);
 
-	            @RequestParam(required = false) String phone,
+		CandidateResponse response =
+				candidateService.updateMyProfile(
+						userDetails.getId(),
+						request
+				);
 
-	            @RequestParam(required = false) String location,
+		return ResponseEntity.ok(response);
+	}
 
-	            @RequestParam(required = false) String candidateStatus,
 
-	            @RequestParam(required = false) java.math.BigDecimal experience,
+	// =========================================================
+	// GENERAL CANDIDATE MANAGEMENT
+	// =========================================================
 
-	            @RequestParam(required = false) String skill,
+	@PostMapping("/candidates")
+	public ResponseEntity<CandidateResponse> createCandidate(
+			@Valid @RequestBody CandidateRequest request) {
 
-	            @RequestParam(defaultValue = "0") int page,
+		CandidateResponse response =
+				candidateService.createCandidate(request);
 
-	            @RequestParam(defaultValue = "10") int size,
+		return ResponseEntity
+				.status(HttpStatus.CREATED)
+				.body(response);
+	}
 
-	            @RequestParam(defaultValue = "createdAt") String sortBy,
 
-	            @RequestParam(defaultValue = "desc") String sortDir) {
+	@GetMapping("/candidates/{candidateId}")
+	public ResponseEntity<CandidateResponse> getCandidateById(
+			@PathVariable UUID candidateId) {
 
-	        CandidateFilter filter = new CandidateFilter();
+		CandidateResponse response =
+				candidateService.getCandidateById(
+						candidateId
+				);
 
-	        filter.setCandidateId(candidateId);
-	        filter.setFirstName(firstName);
-	        filter.setLastName(lastName);
-	        filter.setEmail(email);
-	        filter.setPhone(phone);
-	        filter.setLocation(location);
-	        filter.setExperience(experience);
-	        filter.setSkill(skill);
+		return ResponseEntity.ok(response);
+	}
 
-	        if (candidateStatus != null && !candidateStatus.isBlank()) {
-	            filter.setCandidateStatus(
-	                    com.vionsys.hireai.candidate.enums.CandidateStatus
-	                            .valueOf(candidateStatus.toUpperCase()));
-	        }
 
-	        Page<CandidateResponse> candidates =
-	                candidateService.getAllCandidates(
-	                        filter,
-	                        page,
-	                        size,
-	                        sortBy,
-	                        sortDir);
+	@GetMapping("/candidates")
+	public ResponseEntity<Page<CandidateResponse>> getAllCandidates(
 
-	        ApiResponse<Page<CandidateResponse>> apiResponse =
-	                ApiResponse.<Page<CandidateResponse>>builder()
-	                        .success(true)
-	                        .message("Candidates retrieved successfully")
-	                        .data(candidates)
-	                        .build();
+			@RequestParam(required = false)
+			String candidateId,
 
-	        return ResponseEntity.ok(apiResponse);
-	    }
+			@RequestParam(required = false)
+			String firstName,
 
-	    /**
-	     * Update an existing candidate.
-	     */
-	    @PutMapping("/{id}")
-	    public ResponseEntity<ApiResponse<CandidateResponse>> updateCandidate(
-	            @PathVariable UUID id,
-	            @Valid @RequestBody UpdateCandidateRequest request) {
+			@RequestParam(required = false)
+			String lastName,
 
-	        CandidateResponse response =
-	                candidateService.updateCandidate(id, request);
+			@RequestParam(required = false)
+			String email,
 
-	        ApiResponse<CandidateResponse> apiResponse =
-	                ApiResponse.<CandidateResponse>builder()
-	                        .success(true)
-	                        .message("Candidate updated successfully")
-	                        .data(response)
-	                        .build();
+			@RequestParam(required = false)
+			String phone,
 
-	        return ResponseEntity.ok(apiResponse);
-	    }
+			@RequestParam(required = false)
+			String location,
 
-	    /**
-	     * Soft delete a candidate.
-	     */
-	    @DeleteMapping("/{id}")
-	    public ResponseEntity<Void> deleteCandidate(
-	            @PathVariable UUID id) {
+			@RequestParam(required = false)
+			CandidateStatus candidateStatus,
 
-	        candidateService.deleteCandidate(id);
+			@RequestParam(required = false)
+			BigDecimal experience,
 
-	        return ResponseEntity.noContent().build();
-	    }
+			@RequestParam(required = false)
+			String skill,
+
+			@RequestParam(defaultValue = "0")
+			int page,
+
+			@RequestParam(defaultValue = "10")
+			int size,
+
+			@RequestParam(defaultValue = "createdAt")
+			String sortBy,
+
+			@RequestParam(defaultValue = "desc")
+			String direction) {
+
+		Sort.Direction sortDirection =
+				direction.equalsIgnoreCase("asc")
+						? Sort.Direction.ASC
+						: Sort.Direction.DESC;
+
+		PageRequest pageable =
+				PageRequest.of(
+						page,
+						size,
+						Sort.by(
+								sortDirection,
+								sortBy
+						)
+				);
+
+		CandidateFilter filter =
+				CandidateFilter.builder()
+						.candidateId(candidateId)
+						.firstName(firstName)
+						.lastName(lastName)
+						.email(email)
+						.phone(phone)
+						.location(location)
+						.candidateStatus(candidateStatus)
+						.experience(experience)
+						.skill(skill)
+						.build();
+
+		Page<CandidateResponse> response =
+				candidateService.getAllCandidates(
+						filter,
+						pageable
+				);
+
+		return ResponseEntity.ok(response);
+	}
+
+
+	@PutMapping("/candidates/{candidateId}")
+	public ResponseEntity<CandidateResponse> updateCandidate(
+			@PathVariable UUID candidateId,
+			@Valid @RequestBody CandidateRequest request) {
+
+		CandidateResponse response =
+				candidateService.updateCandidate(
+						candidateId,
+						request
+				);
+
+		return ResponseEntity.ok(response);
+	}
+
+
+	@DeleteMapping("/candidates/{candidateId}")
+	public ResponseEntity<Void> deleteCandidate(
+			@PathVariable UUID candidateId) {
+
+		candidateService.deleteCandidate(
+				candidateId
+		);
+
+		return ResponseEntity
+				.noContent()
+				.build();
+	}
+
+
+	// =========================================================
+	// AUTHENTICATION HELPER
+	// =========================================================
+
+	private CustomUserDetails getAuthenticatedUser(
+			Authentication authentication) {
+
+		if (authentication == null ||
+				!(authentication.getPrincipal()
+						instanceof CustomUserDetails)) {
+
+			throw new IllegalStateException(
+					"Authenticated user not found"
+			);
+		}
+
+		return (CustomUserDetails)
+				authentication.getPrincipal();
+	}
 }
