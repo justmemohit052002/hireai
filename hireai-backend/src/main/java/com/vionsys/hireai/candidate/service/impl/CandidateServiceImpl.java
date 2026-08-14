@@ -16,6 +16,7 @@ import com.vionsys.hireai.candidate.dto.CandidateResponse;
 import com.vionsys.hireai.candidate.entity.Candidate;
 import com.vionsys.hireai.candidate.entity.Skill;
 import com.vionsys.hireai.candidate.enums.CandidateStatus;
+import com.vionsys.hireai.candidate.exception.DuplicateResourceException;
 import com.vionsys.hireai.candidate.filter.CandidateFilter;
 import com.vionsys.hireai.candidate.mapper.CandidateMapper;
 import com.vionsys.hireai.candidate.repository.CandidateRepository;
@@ -25,6 +26,7 @@ import com.vionsys.hireai.candidate.specification.CandidateSpecification;
 import com.vionsys.hireai.candidate.util.CandidateIdGenerator;
 import com.vionsys.hireai.exception.CandidateNotFoundException;
 import com.vionsys.hireai.exception.SkillNotFoundException;
+import com.vionsys.hireai.exception.UserNotFoundException;
 import com.vionsys.hireai.user.entity.User;
 import com.vionsys.hireai.user.repository.UserRepository;
 
@@ -175,7 +177,7 @@ public class CandidateServiceImpl implements CandidateService {
         User user =
                 userRepository.findById(userId)
                         .orElseThrow(() ->
-                                new RuntimeException(
+                                new UserNotFoundException(
                                         "User not found"
                                 )
                         );
@@ -185,7 +187,7 @@ public class CandidateServiceImpl implements CandidateService {
          */
         if (candidateRepository.existsByUserId(userId)) {
 
-            throw new IllegalArgumentException(
+            throw new DuplicateResourceException(
                     "Candidate profile already exists"
             );
         }
@@ -374,7 +376,7 @@ public class CandidateServiceImpl implements CandidateService {
         if (candidateRepository.existsByEmail(
                 request.getEmail())) {
 
-            throw new IllegalArgumentException(
+            throw new DuplicateResourceException(
                     "Candidate with this email already exists"
             );
         }
@@ -382,7 +384,7 @@ public class CandidateServiceImpl implements CandidateService {
         if (candidateRepository.existsByPhone(
                 request.getPhone())) {
 
-            throw new IllegalArgumentException(
+            throw new DuplicateResourceException(
                     "Candidate with this phone number already exists"
             );
         }
@@ -401,7 +403,7 @@ public class CandidateServiceImpl implements CandidateService {
                 request.getEmail()
         )) {
 
-            throw new IllegalArgumentException(
+            throw new DuplicateResourceException(
                     "Candidate with this email already exists"
             );
         }
@@ -414,7 +416,7 @@ public class CandidateServiceImpl implements CandidateService {
                 request.getPhone()
         )) {
 
-            throw new IllegalArgumentException(
+            throw new DuplicateResourceException(
                     "Candidate with this phone number already exists"
             );
         }

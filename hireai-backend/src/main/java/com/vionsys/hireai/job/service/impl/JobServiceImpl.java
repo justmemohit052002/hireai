@@ -1,4 +1,5 @@
 package com.vionsys.hireai.job.service.impl;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -21,118 +22,249 @@ import com.vionsys.hireai.recruiter.repository.RecruiterProfileRepository;
 import com.vionsys.hireai.security.CustomUserDetails;
 
 import lombok.RequiredArgsConstructor;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class JobServiceImpl implements JobService {
 
     private final JobRepository jobRepository;
+
     private final RecruiterProfileRepository recruiterProfileRepository;
 
+
+    // =========================================================
+    // CREATE JOB
+    // =========================================================
+
     @Override
-    public JobResponse createJob(JobRequest request) {
+    public JobResponse createJob(
+            JobRequest request) {
 
-        RecruiterProfile recruiterProfile = getCurrentRecruiterProfile();
+        RecruiterProfile recruiterProfile =
+                getCurrentRecruiterProfile();
 
-        Job job = JobMapper.toEntity(request);
+        Job job =
+                JobMapper.toEntity(request);
 
-        job.setRecruiterProfile(recruiterProfile);
-        job.setStatus(JobStatus.OPEN);
+        job.setRecruiterProfile(
+                recruiterProfile
+        );
 
-        Job savedJob = jobRepository.save(job);
+        job.setStatus(
+                JobStatus.OPEN
+        );
 
-        return JobMapper.toResponse(savedJob);
+        Job savedJob =
+                jobRepository.save(job);
+
+        return JobMapper.toResponse(
+                savedJob
+        );
     }
 
 
-
-
+    // =========================================================
+    // RECRUITER - MY JOBS
+    // =========================================================
 
     @Override
     @Transactional(readOnly = true)
     public List<JobResponse> getMyJobs() {
 
-        RecruiterProfile recruiterProfile = getCurrentRecruiterProfile();
+        RecruiterProfile recruiterProfile =
+                getCurrentRecruiterProfile();
 
-        return jobRepository.findByRecruiterProfileId(
-                        recruiterProfile.getId())
+        return jobRepository
+                .findByRecruiterProfileId(
+                        recruiterProfile.getId()
+                )
                 .stream()
                 .map(JobMapper::toResponse)
                 .toList();
     }
 
+
+    // =========================================================
+    // CANDIDATE - OPEN JOBS
+    // =========================================================
+
     @Override
     @Transactional(readOnly = true)
-    public JobResponse getJobById(UUID jobId) {
+    public List<JobResponse> getOpenJobs() {
 
-        RecruiterProfile recruiterProfile = getCurrentRecruiterProfile();
-
-        Job job = jobRepository.findByIdAndRecruiterProfileId(
-                        jobId,
-                        recruiterProfile.getId())
-                .orElseThrow(() ->
-                        new JobNotFoundException("Job not found"));
-
-        return JobMapper.toResponse(job);
+        return jobRepository
+                .findByStatus(JobStatus.OPEN)
+                .stream()
+                .map(JobMapper::toResponse)
+                .toList();
     }
+
+
+    // =========================================================
+    // GET JOB BY ID
+    // =========================================================
+
+    @Override
+    @Transactional(readOnly = true)
+    public JobResponse getJobById(
+            UUID jobId) {
+
+        RecruiterProfile recruiterProfile =
+                getCurrentRecruiterProfile();
+
+        Job job =
+                jobRepository
+                        .findByIdAndRecruiterProfileId(
+                                jobId,
+                                recruiterProfile.getId()
+                        )
+                        .orElseThrow(() ->
+                                new JobNotFoundException(
+                                        "Job not found"
+                                )
+                        );
+
+        return JobMapper.toResponse(
+                job
+        );
+    }
+
+
+    // =========================================================
+    // UPDATE JOB
+    // =========================================================
 
     @Override
     public JobResponse updateJob(
             UUID jobId,
             JobRequest request) {
 
-        RecruiterProfile recruiterProfile = getCurrentRecruiterProfile();
+        RecruiterProfile recruiterProfile =
+                getCurrentRecruiterProfile();
 
-        Job job = jobRepository.findByIdAndRecruiterProfileId(
-                        jobId,
-                        recruiterProfile.getId())
-                .orElseThrow(() ->
-                        new JobNotFoundException("Job not found"));
+        Job job =
+                jobRepository
+                        .findByIdAndRecruiterProfileId(
+                                jobId,
+                                recruiterProfile.getId()
+                        )
+                        .orElseThrow(() ->
+                                new JobNotFoundException(
+                                        "Job not found"
+                                )
+                        );
 
-        job.setTitle(request.getTitle());
-        job.setDescription(request.getDescription());
-        job.setEmploymentType(request.getEmploymentType());
-        job.setExperienceLevel(request.getExperienceLevel());
-        job.setLocation(request.getLocation());
-        job.setRemote(request.getRemote());
-        job.setSalaryMin(request.getSalaryMin());
-        job.setSalaryMax(request.getSalaryMax());
-        job.setCurrency(request.getCurrency());
-        job.setSkills(request.getSkills());
-        job.setEducation(request.getEducation());
-        job.setOpenings(request.getOpenings());
-        job.setApplicationDeadline(request.getApplicationDeadline());
+        job.setTitle(
+                request.getTitle()
+        );
 
-        return JobMapper.toResponse(job);
+        job.setDescription(
+                request.getDescription()
+        );
+
+        job.setEmploymentType(
+                request.getEmploymentType()
+        );
+
+        job.setExperienceLevel(
+                request.getExperienceLevel()
+        );
+
+        job.setLocation(
+                request.getLocation()
+        );
+
+        job.setRemote(
+                request.getRemote()
+        );
+
+        job.setSalaryMin(
+                request.getSalaryMin()
+        );
+
+        job.setSalaryMax(
+                request.getSalaryMax()
+        );
+
+        job.setCurrency(
+                request.getCurrency()
+        );
+
+        job.setSkills(
+                request.getSkills()
+        );
+
+        job.setEducation(
+                request.getEducation()
+        );
+
+        job.setOpenings(
+                request.getOpenings()
+        );
+
+        job.setApplicationDeadline(
+                request.getApplicationDeadline()
+        );
+
+        return JobMapper.toResponse(
+                job
+        );
     }
+
+
+    // =========================================================
+    // CLOSE JOB
+    // =========================================================
 
     @Override
-    public void closeJob(UUID jobId) {
+    public void closeJob(
+            UUID jobId) {
 
-        RecruiterProfile recruiterProfile = getCurrentRecruiterProfile();
+        RecruiterProfile recruiterProfile =
+                getCurrentRecruiterProfile();
 
-        Job job = jobRepository.findByIdAndRecruiterProfileId(
-                        jobId,
-                        recruiterProfile.getId())
-                .orElseThrow(() ->
-                        new JobNotFoundException("Job not found"));
+        Job job =
+                jobRepository
+                        .findByIdAndRecruiterProfileId(
+                                jobId,
+                                recruiterProfile.getId()
+                        )
+                        .orElseThrow(() ->
+                                new JobNotFoundException(
+                                        "Job not found"
+                                )
+                        );
 
-        job.setStatus(JobStatus.CLOSED);
+        job.setStatus(
+                JobStatus.CLOSED
+        );
     }
 
 
+    // =========================================================
+    // CURRENT RECRUITER
+    // =========================================================
 
     private RecruiterProfile getCurrentRecruiterProfile() {
 
         Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
 
         CustomUserDetails userDetails =
-                (CustomUserDetails) authentication.getPrincipal();
+                (CustomUserDetails)
+                        authentication.getPrincipal();
 
-        return recruiterProfileRepository.findByUserId(userDetails.getId())
+        return recruiterProfileRepository
+                .findByUserId(
+                        userDetails.getId()
+                )
                 .orElseThrow(() ->
                         new RecruiterProfileNotFoundException(
-                                "Recruiter profile not found"));
+                                "Recruiter profile not found"
+                        )
+                );
     }
 }
