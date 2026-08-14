@@ -18,25 +18,34 @@ public class CandidateIdGenerator {
 
     public String generateCandidateId() {
 
+        int currentYear = Year.now().getValue();
         Optional<Candidate> latestCandidate =
                 candidateRepository.findTopByOrderByCreatedAtDesc();
 
         int nextSequence = 1;
 
-        if (latestCandidate.isPresent()) {
+        if (latestCandidate.isPresent() && latestCandidate.get().getCandidateId() != null) {
 
             String lastCandidateId =
                     latestCandidate.get().getCandidateId();
 
             String[] parts = lastCandidateId.split("-");
 
-            nextSequence =
-                    Integer.parseInt(parts[2]) + 1;
+            if (parts.length == 3) {
+                try {
+                    int lastYear = Integer.parseInt(parts[1]);
+                    if (lastYear == currentYear) {
+                        nextSequence = Integer.parseInt(parts[2]) + 1;
+                    }
+                } catch (NumberFormatException ignored) {
+                    // Fall back to sequence 1 if last ID sequence cannot be parsed
+                }
+            }
         }
 
         return String.format(
                 "CAN-%d-%06d",
-                Year.now().getValue(),
+                currentYear,
                 nextSequence
         );
     }

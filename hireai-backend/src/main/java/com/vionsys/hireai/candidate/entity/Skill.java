@@ -5,7 +5,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 
 import com.vionsys.hireai.common.base.BaseEntity;
 
@@ -39,7 +39,7 @@ import lombok.Setter;
 		}
 )
 @SQLDelete(sql = "UPDATE skills SET deleted = true WHERE id = ?")
-@Where(clause = "deleted = false")
+@SQLRestriction("deleted = false")
 public class Skill extends BaseEntity {
 
 	@Id
@@ -64,6 +64,13 @@ public class Skill extends BaseEntity {
 			length = 255
 	)
 	private String description;
+
+	@Builder.Default
+	@Column(
+			name = "deleted",
+			nullable = false
+	)
+	private boolean deleted = false;
 
 	@Builder.Default
 	@ManyToMany(

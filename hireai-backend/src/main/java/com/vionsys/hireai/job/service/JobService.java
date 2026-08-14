@@ -19,6 +19,12 @@ public interface JobService {
     List<JobResponse> getMyJobs();
 
     /**
+     * Get all currently open jobs.
+     * Used by candidates to browse available jobs.
+     */
+    List<JobResponse> getOpenJobs();
+
+    /**
      * Get a job by its id.
      */
     JobResponse getJobById(UUID jobId);
@@ -26,11 +32,13 @@ public interface JobService {
     /**
      * Update an existing job.
      */
-    JobResponse updateJob(UUID jobId, JobRequest request);
+    JobResponse updateJob(
+            UUID jobId,
+            JobRequest request
+    );
 
     /**
      * Close a job.
      */
     void closeJob(UUID jobId);
-
 }

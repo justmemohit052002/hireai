@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.vionsys.hireai.candidate.exception.DuplicateResourceException;
 import com.vionsys.hireai.candidate.exception.FileStorageException;
 
+import lombok.extern.slf4j.Slf4j;
 import jakarta.servlet.http.HttpServletRequest;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -62,7 +64,7 @@ public class GlobalExceptionHandler {
 
 
 	// =========================================================
-	// VALIDATION
+	// VALIDATION & JSON PARSING
 	// =========================================================
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
@@ -90,6 +92,60 @@ public class GlobalExceptionHandler {
 
 		return ResponseEntity
 				.status(HttpStatus.BAD_REQUEST)
+				.body(response);
+	}
+
+	@ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+	public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
+			org.springframework.http.converter.HttpMessageNotReadableException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.BAD_REQUEST.value(),
+				HttpStatus.BAD_REQUEST.getReasonPhrase(),
+				"Malformed JSON request or invalid field format",
+				request.getRequestURI()
+		);
+
+		return ResponseEntity
+				.status(HttpStatus.BAD_REQUEST)
+				.body(response);
+	}
+
+	@ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+	public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
+			org.springframework.dao.DataIntegrityViolationException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.CONFLICT.value(),
+				HttpStatus.CONFLICT.getReasonPhrase(),
+				"Database constraint violation: duplicate record or unique field conflict",
+				request.getRequestURI()
+		);
+
+		return ResponseEntity
+				.status(HttpStatus.CONFLICT)
+				.body(response);
+	}
+
+	@ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+	public ResponseEntity<ErrorResponse> handleNoResourceFound(
+			org.springframework.web.servlet.resource.NoResourceFoundException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.NOT_FOUND.value(),
+				HttpStatus.NOT_FOUND.getReasonPhrase(),
+				"Requested resource was not found",
+				request.getRequestURI()
+		);
+
+		return ResponseEntity
+				.status(HttpStatus.NOT_FOUND)
 				.body(response);
 	}
 
@@ -256,6 +312,29 @@ public class GlobalExceptionHandler {
 
 
 	// =========================================================
+	// APPLICATION NOT FOUND
+	// =========================================================
+
+	@ExceptionHandler(ApplicationNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handleApplicationNotFound(
+			ApplicationNotFoundException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.NOT_FOUND.value(),
+				"Not Found",
+				ex.getMessage(),
+				request.getRequestURI()
+		);
+
+		return ResponseEntity
+				.status(HttpStatus.NOT_FOUND)
+				.body(response);
+	}
+
+
+	// =========================================================
 	// CANDIDATE NOT FOUND
 	// =========================================================
 
@@ -302,6 +381,75 @@ public class GlobalExceptionHandler {
 
 
 	// =========================================================
+	// ACCESS DENIED
+	// =========================================================
+
+	@ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+	public ResponseEntity<ErrorResponse> handleAccessDenied(
+			org.springframework.security.access.AccessDeniedException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.FORBIDDEN.value(),
+				HttpStatus.FORBIDDEN.getReasonPhrase(),
+				"Access denied: You do not have permission to access this resource",
+				request.getRequestURI()
+		);
+
+		return ResponseEntity
+				.status(HttpStatus.FORBIDDEN)
+				.body(response);
+	}
+
+
+	// =========================================================
+	// ILLEGAL ARGUMENT
+	// =========================================================
+
+	@ExceptionHandler(IllegalArgumentException.class)
+	public ResponseEntity<ErrorResponse> handleIllegalArgument(
+			IllegalArgumentException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.BAD_REQUEST.value(),
+				HttpStatus.BAD_REQUEST.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI()
+		);
+
+		return ResponseEntity
+				.status(HttpStatus.BAD_REQUEST)
+				.body(response);
+	}
+
+
+	// =========================================================
+	// ILLEGAL STATE
+	// =========================================================
+
+	@ExceptionHandler(IllegalStateException.class)
+	public ResponseEntity<ErrorResponse> handleIllegalState(
+			IllegalStateException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.BAD_REQUEST.value(),
+				HttpStatus.BAD_REQUEST.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI()
+		);
+
+		return ResponseEntity
+				.status(HttpStatus.BAD_REQUEST)
+				.body(response);
+	}
+
+
+	// =========================================================
 	// GENERIC EXCEPTION
 	// =========================================================
 
@@ -310,11 +458,13 @@ public class GlobalExceptionHandler {
 			Exception ex,
 			HttpServletRequest request) {
 
+		log.error("Unhandled exception processing request {}: ", request.getRequestURI(), ex);
+
 		ErrorResponse response = new ErrorResponse(
 				false,
 				HttpStatus.INTERNAL_SERVER_ERROR.value(),
 				HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-				"Something went wrong.",
+				ex.getMessage() != null ? ex.getMessage() : "Something went wrong.",
 				request.getRequestURI()
 		);
 

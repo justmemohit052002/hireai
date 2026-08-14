@@ -6,7 +6,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 
 import com.vionsys.hireai.candidate.enums.CandidateStatus;
 import com.vionsys.hireai.common.base.BaseEntity;
@@ -67,7 +67,7 @@ import lombok.experimental.SuperBuilder;
 @SQLDelete(
         sql = "UPDATE candidates SET deleted = true WHERE id = ?"
 )
-@Where(clause = "deleted = false")
+@SQLRestriction("deleted = false")
 public class Candidate extends BaseEntity {
 
     @Id
@@ -113,7 +113,7 @@ public class Candidate extends BaseEntity {
             name = "phone",
             nullable = false,
             unique = true,
-            length = 10
+            length = 15
     )
     private String phone;
 
@@ -167,12 +167,12 @@ public class Candidate extends BaseEntity {
     private CandidateStatus candidateStatus;
 
     /*
-     * Authenticated User ↔ Candidate Profile
+     * Authenticated User ↔ Candidate Profile (Optional for recruiter-managed candidates)
      */
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "user_id",
-            nullable = false,
+            nullable = true,
             unique = true
     )
     private User user;

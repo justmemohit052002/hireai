@@ -22,76 +22,111 @@ import com.vionsys.hireai.job.service.JobService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-
 @RestController
 @RequestMapping("/jobs")
 @RequiredArgsConstructor
-//@PreAuthorize("hasRole('RECRUITER')")
 public class JobController {
 
     private final JobService jobService;
 
-    /**
-     * Create a new job.
-     */
+
+    // =========================================================
+    // RECRUITER - CREATE JOB
+    // =========================================================
+
     @PostMapping
+    @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<JobResponse> createJob(
             @Valid @RequestBody JobRequest request) {
 
-        JobResponse response = jobService.createJob(request);
+        JobResponse response =
+                jobService.createJob(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
     }
 
-    /**
-     * Get all jobs of the logged-in recruiter.
-     */
+
+    // =========================================================
+    // RECRUITER - MY JOBS
+    // =========================================================
+
     @GetMapping
+    @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<List<JobResponse>> getMyJobs() {
 
-        List<JobResponse> response = jobService.getMyJobs();
+        List<JobResponse> response =
+                jobService.getMyJobs();
 
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Get a job by id.
-     */
+
+    // =========================================================
+    // CANDIDATE - OPEN JOBS
+    // =========================================================
+
+    @GetMapping("/open")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'RECRUITER')")
+    public ResponseEntity<List<JobResponse>> getOpenJobs() {
+
+        List<JobResponse> response =
+                jobService.getOpenJobs();
+
+        return ResponseEntity.ok(response);
+    }
+
+
+    // =========================================================
+    // RECRUITER - GET OWN JOB
+    // =========================================================
+
     @GetMapping("/{jobId}")
+    @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<JobResponse> getJobById(
             @PathVariable UUID jobId) {
 
-        JobResponse response = jobService.getJobById(jobId);
+        JobResponse response =
+                jobService.getJobById(jobId);
 
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Update a job.
-     */
+
+    // =========================================================
+    // RECRUITER - UPDATE JOB
+    // =========================================================
+
     @PutMapping("/{jobId}")
+    @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<JobResponse> updateJob(
             @PathVariable UUID jobId,
             @Valid @RequestBody JobRequest request) {
 
         JobResponse response =
-                jobService.updateJob(jobId, request);
+                jobService.updateJob(
+                        jobId,
+                        request
+                );
 
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Close a job.
-     */
+
+    // =========================================================
+    // RECRUITER - CLOSE JOB
+    // =========================================================
+
     @PatchMapping("/{jobId}/close")
+    @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<Void> closeJob(
             @PathVariable UUID jobId) {
 
         jobService.closeJob(jobId);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity
+                .noContent()
+                .build();
     }
-
 }
