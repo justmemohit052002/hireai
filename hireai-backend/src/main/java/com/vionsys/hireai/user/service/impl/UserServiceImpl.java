@@ -5,18 +5,17 @@ import java.util.UUID;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.vionsys.hireai.exception.UserNotFoundException;
 import com.vionsys.hireai.security.CustomUserDetails;
+import com.vionsys.hireai.user.dto.UpdateUserRequest;
 import com.vionsys.hireai.user.dto.UserResponse;
 import com.vionsys.hireai.user.entity.User;
 import com.vionsys.hireai.user.mapper.UserMapper;
 import com.vionsys.hireai.user.repository.UserRepository;
 import com.vionsys.hireai.user.service.UserService;
-import com.vionsys.hireai.user.dto.UpdateUserRequest;
-import org.springframework.transaction.annotation.Transactional;
 
-import com.vionsys.hireai.user.dto.UpdateUserRequest;
 import lombok.RequiredArgsConstructor;
 
 @Service

@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -23,17 +24,34 @@ import lombok.Setter;
 @AllArgsConstructor
 public class CandidateRequest {
 
+    /*
+     * Existing User account associated with this candidate.
+     *
+     * This is required because Candidate.user is mandatory.
+     */
+    @NotNull(message = "User ID is required")
+    private UUID userId;
+
     @NotBlank(message = "First name is required")
-    @Size(max = 50, message = "First name must not exceed 50 characters")
+    @Size(
+            max = 50,
+            message = "First name must not exceed 50 characters"
+    )
     private String firstName;
 
     @NotBlank(message = "Last name is required")
-    @Size(max = 50, message = "Last name must not exceed 50 characters")
+    @Size(
+            max = 50,
+            message = "Last name must not exceed 50 characters"
+    )
     private String lastName;
 
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
-    @Size(max = 100, message = "Email must not exceed 100 characters")
+    @Size(
+            max = 100,
+            message = "Email must not exceed 100 characters"
+    )
     private String email;
 
     @NotBlank(message = "Phone number is required")

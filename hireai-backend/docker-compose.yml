@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # =========================================================
+  # PostgreSQL Database Service
+  # =========================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: hireai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hireai
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d hireai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =========================================================
+  # HireAI Spring Boot Backend Service
+  # =========================================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hireai-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/hireai
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    ports:
+      - "8080:8080"
+    volumes:
+      - backend_uploads:/app/uploads
+
+volumes:
+  postgres_data:
+  backend_uploads:
