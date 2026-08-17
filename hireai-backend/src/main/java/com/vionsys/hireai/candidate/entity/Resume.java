@@ -16,46 +16,46 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "resumes")
-public class Resume extends BaseEntity{
+public class Resume extends BaseEntity {
 
-	@Id
+    @Id
     @GeneratedValue
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
-    @Column(name = "original_file_name", nullable = false)
+    @Column(name = "original_file_name", nullable = false, length = 255)
     private String originalFileName;
 
-    @Column(name = "stored_file_name", nullable = false, unique = true)
+    @Column(name = "stored_file_name", nullable = false, unique = true, length = 255)
     private String storedFileName;
 
-    @Column(name = "file_type", nullable = false, length = 50)
+    @Column(name = "file_type", nullable = false, length = 100)
     private String fileType;
 
     @Column(name = "file_size", nullable = false)
     private Long fileSize;
 
-    @Column(name = "file_path", nullable = false)
+    @Column(name = "file_path", nullable = false, length = 500)
     private String filePath;
 
+    @Column(name = "uploaded_at", nullable = false, updatable = false)
+    private LocalDateTime uploadedAt;
+    
     @Enumerated(EnumType.STRING)
     @Column(name = "resume_status", nullable = false)
     private ResumeStatus resumeStatus;
-
-    @Column(name = "uploaded_at", nullable = false)
-    private LocalDateTime uploadedAt;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(

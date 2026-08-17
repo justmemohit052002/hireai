@@ -4,5 +4,7 @@ public enum ResumeStatus {
 
     NOT_UPLOADED,
 
-    UPLOADED
+    UPLOADED,
+    
+    DELETED
 }

@@ -10,7 +10,9 @@ import com.vionsys.hireai.candidate.entity.Resume;
 
 @Repository
 public interface ResumeRepository extends JpaRepository<Resume, UUID> {
+	
+    Optional<Resume> findByCandidateIdAndDeletedFalse(UUID candidateId);
 
-	 Optional<Resume> findByCandidate_Id(UUID candidateId);
-
+    boolean existsByCandidateIdAndDeletedFalse(UUID candidateId);
+    
 }

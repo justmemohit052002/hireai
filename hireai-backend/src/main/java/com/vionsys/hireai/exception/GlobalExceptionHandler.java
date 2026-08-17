@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.vionsys.hireai.candidate.exception.CandidateNotFoundException;
 import com.vionsys.hireai.candidate.exception.DuplicateResourceException;
-
 import com.vionsys.hireai.candidate.exception.FileStorageException;
+import com.vionsys.hireai.candidate.exception.ResumeNotFoundException;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -58,15 +58,33 @@ public class GlobalExceptionHandler {
 
 	    	 ErrorResponse response = new ErrorResponse(
 	                 false,
-	                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-	                 HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+	                 HttpStatus.BAD_REQUEST.value(),
+	                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
 	                 ex.getMessage(),
 	                 request.getRequestURI()
 	         );
 
 	         return ResponseEntity
-	                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                 .status(HttpStatus.BAD_REQUEST)
 	                 .body(response);
+	    }
+	    
+	    @ExceptionHandler(ResumeNotFoundException.class)
+	    public ResponseEntity<ErrorResponse> handleResumeNotFound(
+	            ResumeNotFoundException ex,
+	            HttpServletRequest request) {
+
+	        ErrorResponse response = new ErrorResponse(
+	                false,
+	                HttpStatus.NOT_FOUND.value(),
+	                HttpStatus.NOT_FOUND.getReasonPhrase(),
+	                ex.getMessage(),
+	                request.getRequestURI()
+	        );
+
+	        return ResponseEntity
+	                .status(HttpStatus.NOT_FOUND)
+	                .body(response);
 	    }
 
 	    @ExceptionHandler(Exception.class)
