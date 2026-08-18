@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HireAI Backend - API Testing & Debugging Specification Manual</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  @page {
+    size: A4;
+    margin: 14mm 14mm 14mm 14mm;
+    @bottom-right {
+      content: counter(page);
+    }
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #1e293b;
+    background: #ffffff;
+    line-height: 1.55;
+    font-size: 9.5pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .cover-page {
+    page-break-after: always;
+    min-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 40px 20px 20px 20px;
+    background: linear-gradient(145deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+    color: #ffffff;
+    border-radius: 12px;
+  }
+
+  .cover-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding-bottom: 20px;
+  }
+
+  .cover-badge {
+    display: inline-block;
+    background: rgba(99, 102, 241, 0.25);
+    color: #a5b4fc;
+    border: 1px solid rgba(165, 180, 252, 0.35);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 8.5pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+  }
+
+  .cover-title {
+    font-size: 28pt;
+    font-weight: 800;
+    line-height: 1.15;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+
+  .cover-subtitle {
+    font-size: 13pt;
+    color: #cbd5e1;
+    font-weight: 400;
+    max-width: 650px;
+    line-height: 1.4;
+  }
+
+  .cover-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 18px;
+    border-radius: 8px;
+    margin-top: 40px;
+  }
+
+  .cover-meta-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cover-meta-label {
+    font-size: 7.5pt;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 2px;
+    font-weight: 600;
+  }
+
+  .cover-meta-value {
+    font-size: 10pt;
+    color: #f8fafc;
+    font-weight: 600;
+  }
+
+  .cover-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    padding-top: 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 8pt;
+    color: #94a3b8;
+  }
+
+  /* Content Structure */
+  .section {
+    margin-top: 24px;
+    page-break-inside: avoid;
+  }
+
+  .section-page-break {
+    page-break-before: always;
+  }
+
+  h1 {
+    font-size: 16pt;
+    font-weight: 800;
+    color: #0f172a;
+    border-bottom: 2px solid #4f46e5;
+    padding-bottom: 6px;
+    margin-bottom: 14px;
+    margin-top: 20px;
+    letter-spacing: -0.01em;
+  }
+
+  h2 {
+    font-size: 12pt;
+    font-weight: 700;
+    color: #1e293b;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  h3 {
+    font-size: 10.5pt;
+    font-weight: 600;
+    color: #334155;
+    margin-top: 12px;
+    margin-bottom: 6px;
+  }
+
+  p {
+    margin-bottom: 8px;
+    color: #334155;
+  }
+
+  /* Badges & Pills */
+  .badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 7.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .badge-post { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+  .badge-get { background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; }
+  .badge-put { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+  .badge-patch { background: #f3e8ff; color: #7e22ce; border: 1px solid #d8b4fe; }
+  .badge-delete { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+
+  .status-pass {
+    background: #dcfce7;
+    color: #166534;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 8pt;
+  }
+
+  .status-fixed {
+    background: #e0e7ff;
+    color: #3730a3;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 8pt;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 16px 0;
+    font-size: 8.5pt;
+  }
+
+  th, td {
+    padding: 6px 9px;
+    text-align: left;
+    border: 1px solid #e2e8f0;
+  }
+
+  th {
+    background-color: #f1f5f9;
+    color: #1e293b;
+    font-weight: 700;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  tr:nth-child(even) td {
+    background-color: #f8fafc;
+  }
+
+  /* API Endpoint Cards */
+  .api-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    background: #ffffff;
+    page-break-inside: avoid;
+  }
+
+  .api-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .api-endpoint-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .api-auth-tag {
+    font-size: 7.5pt;
+    font-weight: 600;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .code-block {
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 8px 10px;
+    border-radius: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7.5pt;
+    overflow-x: auto;
+    margin: 4px 0 8px 0;
+    line-height: 1.45;
+  }
+
+  .code-title {
+    font-size: 7.5pt;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-top: 4px;
+    margin-bottom: 2px;
+  }
+
+  /* Callout Boxes */
+  .callout {
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin: 10px 0;
+    font-size: 8.5pt;
+    page-break-inside: avoid;
+  }
+
+  .callout-success {
+    background: #f0fdf4;
+    border-left: 4px solid #22c55e;
+    color: #14532d;
+  }
+
+  .callout-warning {
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    color: #78350f;
+  }
+
+  .callout-bug {
+    background: #fef2f2;
+    border-left: 4px solid #ef4444;
+    color: #7f1d1d;
+  }
+
+  .callout-title {
+    font-weight: 700;
+    margin-bottom: 3px;
+    font-size: 9pt;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .pill-metric {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 8px 12px;
+    text-align: center;
+  }
+
+  .pill-metric-val {
+    font-size: 15pt;
+    font-weight: 800;
+    color: #4f46e5;
+  }
+
+  .pill-metric-lbl {
+    font-size: 7.5pt;
+    color: #64748b;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover-page">
+  <div class="cover-header">
+    <div class="cover-badge">Vionsys Enterprise Systems • QA & Security Inspection</div>
+    <div class="cover-title">HireAI Backend<br>API Testing &amp; Debugging Manual</div>
+    <div class="cover-subtitle">
+      Comprehensive architectural audit, end-to-end endpoint verification, role-based access validation, and root cause debugging analysis for the HireAI Spring Boot microservice.
+    </div>
+  </div>
+
+  <div class="cover-meta-grid">
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Target Service</div>
+      <div class="cover-meta-value">hireai-backend (Port 8080)</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Framework & Runtime</div>
+      <div class="cover-meta-value">Spring Boot 3.5.5 • Java 24</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Database & Security</div>
+      <div class="cover-meta-value">PostgreSQL 18 • JJWT (Stateless)</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Overall Test Pass Rate</div>
+      <div class="cover-meta-value" style="color: #4ade80;">46 / 46 Passed (100.0%)</div>
+    </div>
+  </div>
+
+  <div class="cover-footer">
+    <span>Author: Antigravity Automated AI Inspector</span>
+    <span>Date: August 2026</span>
+    <span>Confidential • Vionsys Infotech</span>
+  </div>
+</div>
+
+<!-- SECTION 1: ARCHITECTURE OVERVIEW -->
+<div class="section">
+  <h1>1. Architecture &amp; Test Execution Summary</h1>
+  <p>
+    The <strong>HireAI Backend</strong> is an intelligent talent acquisition platform powered by Spring Boot 3.5.5, PostgreSQL, and an automated ATS rule-based / LLM candidate match scoring engine.
+  </p>
+
+  <div class="grid-2" style="margin: 14px 0;">
+    <div class="pill-metric">
+      <div class="pill-metric-val">46</div>
+      <div class="pill-metric-lbl">Total API Tests Executed</div>
+    </div>
+    <div class="pill-metric">
+      <div class="pill-metric-val" style="color: #16a34a;">100%</div>
+      <div class="pill-metric-lbl">End-to-End Success Rate</div>
+    </div>
+  </div>
+
+  <h2>1.1 Core Subsystem Matrix</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Subsystem</th>
+        <th>Primary Responsibility</th>
+        <th>Security Access Role</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Auth &amp; JWT Engine</strong></td>
+        <td>Candidate &amp; Recruiter onboarding, password hashing (BCrypt), JWT token signing &amp; verification</td>
+        <td><code>permitAll()</code></td>
+      </tr>
+      <tr>
+        <td><strong>User Self-Service</strong></td>
+        <td>Profile inspection (<code>/users/me</code>), account data updates, UUID lookups</td>
+        <td><code>Authenticated</code></td>
+      </tr>
+      <tr>
+        <td><strong>Recruiter Profiles</strong></td>
+        <td>Enterprise employer registration, company branding, location, employee size management</td>
+        <td><code>ROLE_RECRUITER</code>, <code>ROLE_ADMIN</code></td>
+      </tr>
+      <tr>
+        <td><strong>Candidate Directory</strong></td>
+        <td>Candidate profiles, experience, CTC expectations, pagination, and multi-field query filters</td>
+        <td><code>ROLE_CANDIDATE</code> (Self), <code>ROLE_RECRUITER</code> (Directory)</td>
+      </tr>
+      <tr>
+        <td><strong>Job Postings</strong></td>
+        <td>Job vacancies, experience levels, budget ranges, remote policies, opening count, closure lifecycle</td>
+        <td><code>ROLE_RECRUITER</code> (Manage), <code>ROLE_CANDIDATE</code> (Browse Open)</td>
+      </tr>
+      <tr>
+        <td><strong>ATS Scoring Pipeline</strong></td>
+        <td>Intelligent algorithm matching Candidate profile skills + experience against Job requirements</td>
+        <td><code>ROLE_CANDIDATE</code> (Apply), <code>ROLE_RECRUITER</code> (Score Pipeline)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 2: AUTHENTICATION MODULE -->
+<div class="section section-page-break">
+  <h1>2. Authentication &amp; Token APIs (<code>/auth</code>, <code>/test</code>)</h1>
+  <p>Handles secure registration, credential verification, and JWT access token issuance.</p>
+
+  <!-- POST /auth/register/candidate -->
+  <div class="api-card">
+    <div class="api-header">
+      <div class="api-endpoint-title">
+        <span class="badge badge-post">POST</span>
+        <span>/auth/register/candidate</span>
+      </div>
+      <div class="api-auth-tag">PUBLIC</div>
+    </div>
+    <p>Registers a new Candidate user with <code>ROLE_CANDIDATE</code> and returns initial JWT tokens.</p>
+    <div class="code-title">Sample Request Body</div>
+    <div class="code-block">{
+  "firstName": "Rahul",
+  "lastName": "Sharma",
+  "email": "rahul.sharma@example.com",
+  "password": "Password@123",
+  "phoneNumber": "9876543210"
+}</div>
+    <div class="code-title">Expected Response (HTTP 201 Created)</div>
+    <div class="code-block">{
+  "userId": "dabec5fd-643d-434e-b295-064146d01580",
+  "firstName": "Rahul",
+  "lastName": "Sharma",
+  "email": "rahul.sharma@example.com",
+  "role": "ROLE_CANDIDATE",
+  "accessToken": "eyJhbGciOiJIUzUxMiJ9...",
+  "refreshToken": "eyJhbGciOiJIUzUxMiJ9..."
+}</div>
+  </div>
+
+  <!-- POST /auth/register/recruiter -->
+  <div class="api-card">
+    <div class="api-header">
+      <div class="api-endpoint-title">
+        <span class="badge badge-post">POST</span>
+        <span>/auth/register/recruiter</span>
+      </div>
+      <div class="api-auth-tag">PUBLIC</div>
+    </div>
+    <p>Registers a new Recruiter account with <code>ROLE_RECRUITER</code> permissions.</p>
+    <div class="code-title">Sample Request Body</div>
+    <div class="code-block">{
+  "firstName": "Priya",
+  "lastName": "Deshmukh",
+  "email": "priya.recruiter@acmeai.io",
+  "password": "Password@123",
+  "phoneNumber": "9765432100"
+}</div>
+    <div class="code-title">Expected Response (HTTP 201 Created)</div>
+    <div class="code-block">{
+  "userId": "363e78f9-a7db-4b64-9b8c-b45db130d624",
+  "role": "ROLE_RECRUITER",
+  "accessToken": "eyJhbGciOiJIUzUxMiJ9...",
+  "refreshToken": "eyJhbGciOiJIUzUxMiJ9..."
+}</div>
+  </div>
+
+  <!-- POST /auth/login -->
+  <div class="api-card">
+    <div class="api-header">
+      <div class="api-endpoint-title">
+        <span class="badge badge-post">POST</span>
+        <span>/auth/login</span>
+      </div>
+      <div class="api-auth-tag">PUBLIC</div>
+    </div>
+    <p>Authenticates user against PostgreSQL database using BCrypt password verification.</p>
+    <div class="code-title">Sample Request Body</div>
+    <div class="code-block">{
+  "email": "rahul.sharma@example.com",
+  "password": "Password@123"
+}</div>
+    <div class="code-title">Expected Response (HTTP 200 OK)</div>
+    <div class="code-block">{
+  "userId": "dabec5fd-643d-434e-b295-064146d01580",
+  "email": "rahul.sharma@example.com",
+  "role": "ROLE_CANDIDATE",
+  "accessToken": "eyJhbGciOiJIUzUxMiJ9...",
+  "refreshToken": "eyJhbGciOiJIUzUxMiJ9..."
+}</div>
+  </div>
+
+  <!-- GET /test -->
+  <div class="api-card">
+    <div class="api-header">
+      <div class="api-endpoint-title">
+        <span class="badge badge-get">GET</span>
+        <span>/test</span>
+      </div>
+      <div class="api-auth-tag">AUTHENTICATED</div>
+    </div>
+    <p>Connectivity and Bearer JWT signature verification probe.</p>
+    <div class="code-title">Headers</div>
+    <div class="code-block">Authorization: Bearer &lt;access_token&gt;</div>
+    <div class="code-title">Expected Response (HTTP 200 OK)</div>
+    <div class="code-block">"JWT Authentication Successful"</div>
+  </div>
+</div>
+
+<!-- SECTION 3: USER & RECRUITER PROFILES -->
+<div class="section section-page-break">
+  <h1>3. User Self-Service &amp; Recruiter Profiles</h1>
+
+  <!-- GET /users/me -->
+  <div class="api-card">
+    <div class="api-header">
+      <div class="api-endpoint-title">
+        <span class="badge badge-get">GET</span>
+        <span>/users/me</span>
+      </div>
+      <div class="api-auth-tag">AUTHENTICATED (ANY)</div>
+    </div>
+    <p>Retrieves the current authenticated user's base account record.</p>
+    <div class="code-title">Expected Response (HTTP 200 OK)</div>
+    <div class="code-block">{
+  "id": "dabec5fd-643d-434e-b295-064146d01580",
+  "firstName": "Rahul",
+  "lastName": "Sharma",
+  "email": "rahul.sharma@example.com",
+  "phoneNumber": "9876543210",
+  "role": "ROLE_CANDIDATE",
+  "enabled": true
+}</div>
+  </div>
+
+  <!-- POST /recruiter/profile -->
+  <div class="api-card">
+    <div class="api-header">
+      <div class="api-endpoint-title">
+        <span class="badge badge-post">POST</span>
+        <span>/recruiter/profile</span>
+      </div>
+      <div class="api-auth-tag">RECRUITER / ADMIN ONLY</div>
+    </div>
+    <p>Initializes the enterprise employer profile for the logged-in recruiter.</p>
+    <div class="code-title">Sample Request Body</div>
+    <div class="code-block">{
+  "companyName": "Acme AI Technologies Inc",
+  "designation": "Lead Talent Acquisition Partner",
+  "companyWebsite": "https://acmeai.io",
+  "companyEmail": "hr@acmeai.io",
+  "companyPhone": "9988776655",
+  "industry": "Information Technology",
+  "companySize": 250,
+  "country": "India",
+  "state": "Maharashtra",
+  "city": "Pune",
+  "address": "Viman Nagar IT Park, Pune"
+}</div>
+    <div class="code-title">Expected Response (HTTP 200 OK)</div>
+    <div class="code-block">{
+  "id": "4b7b3df6-6184-4fe0-9430-c3d6934c9fa3",
+  "companyName": "Acme AI Technologies Inc",
+  "designation": "Lead Talent Acquisition Partner",
+  "companySize": 250,
+  "city": "Pune"
+}</div>
+  </div>
+
+  <!-- GET /recruiter/profile -->
+  <div class="api-card">
+    <div class="api-header">
+      <div class="api-endpoint-title">
+        <span class="badge badge-get">GET</span>
+        <span>/recruiter/profile</span>
+      </div>
+      <div class="api-auth-tag">RECRUITER / ADMIN ONLY</div>
+    </div>
+    <p>Fetches the logged-in recruiter's company profile.</p>
+    <div class="code-title">Expected Response (HTTP 200 OK)</div>
+    <div class="code-block">{
+  "id": "4b7b3df6-6184-4fe0-9430-c3d6934c9fa3",
+  "companyName": "Acme AI Technologies Inc",
+  "designation": "Lead Talent Acquisition Partner",
+  "companyEmail": "hr@acmeai.io",
+  "industry": "Information Technology"
+}</div>
+  </div>
+</div>
+
+<!-- SECTION 4: CANDIDATE MODULE -->
+<div class="section section-page-break">
+  <h1>4. Candidate Profiles &amp; Recruiter Directory</h1>
+
+  <!-- POST /candidate/profile -->
+  <div class="api-card">
+    <div class="api-header">
+      <div class="api-endpoint-title">
+        <span class="badge badge-post">POST</span>
+        <span>/candidate/profile</span>
+      </div>
+      <div class="api-auth-tag">CANDIDATE ONLY</div>
+    </div>
+    <p>Creates candidate professional profile, calculating business ID (<code>CAN-2026-XXXXXX</code>) and linking to the user account.</p>
+    <div class="code-title">Sample Request Body</div>
+    <div class="code-block">{
+  "linkedinUrl": "https://linkedin.com/in/rahulsharma",
+  "githubUrl": "https://github.com/rahulsharma",
+  "portfolioUrl": "https://rahul.dev",
+  "currentCompany": "Tech Pioneers Ltd",
+  "currentDesignation": "Senior Java Backend Engineer",
+  "experience": 5.5,
+  "currentCtc": 1800000,
+  "expectedCtc": 2400000,
+  "noticePeriod": 30,
+  "location": "Pune, India",
+  "skillIds": []
+}</div>
+    <div class="code-title">Expected Response (HTTP 201 Created)</div>
+    <div class="code-block">{
+  "id": "8f73e2fb-38db-46fd-bf76-271211421f3e",
+  "candidateId": "CAN-2026-000011",
+  "firstName": "Rahul",
+  "lastName": "Sharma",
+  "currentDesignation": "Senior Java Backend Engineer",
+  "experience": 5.5,
+  "candidateStatus": "ACTIVE",
+  "location": "Pune, India"
+}</div>
+  </div>
+
+  <!-- GET /candidates -->
+  <div class="api-card">
+    <div class="api-header">
+      <div class="api-endpoint-title">
+        <span class="badge badge-get">GET</span>
+        <span>/candidates?location=Pune&amp;candidateStatus=ACTIVE&amp;page=0&amp;size=10</span>
+      </div>
+      <div class="api-auth-tag">RECRUITER / ADMIN ONLY</div>
+    </div>
+    <p>Performs multi-criteria filtering on candidate records with dynamic pagination and sorting.</p>
+    <div class="code-title">Expected Response (HTTP 200 OK)</div>
+    <div class="code-block">{
+  "content": [
+    {
+      "id": "8f73e2fb-38db-46fd-bf76-271211421f3e",
+      "candidateId": "CAN-2026-000011",
+      "firstName": "Rahul",
+      "lastName": "Sharma",
+      "experience": 5.5,
+      "candidateStatus": "ACTIVE"
+    }
+  ],
+  "totalElements": 1,
+  "totalPages": 1,
+  "size": 10,
+  "number": 0
+}</div>
+  </div>
+</div>
+
+<!-- SECTION 5: JOB MANAGEMENT & ATS ENGINE -->
+<div class="section section-page-break">
+  <h1>5. Job Postings &amp; Intelligent ATS Match Pipeline</h1>
+
+  <!-- POST /jobs -->
+  <div class="api-card">
+    <div class="api-header">
+      <div class="api-endpoint-title">
+        <span class="badge badge-post">POST</span>
+        <span>/jobs</span>
+      </div>
+      <div class="api-auth-tag">RECRUITER ONLY</div>
+    </div>
+    <p>Creates a new job posting with mandatory future application deadline and skill requirements.</p>
+    <div class="code-title">Sample Request Body</div>
+    <div class="code-block">{
+  "title": "Senior Java Backend Engineer",
+  "description": "Looking for Spring Boot, PostgreSQL, and Microservices developer to build high throughput engines.",
+  "employmentType": "FULL_TIME",
+  "experienceLevel": "SENIOR",
+  "location": "Pune, Maharashtra",
+  "remote": true,
+  "salaryMin": 1800000,
+  "salaryMax": 2800000,
+  "currency": "INR",
+  "skills": ["Java", "Spring Boot", "PostgreSQL", "Microservices", "Docker"],
+  "education": "Bachelor or Master in CS/IT",
+  "openings": 3,
+  "applicationDeadline": "2026-09-30"
+}</div>
+    <div class="code-title">Expected Response (HTTP 201 Created)</div>
+    <div class="code-block">{
+  "id": "d1456b70-90ce-454e-8c6b-dc477a6101ad",
+  "title": "Senior Java Backend Engineer",
+  "status": "OPEN",
+  "openings": 3,
+  "experienceLevel": "SENIOR"
+}</div>
+  </div>
+
+  <!-- POST /jobs/{jobId}/apply -->
+  <div class="api-card">
+    <div class="api-header">
+      <div class="api-endpoint-title">
+        <span class="badge badge-post">POST</span>
+        <span>/jobs/{jobId}/apply</span>
+      </div>
+      <div class="api-auth-tag">CANDIDATE ONLY</div>
+    </div>
+    <p>Submits application and invokes the ATS Intelligent Match algorithm (Skills: 60%, Exp: 25%, Title: 15%). Auto-shortlists if score &ge; 70%.</p>
+    <div class="code-title">Sample Request Body</div>
+    <div class="code-block">{
+  "coverNote": "5+ years developing Spring Boot cloud microservices and high-concurrency systems."
+}</div>
+    <div class="code-title">Expected Response (HTTP 201 Created)</div>
+    <div class="code-block">{
+  "success": true,
+  "message": "Application submitted successfully with ATS match score calculated",
+  "data": {
+    "id": "e7bb59e2-c8b0-4d83-a50a-2167e32bd76d",
+    "jobTitle": "Senior Java Backend Engineer",
+    "candidateName": "Rahul Sharma",
+    "atsMatchScore": 40,
+    "status": "APPLIED",
+    "recruiterNotes": "ATS Match Score: 40% (Awaiting manual recruiter review)"
+  }
+}</div>
+  </div>
+
+  <!-- PATCH /applications/{applicationId}/status -->
+  <div class="api-card">
+    <div class="api-header">
+      <div class="api-endpoint-title">
+        <span class="badge badge-patch">PATCH</span>
+        <span>/applications/{applicationId}/status</span>
+      </div>
+      <div class="api-auth-tag">RECRUITER ONLY</div>
+    </div>
+    <p>Moves the candidate through the hiring pipeline stages (<code>SCREENING</code> &rarr; <code>SHORTLISTED</code> &rarr; <code>INTERVIEW_SCHEDULED</code> &rarr; <code>OFFERED</code> / <code>REJECTED</code>).</p>
+    <div class="code-title">Sample Request Body</div>
+    <div class="code-block">{
+  "status": "INTERVIEW_SCHEDULED",
+  "recruiterNotes": "Strong candidate background in distributed microservices. Scheduled Round 1 Architecture Interview."
+}</div>
+    <div class="code-title">Expected Response (HTTP 200 OK)</div>
+    <div class="code-block">{
+  "success": true,
+  "message": "Application stage updated successfully",
+  "data": {
+    "id": "e7bb59e2-c8b0-4d83-a50a-2167e32bd76d",
+    "status": "INTERVIEW_SCHEDULED",
+    "recruiterNotes": "Strong candidate background in distributed microservices. Scheduled Round 1 Architecture Interview."
+  }
+}</div>
+  </div>
+</div>
+
+<!-- SECTION 6: DEBUGGING & ROOT CAUSE ANALYSIS -->
+<div class="section section-page-break">
+  <h1>6. Debugging &amp; Root Cause Analysis (RCA)</h1>
+  <p>The following critical issues were identified during inspection and successfully debugged and resolved:</p>
+
+  <!-- Bug 1 -->
+  <div class="callout callout-bug">
+    <div class="callout-title">🐛 Issue 1: Missing User Relationship in Candidate Creation (HTTP 409 / 500)</div>
+    <p><strong>Root Cause:</strong> In <code>CandidateServiceImpl.createCandidate</code>, the <code>Candidate</code> entity was constructed via <code>CandidateMapper.toEntity(request)</code>, but the <code>candidate.setUser(user)</code> mapping was never set. Because <code>user_id</code> on table <code>candidates</code> has a database <code>NOT NULL</code> constraint, PostgreSQL rejected the transaction with a constraint violation.</p>
+    <p><strong>Resolution:</strong> Modified <code>CandidateServiceImpl.java</code> to look up the <code>User</code> entity by <code>request.getUserId()</code> and associate <code>candidate.setUser(user)</code> prior to saving.</p>
+  </div>
+
+  <!-- Bug 2 -->
+  <div class="callout callout-bug">
+    <div class="callout-title">🐛 Issue 2: Role-Based Authorization Returned 401 Instead of 403 Forbidden</div>
+    <p><strong>Root Cause:</strong> When an authenticated candidate attempted to access recruiter-only endpoints (e.g. <code>POST /recruiter/profile</code>, <code>POST /jobs</code>), Spring Security denied access and forwarded to <code>/error</code>. Because <code>/error</code> was not configured in <code>permitAll()</code> and no <code>AccessDeniedHandler</code> was registered, Spring Security re-evaluated the error forward as an unauthenticated request and returned a misleading <code>401 Unauthorized</code>.</p>
+    <p><strong>Resolution:</strong> Implemented <code>JwtAccessDeniedHandler.java</code> to return structured JSON with HTTP 403 Forbidden, and added <code>.accessDeniedHandler(jwtAccessDeniedHandler)</code> and <code>/error</code> to <code>permitAll()</code> in <code>SecurityConfig.java</code>.</p>
+  </div>
+
+  <!-- Bug 3 -->
+  <div class="callout callout-bug">
+    <div class="callout-title">🐛 Issue 3: Malformed JWT Caused Unhandled 500 Server Error</div>
+    <p><strong>Root Cause:</strong> Passing an invalid, expired, or malformed JWT token caused <code>io.jsonwebtoken</code> parser to throw an unhandled runtime exception inside <code>JwtAuthenticationFilter.java</code>, which bypassed Spring MVC exception handlers and bubbled up as an HTTP 500 error.</p>
+    <p><strong>Resolution:</strong> Wrapped JWT parsing and claim extraction in a try-catch block inside <code>JwtAuthenticationFilter.java</code>. On parser exception, the security context is cleanly cleared, allowing Spring Security's <code>JwtAuthenticationEntryPoint</code> to return HTTP 401 Unauthorized.</p>
+  </div>
+
+  <h2>6.1 Verification Status</h2>
+  <div class="callout callout-success">
+    <div class="callout-title">✅ All 46 Regression and Functional Tests Passing</div>
+    <p>The entire API test matrix has been executed against the running backend with PostgreSQL 18. Zero failures or unhandled exceptions were detected.</p>
+  </div>
+</div>
+
+<!-- SECTION 7: FULL ENDPOINT REFERENCE TABLE -->
+<div class="section section-page-break">
+  <h1>7. Full API Test Matrix (46/46 Passed)</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Method</th>
+        <th>Endpoint</th>
+        <th>Auth Level</th>
+        <th>Test Scenario</th>
+        <th>Result</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/test</code></td><td>None</td><td>No Authorization header</td><td><span class="status-pass">401 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/test</code></td><td>Invalid Token</td><td>Malformed Bearer token</td><td><span class="status-fixed">401 Fixed</span></td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/auth/register/candidate</code></td><td>Public</td><td>New candidate onboarding</td><td><span class="status-pass">201 OK</span></td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/auth/register/recruiter</code></td><td>Public</td><td>New recruiter onboarding</td><td><span class="status-pass">201 OK</span></td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/auth/register/candidate</code></td><td>Public</td><td>Duplicate email conflict</td><td><span class="status-pass">409 OK</span></td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/auth/login</code></td><td>Public</td><td>Valid candidate login</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/auth/login</code></td><td>Public</td><td>Valid recruiter login</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/auth/login</code></td><td>Public</td><td>Incorrect password</td><td><span class="status-pass">401 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/test</code></td><td>Candidate</td><td>Valid candidate JWT</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/users/me</code></td><td>Authenticated</td><td>Fetch current user session</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-put">PUT</span></td><td><code>/users/me</code></td><td>Authenticated</td><td>Update user name/phone</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/users/{userId}</code></td><td>Authenticated</td><td>Lookup user by UUID</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/recruiter/profile</code></td><td>Candidate</td><td>Candidate access violation</td><td><span class="status-fixed">403 Fixed</span></td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/recruiter/profile</code></td><td>Recruiter</td><td>Create company profile</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/recruiter/profile</code></td><td>Recruiter</td><td>Fetch own company profile</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-put">PUT</span></td><td><code>/recruiter/profile</code></td><td>Recruiter</td><td>Update company profile</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/recruiter/profile/{id}</code></td><td>Recruiter</td><td>Fetch profile by user ID</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/candidate/profile</code></td><td>Recruiter</td><td>Recruiter access violation</td><td><span class="status-fixed">403 Fixed</span></td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/candidate/profile</code></td><td>Candidate</td><td>Create candidate profile</td><td><span class="status-pass">201 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/candidate/profile</code></td><td>Candidate</td><td>Fetch candidate profile</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-put">PUT</span></td><td><code>/candidate/profile</code></td><td>Candidate</td><td>Update candidate profile</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/candidates</code></td><td>Recruiter</td><td>Direct candidate creation</td><td><span class="status-fixed">201 Fixed</span></td></tr>
+      <tr><td><span class="badge badge-put">PUT</span></td><td><code>/candidates/{id}</code></td><td>Recruiter</td><td>Update direct candidate</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-delete">DELETE</span></td><td><code>/candidates/{id}</code></td><td>Recruiter</td><td>Soft-delete candidate</td><td><span class="status-pass">204 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/candidates</code></td><td>Recruiter</td><td>Paginated list query</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/candidates?filters</code></td><td>Recruiter</td><td>Filter by location &amp; status</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/candidates/{id}</code></td><td>Recruiter</td><td>Get candidate by ID</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/candidates</code></td><td>Candidate</td><td>Candidate directory probe</td><td><span class="status-fixed">403 Fixed</span></td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/jobs</code></td><td>Candidate</td><td>Candidate post job probe</td><td><span class="status-fixed">403 Fixed</span></td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/jobs</code></td><td>Recruiter</td><td>Create job posting</td><td><span class="status-pass">201 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/jobs</code></td><td>Recruiter</td><td>Get recruiter's posted jobs</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/jobs/open</code></td><td>Candidate</td><td>Browse open job postings</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/jobs/{jobId}</code></td><td>Recruiter</td><td>Get job details by ID</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-put">PUT</span></td><td><code>/jobs/{jobId}</code></td><td>Recruiter</td><td>Update job openings &amp; title</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/jobs/{id}/apply</code></td><td>Candidate</td><td>Apply to job + ATS scoring</td><td><span class="status-pass">201 OK</span></td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/jobs/{id}/apply</code></td><td>Candidate</td><td>Duplicate application attempt</td><td><span class="status-pass">409 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/candidate/applications</code></td><td>Candidate</td><td>View submitted applications</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/jobs/{id}/applications</code></td><td>Recruiter</td><td>View applicants ranked by ATS</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-patch">PATCH</span></td><td><code>/applications/{id}/status</code></td><td>Candidate</td><td>Candidate change stage probe</td><td><span class="status-pass">403 OK</span></td></tr>
+      <tr><td><span class="badge badge-patch">PATCH</span></td><td><code>/applications/{id}/status</code></td><td>Recruiter</td><td>Update stage to INTERVIEW</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/applications/{id}</code></td><td>Candidate</td><td>Get single application breakdown</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-patch">PATCH</span></td><td><code>/jobs/{id}/close</code></td><td>Recruiter</td><td>Close job posting</td><td><span class="status-pass">204 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/jobs/{id}</code></td><td>Recruiter</td><td>Confirm status CLOSED</td><td><span class="status-pass">200 OK</span></td></tr>
+      <tr><td><span class="badge badge-get">GET</span></td><td><code>/jobs/{fakeUUID}</code></td><td>Recruiter</td><td>Non-existent UUID</td><td><span class="status-pass">404 OK</span></td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/auth/login</code></td><td>Public</td><td>Malformed JSON body</td><td><span class="status-pass">400 OK</span></td></tr>
+      <tr><td><span class="badge badge-post">POST</span></td><td><code>/auth/register/candidate</code></td><td>Public</td><td>Missing required lastName</td><td><span class="status-pass">400 OK</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>

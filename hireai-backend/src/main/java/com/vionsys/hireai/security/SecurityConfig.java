@@ -21,6 +21,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.vionsys.hireai.security.jwt.JwtAccessDeniedHandler;
 import com.vionsys.hireai.security.jwt.JwtAuthenticationEntryPoint;
 import com.vionsys.hireai.security.jwt.JwtAuthenticationFilter;
 import com.vionsys.hireai.security.jwt.JwtProperties;
@@ -36,6 +37,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -81,10 +83,11 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS))
 
-                // Return 401 when authentication fails
+                // Return 401 when authentication fails & 403 when access is denied
                 .exceptionHandling(exception ->
-                        exception.authenticationEntryPoint(
-                                jwtAuthenticationEntryPoint))
+                        exception
+                                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+                                .accessDeniedHandler(jwtAccessDeniedHandler))
 
                 .authorizeHttpRequests(auth -> auth
 
@@ -92,7 +95,7 @@ public class SecurityConfig {
                         // PUBLIC APIs
                         // =====================================================
 
-                        .requestMatchers("/auth/**")
+                        .requestMatchers("/auth/**", "/error")
                         .permitAll()
 
                         // Swagger / OpenAPI
