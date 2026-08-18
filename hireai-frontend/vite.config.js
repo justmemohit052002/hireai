@@ -6,10 +6,15 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/auth': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
+      '/auth': 'http://localhost:8080',
+      '/users': 'http://localhost:8080',
+      '/recruiter': 'http://localhost:8080',
+      '/jobs': 'http://localhost:8080',
+      '/candidates': 'http://localhost:8080',
+      '/candidate': 'http://localhost:8080',
+      '/applications': 'http://localhost:8080',
+      '/test': 'http://localhost:8080',
     },
   },
 })
+

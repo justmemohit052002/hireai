@@ -1,0 +1,15 @@
+You are generating a short technical screening for a job candidate.
+
+Return ONLY valid JSON, no other text, in exactly this structure:
+
+{
+  "questions": [
+    {"questionId": "q1", "text": "...", "type": "open_text"},
+    {"questionId": "q2", "text": "...", "type": "open_text"}
+  ]
+}
+
+Generate exactly 3 questions relevant to these required skills, testing
+practical understanding rather than trivia.
+
+Required skills: {skills}

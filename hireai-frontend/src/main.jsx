@@ -2,9 +2,12 @@ import React, { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
   ArrowRight, BriefcaseBusiness, Building2, Check, CircleUserRound, Eye, EyeOff,
-  LockKeyhole, Mail, ShieldCheck, Sparkles, UserRound,
+  LockKeyhole, Mail, ShieldCheck, Sparkles, UserRound, ArrowLeft, Terminal,
 } from 'lucide-react'
 import './styles.css'
+import './testing/testing.css'
+import { AuthProvider } from './testing/context/AuthContext'
+import ApiTestingHub from './testing/ApiTestingHub'
 
 const emptyLogin = { email: '', password: '' }
 const emptyRegister = { firstName: '', lastName: '', email: '', phoneNumber: '', password: '', role: 'ROLE_CANDIDATE' }
@@ -32,7 +35,7 @@ function PasswordInput({ value, onChange, error }) {
   )
 }
 
-function App() {
+function AuthApp({ onSwitchToTestingHub }) {
   const [mode, setMode] = useState('login')
   const [login, setLogin] = useState(emptyLogin)
   const [register, setRegister] = useState(emptyRegister)
@@ -77,7 +80,12 @@ function App() {
     if (!validate()) return
     setLoading(true)
     try {
-      const endpoint = isLogin ? '/auth/login' : '/auth/register'
+      const endpoint = isLogin
+        ? '/auth/login'
+        : form.role === 'ROLE_RECRUITER'
+        ? '/auth/register/recruiter'
+        : '/auth/register/candidate'
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -90,6 +98,7 @@ function App() {
         throw new Error(payload.message || 'Something went wrong. Please try again.')
       }
       localStorage.setItem('hireai_auth', JSON.stringify(payload))
+      localStorage.setItem('hireai_token', payload.accessToken || '')
       setNotice(isLogin ? `Welcome back, ${payload.firstName || 'there'}!` : 'Your account is ready. Welcome to HireAI!')
       if (!isLogin) setRegister(emptyRegister)
     } catch (error) {
@@ -101,6 +110,17 @@ function App() {
 
   return (
     <main className="auth-page">
+      <div style={{ position: 'fixed', top: '16px', right: '16px', zIndex: 100 }}>
+        <button
+          type="button"
+          className="btn-primary"
+          onClick={onSwitchToTestingHub}
+          style={{ boxShadow: '0 4px 14px rgba(0,0,0,0.3)', padding: '0.6rem 1rem' }}
+        >
+          <Terminal size={16} /> Open Full API Testing Workbench
+        </button>
+      </div>
+
       <section className="story-panel">
         <div className="brand"><span className="brand-mark"><BriefcaseBusiness size={21} /></span> Hire<span>AI</span></div>
         <div className="story-content">
@@ -166,4 +186,18 @@ function App() {
   )
 }
 
-createRoot(document.getElementById('root')).render(<App />)
+function RootApp() {
+  const [view, setView] = useState('testing') // 'testing' | 'auth'
+
+  return (
+    <AuthProvider>
+      {view === 'testing' ? (
+        <ApiTestingHub onSwitchToAppView={() => setView('auth')} />
+      ) : (
+        <AuthApp onSwitchToTestingHub={() => setView('testing')} />
+      )}
+    </AuthProvider>
+  )
+}
+
+createRoot(document.getElementById('root')).render(<RootApp />)

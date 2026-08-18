@@ -51,10 +51,15 @@ public class CandidateServiceImpl implements CandidateService {
     public CandidateResponse createCandidate(
             CandidateRequest request) {
 
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
         validateDuplicateCandidate(request);
 
         Candidate candidate =
                 CandidateMapper.toEntity(request);
+
+        candidate.setUser(user);
 
         candidate.setCandidateId(
                 candidateIdGenerator.generateCandidateId()
