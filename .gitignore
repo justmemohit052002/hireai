@@ -40,16 +40,6 @@ hireai-backend/.mvn/wrapper/maven-wrapper.jar
 .idea/
 *.iml
 
-####################################################
-# Eclipse / Spring Tool Suite (STS)
-####################################################
-
-.classpath
-.project
-.settings/
-.factorypath
-.springBeans
-.sts4-cache/
 
 ####################################################
 # VS Code
@@ -94,3 +84,15 @@ coverage/
 
 .metadata/
 .run/
+
+####################################################
+# Eclipse / Spring Tool Suite (STS)
+####################################################
+
+.metadata/
+.classpath
+.project
+.settings/
+.factorypath
+.springBeans
+.sts4-cache/
