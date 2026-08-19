@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HireAI AI Engine — Architecture, Schema & Backend Integration Specification</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  @page {
+    size: A4;
+    margin: 14mm 14mm 14mm 14mm;
+    @bottom-right {
+      content: counter(page);
+    }
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #1e293b;
+    background: #ffffff;
+    line-height: 1.55;
+    font-size: 9.5pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .cover-page {
+    page-break-after: always;
+    min-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 40px 20px 20px 20px;
+    background: linear-gradient(145deg, #090d16 0%, #171c35 50%, #2e1065 100%);
+    color: #ffffff;
+    border-radius: 12px;
+  }
+
+  .cover-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding-bottom: 20px;
+  }
+
+  .cover-badge {
+    display: inline-block;
+    background: rgba(99, 102, 241, 0.25);
+    color: #a5b4fc;
+    border: 1px solid rgba(165, 180, 252, 0.35);
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 8.5pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 15px;
+  }
+
+  .cover-title {
+    font-size: 26pt;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 12px;
+    background: linear-gradient(to right, #ffffff, #c7d2fe, #a5b4fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .cover-subtitle {
+    font-size: 12pt;
+    color: #94a3b8;
+    max-width: 600px;
+    line-height: 1.4;
+  }
+
+  .cover-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin: 30px 0;
+  }
+
+  .stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 14px;
+    backdrop-filter: blur(10px);
+  }
+
+  .stat-val {
+    font-size: 18pt;
+    font-weight: 800;
+    color: #38bdf8;
+    margin-bottom: 2px;
+  }
+
+  .stat-lbl {
+    font-size: 8pt;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .cover-meta {
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    padding-top: 15px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 8.5pt;
+    color: #94a3b8;
+  }
+
+  .section {
+    margin-top: 24px;
+    page-break-inside: avoid;
+  }
+
+  .page-break {
+    page-break-before: always;
+  }
+
+  h1 {
+    font-size: 15pt;
+    font-weight: 800;
+    color: #0f172a;
+    border-bottom: 2px solid #6366f1;
+    padding-bottom: 6px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  h2 {
+    font-size: 12pt;
+    font-weight: 700;
+    color: #1e293b;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    border-left: 3px solid #6366f1;
+    padding-left: 8px;
+  }
+
+  h3 {
+    font-size: 10.5pt;
+    font-weight: 600;
+    color: #334155;
+    margin-top: 12px;
+    margin-bottom: 6px;
+  }
+
+  p {
+    margin-bottom: 10px;
+    color: #334155;
+    text-align: justify;
+  }
+
+  ul, ol {
+    margin-left: 20px;
+    margin-bottom: 10px;
+    color: #334155;
+  }
+
+  li {
+    margin-bottom: 4px;
+  }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8pt;
+    background: #f1f5f9;
+    color: #4338ca;
+    padding: 2px 5px;
+    border-radius: 4px;
+    border: 1px solid #e2e8f0;
+  }
+
+  pre {
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 12px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8pt;
+    overflow-x: auto;
+    margin-bottom: 12px;
+    border: 1px solid #1e293b;
+    page-break-inside: avoid;
+  }
+
+  pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    border: none;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 7.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .badge-post { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+  .badge-get { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+  .badge-sync { background: #e0e7ff; color: #3730a3; }
+  .badge-async { background: #fef3c7; color: #92400e; }
+  .badge-alert { background: #fee2e2; color: #991b1b; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 8.5pt;
+    page-break-inside: avoid;
+  }
+
+  th {
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 700;
+    text-align: left;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e1;
+    border-bottom: 2px solid #94a3b8;
+  }
+
+  td {
+    padding: 7px 10px;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) td {
+    background: #f8fafc;
+  }
+
+  .alert-box {
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 12px 0;
+    font-size: 8.5pt;
+    border-left: 4px solid;
+    page-break-inside: avoid;
+  }
+
+  .alert-warning {
+    background: #fffbeb;
+    border-color: #f59e0b;
+    color: #92400e;
+  }
+
+  .alert-info {
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #1e40af;
+  }
+
+  .alert-success {
+    background: #f0fdf4;
+    border-color: #22c55e;
+    color: #166534;
+  }
+
+  .diagram-container {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 12px 0;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8pt;
+    color: #334155;
+    page-break-inside: avoid;
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover-page">
+  <div class="cover-header">
+    <div class="cover-badge">HireAI Engineering Blueprint • v1.0</div>
+    <div class="cover-title">AI Engine Architecture & Backend Integration Specification</div>
+    <div class="cover-subtitle">Technical blueprint for integrating the standalone FastAPI AI Engine with the Spring Boot 3.5 & PostgreSQL backend.</div>
+  </div>
+
+  <div class="cover-stats">
+    <div class="stat-card">
+      <div class="stat-val">6 Modules</div>
+      <div class="stat-lbl">AI Core Capabilities</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">8 Endpoints</div>
+      <div class="stat-lbl">REST API Surface</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">Spring Boot 3.5</div>
+      <div class="stat-lbl">Target Orchestrator</div>
+    </div>
+  </div>
+
+  <div class="cover-meta">
+    <div><strong>Target Systems:</strong> Spring Boot 3.5.5 (Port 8080) • FastAPI AI Engine (Port 8000)</div>
+    <div><strong>Author:</strong> HireAI Core Team • August 2026</div>
+  </div>
+</div>
+
+<!-- SECTION 1: SYSTEM OVERVIEW -->
+<div class="section">
+  <h1>1. Executive Summary & System Topology</h1>
+  <p>The HireAI platform architecture enforces a strict separation of concerns between <strong>transactional business logic</strong> (Spring Boot) and <strong>stateless AI processing</strong> (FastAPI microservice). The AI Engine runs independently, wrapping local LLMs (Ollama / Llama 3.1:8b), cloud providers (Gemini / Groq), and local embedding models.</p>
+
+  <div class="diagram-container">
+[ React 19 Frontend ]  ──►  (HTTP / JSON & Multipart)  ──►  [ Spring Boot 3.5 Backend (Port 8080) ]
+                                                                      │                 │
+                                                               (JPA / SQL)         (HTTP / REST Client)
+                                                                      ▼                 ▼
+                                                             [ PostgreSQL 18 DB ]  [ FastAPI AI Engine (Port 8000) ]
+                                                                                   ├── Ollama / Gemini / Groq
+                                                                                   └── Sentence-Transformers
+  </div>
+
+  <div class="alert-box alert-info">
+    <strong>Key Architectural Rules:</strong>
+    <ul style="margin-top: 4px; margin-bottom: 0;">
+      <li><strong>Database Isolation:</strong> The AI Engine never connects directly to PostgreSQL. Spring Boot acts as the sole data gatekeeper.</li>
+      <li><strong>Text Extraction Boundary:</strong> The AI Engine does not accept raw PDF/DOCX files. Spring Boot extracts plain text and sends JSON.</li>
+      <li><strong>Sync vs Async Models:</strong> Resume parsing uses an asynchronous polling pattern (30-90s on local models), while other 5 modules are synchronous.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SECTION 2: AI ENGINE MODULES -->
+<div class="section page-break">
+  <h1>2. Complete Scan of the 6 AI Engine Modules</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Module Name</th>
+        <th>Endpoint</th>
+        <th>Method</th>
+        <th>Pattern</th>
+        <th>Processing Engine</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1</strong></td>
+        <td><strong>JD Generator</strong></td>
+        <td><code>/api/v1/jd/generate</code></td>
+        <td><span class="badge badge-post">POST</span></td>
+        <td><span class="badge badge-sync">SYNC</span></td>
+        <td>LLM (Llama 3.1:8b / Gemini / Groq)</td>
+      </tr>
+      <tr>
+        <td><strong>2</strong></td>
+        <td><strong>Resume Parser</strong></td>
+        <td><code>/api/v1/resumes/parse</code><br><code>/api/v1/resumes/status/{id}</code></td>
+        <td><span class="badge badge-post">POST</span><br><span class="badge badge-get">GET</span></td>
+        <td><span class="badge badge-async">ASYNC POLL</span></td>
+        <td>LLM Zero-Shot Extraction + In-Memory Thread Pool</td>
+      </tr>
+      <tr>
+        <td><strong>3</strong></td>
+        <td><strong>Match Engine</strong></td>
+        <td><code>/api/v1/match/score</code></td>
+        <td><span class="badge badge-post">POST</span></td>
+        <td><span class="badge badge-sync">SYNC</span></td>
+        <td>Sentence Transformers (<code>all-MiniLM-L6-v2</code>)</td>
+      </tr>
+      <tr>
+        <td><strong>4</strong></td>
+        <td><strong>AI Chatbot</strong></td>
+        <td><code>/api/v1/chatbot/message</code></td>
+        <td><span class="badge badge-post">POST</span></td>
+        <td><span class="badge badge-sync">SYNC</span></td>
+        <td>LLM Conversational State Machine</td>
+      </tr>
+      <tr>
+        <td><strong>5</strong></td>
+        <td><strong>Interview AI</strong></td>
+        <td><code>/api/v1/interview/questions</code><br><code>/api/v1/interview/evaluate</code></td>
+        <td><span class="badge badge-post">POST</span><br><span class="badge badge-post">POST</span></td>
+        <td><span class="badge badge-sync">SYNC</span></td>
+        <td>LLM Technical Assessment & Grading</td>
+      </tr>
+      <tr>
+        <td><strong>6</strong></td>
+        <td><strong>Decision Engine</strong></td>
+        <td><code>/api/v1/decision/finalize</code></td>
+        <td><span class="badge badge-post">POST</span></td>
+        <td><span class="badge badge-sync">SYNC</span></td>
+        <td>Deterministic Weighted Formula (No LLM)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Module 1: Job Description (JD) Generator</h2>
+  <p>Generates structured role overview, responsibilities, required skills, and sample technical questions from title and experience level.</p>
+  <pre><code>// POST /api/v1/jd/generate
+// Request Body:
+{
+  "jobTitle": "Backend Engineer",
+  "requiredSkills": ["Java", "Spring Boot", "PostgreSQL", "Docker"],
+  "experienceLevel": "3-5 years"
+}
+
+// Response Body (200 OK):
+{
+  "description": "Lead the development of scalable microservices...",
+  "responsibilities": ["Design and maintain high-throughput REST APIs", "Collaborate with frontend teams"],
+  "mustHaveSkills": ["Java", "Spring Boot", "PostgreSQL", "Docker"],
+  "niceToHaveSkills": ["Kubernetes", "Redis", "Kafka"],
+  "interviewQuestions": ["Explain transaction propagation in Spring Boot.", "How do you handle connection pools in PostgreSQL?"]
+}</code></pre>
+
+  <h2>Module 2: Resume Parser (Async Job Polling)</h2>
+  <p>Accepts raw extracted text from a candidate's resume and performs zero-shot entity extraction in a background thread.</p>
+  <pre><code>// 1. Start Parse Job: POST /api/v1/resumes/parse
+{
+  "candidateId": "cand_1029",
+  "resumeText": "Rohan Mehta\nSenior Java Developer\nSkills: Java, Spring Boot, Postgres..."
+}
+// Returns immediately: { "jobId": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "status": "processing" }
+
+// 2. Poll Status: GET /api/v1/resumes/status/3fa85f64-5717-4562-b3fc-2c963f66afa6
+{
+  "jobId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "status": "complete",
+  "result": {
+    "candidateId": "cand_1029",
+    "skills": ["Java", "Spring Boot", "PostgreSQL", "Docker"],
+    "yearsExperience": 4.0,
+    "education": [{"degree": "B.Tech Computer Science", "institution": "Pune Institute of Tech", "year": "2020"}],
+    "projects": [{"name": "Order Management System", "description": "Microservices with Spring Cloud"}],
+    "domain": "fintech",
+    "currentRole": "Senior Java Developer",
+    "parseStatus": "success"
+  }
+}</code></pre>
+</div>
+
+<!-- SECTION 3: GAP ANALYSIS -->
+<div class="section page-break">
+  <h1>3. Backend Audit & Gap Analysis</h1>
+
+  <div class="alert-box alert-warning">
+    <strong>⚠️ Critical Mismatches Identified in Existing Backend:</strong>
+    <ul style="margin-top: 4px; margin-bottom: 0;">
+      <li><code>LlmAtsClient.java</code> currently targets <code>/api/v1/ats/score</code> (configured in <code>AtsProperties.java</code>). <strong>This endpoint does not exist on the AI engine.</strong> It must be updated to <code>/api/v1/match/score</code>.</li>
+      <li><code>LlmAtsClient.java</code> sends full <code>CandidateInfo</code> and <code>JobInfo</code> nested objects. The AI Engine accepts <code>{ "resumeSkills": [...], "jobSkills": [...] }</code>.</li>
+      <li>Resume file uploading exists in DTO (<code>ResumeUploadRequest</code>), but no controller or text extractor (Apache Tika) exists.</li>
+      <li>No asynchronous polling mechanism exists in Spring Boot to poll for resume parse completion.</li>
+    </ul>
+  </div>
+
+  <h2>Summary of Required Modifications</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Component</th>
+        <th>Current State</th>
+        <th>Target State</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>AtsProperties.java</strong></td>
+        <td><code>serviceUrl = ".../api/v1/ats/score"</code></td>
+        <td>Point base URL to <code>http://localhost:8000</code> and use <code>/api/v1/match/score</code></td>
+      </tr>
+      <tr>
+        <td><strong>LlmAtsClient.java</strong></td>
+        <td>Single purpose ATS client with wrong payload</td>
+        <td>Replace with comprehensive <code>AiEngineClient.java</code> supporting all 6 modules</td>
+      </tr>
+      <tr>
+        <td><strong>Resume.java Entity</strong></td>
+        <td>Only stores file metadata</td>
+        <td>Add fields for <code>rawText</code>, <code>aiJobId</code>, <code>parsedRole</code>, <code>parsedExperience</code>, <code>parsedDataJson</code></td>
+      </tr>
+      <tr>
+        <td><strong>JobApplication.java</strong></td>
+        <td>Stores only ATS score</td>
+        <td>Add <code>interviewScore</code>, <code>chatbotScore</code>, <code>finalAiScore</code>, <code>aiClassification</code>, <code>aiExplanation</code></td>
+      </tr>
+      <tr>
+        <td><strong>New Entities</strong></td>
+        <td>None</td>
+        <td>Create <code>ChatConversation</code>, <code>ChatMessage</code>, <code>InterviewAssessment</code>, <code>InterviewQuestionAnswer</code></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 4: DATA MODELS & SCHEMA -->
+<div class="section page-break">
+  <h1>4. Backend Schema & Entity Modifications</h1>
+
+  <h2>1. Modification to <code>Resume.java</code></h2>
+  <pre><code>@Getter @Setter @Entity @Table(name = "resumes")
+public class Resume extends BaseEntity {
+    // Existing fields: id, originalFileName, storedFileName, fileType, fileSize, filePath, resumeStatus...
+
+    @Column(name = "raw_text", columnDefinition = "TEXT")
+    private String rawText;
+
+    @Column(name = "ai_job_id", length = 64)
+    private String aiJobId;
+
+    @Column(name = "parsed_domain", length = 100)
+    private String parsedDomain;
+
+    @Column(name = "parsed_role", length = 100)
+    private String parsedRole;
+
+    @Column(name = "parsed_experience", precision = 4, scale = 1)
+    private BigDecimal parsedExperience;
+
+    @Column(name = "parsed_data_json", columnDefinition = "TEXT")
+    private String parsedDataJson;
+}</code></pre>
+
+  <h2>2. Modification to <code>JobApplication.java</code></h2>
+  <pre><code>@Getter @Setter @Entity @Table(name = "job_applications")
+public class JobApplication extends BaseEntity {
+    // Existing fields: id, job, candidate, status, atsMatchScore, matchingSkills, missingSkills...
+
+    @Column(name = "interview_score")
+    private Integer interviewScore;
+
+    @Column(name = "chatbot_score")
+    private Integer chatbotScore;
+
+    @Column(name = "final_ai_score")
+    private Integer finalAiScore;
+
+    @Column(name = "ai_classification", length = 20)
+    private String aiClassification; // SHORTLIST, HOLD, REJECT
+
+    @Column(name = "ai_explanation", length = 2000)
+    private String aiExplanation;
+}</code></pre>
+
+  <h2>3. New Entity: <code>ChatConversation.java</code> & <code>ChatMessage.java</code></h2>
+  <pre><code>@Entity @Table(name = "chat_conversations")
+public class ChatConversation extends BaseEntity {
+    @Id @GeneratedValue private UUID id;
+    @OneToOne @JoinColumn(name = "candidate_id", nullable = false) private Candidate candidate;
+    @Column(nullable = false) private boolean complete = false;
+    @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL) private List&lt;ChatMessage&gt; messages;
+}
+
+@Entity @Table(name = "chat_messages")
+public class ChatMessage extends BaseEntity {
+    @Id @GeneratedValue private UUID id;
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "conversation_id") private ChatConversation conversation;
+    @Column(nullable = false, length = 20) private String role; // "bot" | "candidate"
+    @Column(nullable = false, columnDefinition = "TEXT") private String text;
+}</code></pre>
+</div>
+
+<!-- SECTION 5: UNIFIED REST CLIENT -->
+<div class="section page-break">
+  <h1>5. Unified Spring Boot AI Client</h1>
+  <p>The centralized <code>AiEngineClient</code> encapsulates all communications with the Python AI Engine:</p>
+
+  <pre><code>package com.vionsys.hireai.ai.client;
+
+import java.time.Duration;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
+import com.vionsys.hireai.ai.dto.match.*;
+import com.vionsys.hireai.ai.dto.resume.*;
+import com.vionsys.hireai.ai.dto.jd.*;
+import com.vionsys.hireai.ai.dto.chatbot.*;
+import com.vionsys.hireai.ai.dto.interview.*;
+import com.vionsys.hireai.ai.dto.decision.*;
+
+@Component
+public class AiEngineClient {
+
+    private final RestClient restClient;
+
+    public AiEngineClient(
+            @Value("${ai-engine.base-url:http://localhost:8000}") String baseUrl,
+            @Value("${ai-engine.timeout-ms:30000}") int timeoutMs) {
+
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofMillis(timeoutMs));
+        factory.setReadTimeout(Duration.ofMillis(timeoutMs));
+
+        this.restClient = RestClient.builder()
+                .baseUrl(baseUrl)
+                .requestFactory(factory)
+                .build();
+    }
+
+    public AiJdGenerateResponse generateJd(AiJdGenerateRequest req) {
+        return restClient.post().uri("/api/v1/jd/generate")
+                .contentType(MediaType.APPLICATION_JSON).body(req)
+                .retrieve().body(AiJdGenerateResponse.class);
+    }
+
+    public AiJobAcceptedResponse submitResumeForParsing(AiResumeParseRequest req) {
+        return restClient.post().uri("/api/v1/resumes/parse")
+                .contentType(MediaType.APPLICATION_JSON).body(req)
+                .retrieve().body(AiJobAcceptedResponse.class);
+    }
+
+    public AiJobStatusResponse checkResumeParseStatus(String jobId) {
+        return restClient.get().uri("/api/v1/resumes/status/{jobId}", jobId)
+                .retrieve().body(AiJobStatusResponse.class);
+    }
+
+    public AiMatchScoreResponse calculateMatchScore(AiMatchScoreRequest req) {
+        return restClient.post().uri("/api/v1/match/score")
+                .contentType(MediaType.APPLICATION_JSON).body(req)
+                .retrieve().body(AiMatchScoreResponse.class);
+    }
+
+    public AiChatMessageResponse sendChatMessage(AiChatMessageRequest req) {
+        return restClient.post().uri("/api/v1/chatbot/message")
+                .contentType(MediaType.APPLICATION_JSON).body(req)
+                .retrieve().body(AiChatMessageResponse.class);
+    }
+
+    public AiInterviewQuestionsResponse generateQuestions(AiInterviewQuestionsRequest req) {
+        return restClient.post().uri("/api/v1/interview/questions")
+                .contentType(MediaType.APPLICATION_JSON).body(req)
+                .retrieve().body(AiInterviewQuestionsResponse.class);
+    }
+
+    public AiInterviewEvaluateResponse evaluateAnswers(AiInterviewEvaluateRequest req) {
+        return restClient.post().uri("/api/v1/interview/evaluate")
+                .contentType(MediaType.APPLICATION_JSON).body(req)
+                .retrieve().body(AiInterviewEvaluateResponse.class);
+    }
+
+    public AiDecisionResponse finalizeDecision(AiDecisionRequest req) {
+        return restClient.post().uri("/api/v1/decision/finalize")
+                .contentType(MediaType.APPLICATION_JSON).body(req)
+                .retrieve().body(AiDecisionResponse.class);
+    }
+}</code></pre>
+</div>
+
+<!-- SECTION 6: IMPLEMENTATION ROADMAP -->
+<div class="section page-break">
+  <h1>6. Phased Implementation Roadmap</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Phase</th>
+        <th>Focus Area</th>
+        <th>Key Deliverables</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Phase 1</strong></td>
+        <td><strong>Core Setup & Match Engine Fix</strong></td>
+        <td>
+          • Fix <code>AtsProperties.java</code> to point to <code>http://localhost:8000/api/v1/match/score</code><br>
+          • Implement <code>AiEngineClient.java</code> and base configuration<br>
+          • Align <code>AtsMatchScoringService</code> with <code>AiMatchScoreRequest</code> / <code>Response</code>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Phase 2</strong></td>
+        <td><strong>Resume Text Extraction & Async Parser</strong></td>
+        <td>
+          • Add <code>org.apache.tika</code> to <code>pom.xml</code><br>
+          • Build <code>DocumentTextExtractionService</code> for PDF/DOCX parsing<br>
+          • Implement <code>POST /api/v1/candidate/resume/upload</code> and background status polling worker
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Phase 3</strong></td>
+        <td><strong>AI Job Description Generator</strong></td>
+        <td>
+          • Build <code>AiJdGenerateRequest</code> and <code>AiJdGenerateResponse</code> DTOs<br>
+          • Expose <code>POST /api/v1/recruiter/ai/jd/generate</code> in <code>JobController</code><br>
+          • Connect with Recruiter Frontend Job Creation form
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Phase 4</strong></td>
+        <td><strong>Screening Chatbot State Machine</strong></td>
+        <td>
+          • Create <code>ChatConversation</code> and <code>ChatMessage</code> entities & repositories<br>
+          • Expose <code>POST /api/v1/candidate/chat/message</code> & <code>GET /history</code><br>
+          • Auto-update candidate CTC, notice period, and availability on completion
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Phase 5</strong></td>
+        <td><strong>Interview AI & Decision Engine</strong></td>
+        <td>
+          • Create <code>InterviewAssessment</code> entities & repositories<br>
+          • Implement question generation and automated answer scoring endpoints<br>
+          • Connect <code>/api/v1/decision/finalize</code> to composite hiring pipeline
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="alert-box alert-success" style="margin-top: 20px;">
+    <strong>✅ Status:</strong> Technical specification complete. Ready for phased implementation upon confirmation.
+  </div>
+</div>
+
+</body>
+</html>
