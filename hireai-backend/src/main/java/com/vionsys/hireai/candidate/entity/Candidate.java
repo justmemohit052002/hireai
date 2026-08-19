@@ -184,6 +184,7 @@ public class Candidate extends BaseEntity {
             name = "deleted",
             nullable = false
     )
+    @lombok.Builder.Default
     private boolean deleted = false;
 
     /*
@@ -210,5 +211,6 @@ public class Candidate extends BaseEntity {
                     name = "skill_uuid"
             )
     )
+    @lombok.Builder.Default
     private Set<Skill> skills = new HashSet<>();
 }

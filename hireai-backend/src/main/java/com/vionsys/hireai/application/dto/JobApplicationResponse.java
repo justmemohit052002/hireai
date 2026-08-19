@@ -36,6 +36,11 @@ public class JobApplicationResponse {
     private List<String> missingSkills;
     private String coverNote;
     private String recruiterNotes;
+    private Integer interviewScore;
+    private Integer chatbotScore;
+    private Integer finalAiScore;
+    private String aiClassification;
+    private String aiExplanation;
     private LocalDateTime appliedAt;
     private LocalDateTime updatedAt;
 }

@@ -41,6 +41,11 @@ public final class JobApplicationMapper {
                 .missingSkills(missingSkills)
                 .coverNote(app.getCoverNote())
                 .recruiterNotes(app.getRecruiterNotes())
+                .interviewScore(app.getInterviewScore())
+                .chatbotScore(app.getChatbotScore())
+                .finalAiScore(app.getFinalAiScore())
+                .aiClassification(app.getAiClassification())
+                .aiExplanation(app.getAiExplanation())
                 .appliedAt(app.getCreatedAt())
                 .updatedAt(app.getUpdatedAt())
                 .build();

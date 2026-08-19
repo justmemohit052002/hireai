@@ -82,4 +82,19 @@ public class JobApplication extends BaseEntity {
 
     @Column(name = "recruiter_notes", length = 2000)
     private String recruiterNotes;
+
+    @Column(name = "interview_score")
+    private Integer interviewScore;
+
+    @Column(name = "chatbot_score")
+    private Integer chatbotScore;
+
+    @Column(name = "final_ai_score")
+    private Integer finalAiScore;
+
+    @Column(name = "ai_classification", length = 50)
+    private String aiClassification; // "shortlist" | "hold" | "reject"
+
+    @Column(name = "ai_explanation", columnDefinition = "TEXT")
+    private String aiExplanation;
 }

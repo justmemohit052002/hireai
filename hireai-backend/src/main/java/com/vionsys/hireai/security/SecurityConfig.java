@@ -24,14 +24,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.vionsys.hireai.security.jwt.JwtAccessDeniedHandler;
 import com.vionsys.hireai.security.jwt.JwtAuthenticationEntryPoint;
 import com.vionsys.hireai.security.jwt.JwtAuthenticationFilter;
-import com.vionsys.hireai.security.jwt.JwtProperties;
 
 import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@EnableConfigurationProperties(JwtProperties.class)
 @RequiredArgsConstructor
 public class SecurityConfig {
 

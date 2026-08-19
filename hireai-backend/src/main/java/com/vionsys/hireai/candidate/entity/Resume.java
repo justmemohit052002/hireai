@@ -85,6 +85,50 @@ public class Resume extends BaseEntity {
     )
     private LocalDateTime uploadedAt;
 
+    @Column(
+            name = "raw_text",
+            columnDefinition = "TEXT"
+    )
+    private String rawText;
+
+    @Column(
+            name = "ai_job_id",
+            length = 100
+    )
+    private String aiJobId;
+
+    @Column(
+            name = "parsed_domain",
+            length = 100
+    )
+    private String parsedDomain;
+
+    @Column(
+            name = "parsed_role",
+            length = 150
+    )
+    private String parsedRole;
+
+    @Column(
+            name = "parsed_experience",
+            precision = 4,
+            scale = 1
+    )
+    private java.math.BigDecimal parsedExperience;
+
+    @Column(
+            name = "parsed_data_json",
+            columnDefinition = "TEXT"
+    )
+    private String parsedDataJson;
+
+    @Column(
+            name = "deleted",
+            nullable = false
+    )
+    @Builder.Default
+    private boolean deleted = false;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "candidate_id",
