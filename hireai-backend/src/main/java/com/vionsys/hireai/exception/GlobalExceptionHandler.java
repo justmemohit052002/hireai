@@ -41,7 +41,7 @@ public class GlobalExceptionHandler {
 
 
 	// =========================================================
-	// FILE STORAGE
+	// FILE STORAGE & RESUME
 	// =========================================================
 
 	@ExceptionHandler(FileStorageException.class)
@@ -51,14 +51,50 @@ public class GlobalExceptionHandler {
 
 		ErrorResponse response = new ErrorResponse(
 				false,
-				HttpStatus.INTERNAL_SERVER_ERROR.value(),
-				HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+				HttpStatus.BAD_REQUEST.value(),
+				HttpStatus.BAD_REQUEST.getReasonPhrase(),
 				ex.getMessage(),
 				request.getRequestURI()
 		);
 
 		return ResponseEntity
-				.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.status(HttpStatus.BAD_REQUEST)
+				.body(response);
+	}
+
+	@ExceptionHandler(com.vionsys.hireai.candidate.exception.ResumeNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handleResumeNotFound(
+			com.vionsys.hireai.candidate.exception.ResumeNotFoundException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.NOT_FOUND.value(),
+				HttpStatus.NOT_FOUND.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI()
+		);
+
+		return ResponseEntity
+				.status(HttpStatus.NOT_FOUND)
+				.body(response);
+	}
+
+	@ExceptionHandler(com.vionsys.hireai.ai.exception.AiEngineException.class)
+	public ResponseEntity<ErrorResponse> handleAiEngineException(
+			com.vionsys.hireai.ai.exception.AiEngineException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.BAD_GATEWAY.value(),
+				"AI Service Error",
+				ex.getMessage(),
+				request.getRequestURI()
+		);
+
+		return ResponseEntity
+				.status(HttpStatus.BAD_GATEWAY)
 				.body(response);
 	}
 

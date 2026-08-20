@@ -23,4 +23,5 @@ public class LlmAtsResponse {
     private List<String> missingSkills;
     private String aiSummary;
     private boolean recommended;
+    private String recommendation;
 }

@@ -96,3 +96,11 @@ coverage/
 .factorypath
 .springBeans
 .sts4-cache/
+
+####################################################
+# Uploads & Temporary Office Lock Files
+####################################################
+uploads/
+**/uploads/
+~$*
+**/~$*

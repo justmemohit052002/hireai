@@ -1,17 +1,15 @@
 package com.vionsys.hireai.application.service;
 
-import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
 
+import com.vionsys.hireai.ai.client.AiEngineClient;
+import com.vionsys.hireai.ai.dto.match.AiMatchScoreRequest;
+import com.vionsys.hireai.ai.dto.match.AiMatchScoreResponse;
 import com.vionsys.hireai.application.config.AtsProperties;
-import com.vionsys.hireai.application.dto.llm.LlmAtsRequest;
 import com.vionsys.hireai.application.dto.llm.LlmAtsResponse;
 import com.vionsys.hireai.candidate.entity.Candidate;
 import com.vionsys.hireai.candidate.entity.Skill;
@@ -26,9 +24,10 @@ import lombok.extern.slf4j.Slf4j;
 public class LlmAtsClient {
 
     private final AtsProperties atsProperties;
+    private final AiEngineClient aiEngineClient;
 
     /**
-     * Call external LLM microservice to compute ATS match score.
+     * Call external AI Match Engine microservice to compute ATS match score.
      * Returns Optional.empty() if service is disabled, down, or times out.
      */
     public Optional<LlmAtsResponse> scoreWithLlm(Candidate candidate, Job job) {
@@ -38,52 +37,38 @@ public class LlmAtsClient {
         }
 
         try {
-            int timeoutMs = atsProperties.getLlm().getTimeoutMs();
-            SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-            requestFactory.setConnectTimeout(Duration.ofMillis(timeoutMs));
-            requestFactory.setReadTimeout(Duration.ofMillis(timeoutMs));
-
-            RestClient restClient = RestClient.builder()
-                    .requestFactory(requestFactory)
-                    .baseUrl(atsProperties.getLlm().getServiceUrl())
-                    .build();
-
             List<String> candidateSkills = candidate.getSkills() != null
-                    ? candidate.getSkills().stream().map(Skill::getName).toList()
+                    ? candidate.getSkills().stream().map(Skill::getName).filter(s -> s != null && !s.isBlank()).toList()
                     : Collections.emptyList();
 
-            LlmAtsRequest payload = LlmAtsRequest.builder()
-                    .candidate(LlmAtsRequest.CandidateInfo.builder()
-                            .candidateId(candidate.getCandidateId())
-                            .name(candidate.getFirstName() + " " + candidate.getLastName())
-                            .experienceYears(candidate.getExperience())
-                            .currentDesignation(candidate.getCurrentDesignation())
-                            .currentCompany(candidate.getCurrentCompany())
-                            .skills(candidateSkills)
-                            .build())
-                    .job(LlmAtsRequest.JobInfo.builder()
-                            .jobId(job.getId() != null ? job.getId().toString() : null)
-                            .title(job.getTitle())
-                            .experienceLevel(job.getExperienceLevel() != null ? job.getExperienceLevel().name() : null)
-                            .requiredSkills(job.getSkills() != null ? job.getSkills() : Collections.emptyList())
-                            .description(job.getDescription())
-                            .build())
+            List<String> jobSkills = job.getSkills() != null
+                    ? job.getSkills().stream().filter(s -> s != null && !s.isBlank()).toList()
+                    : Collections.emptyList();
+
+            AiMatchScoreRequest request = AiMatchScoreRequest.builder()
+                    .resumeSkills(candidateSkills)
+                    .jobSkills(jobSkills)
                     .build();
 
-            LlmAtsResponse response = restClient.post()
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(payload)
-                    .retrieve()
-                    .body(LlmAtsResponse.class);
+            Optional<AiMatchScoreResponse> aiResponse = aiEngineClient.calculateMatchScore(request);
 
-            if (response != null) {
-                log.info("LLM ATS Service computed score: {}% for candidate {}",
-                        response.getAtsScore(), candidate.getCandidateId());
+            if (aiResponse.isPresent()) {
+                AiMatchScoreResponse res = aiResponse.get();
+                log.info("AI Match Engine computed score: {}% (Action: {}) for candidate {}",
+                        res.getMatchScore(), res.getAutoAction(), candidate.getCandidateId());
+
+                LlmAtsResponse response = LlmAtsResponse.builder()
+                        .atsScore(res.getMatchScore())
+                        .matchingSkills(res.getMatchedSkills() != null ? res.getMatchedSkills() : Collections.emptyList())
+                        .missingSkills(res.getMissingSkills() != null ? res.getMissingSkills() : Collections.emptyList())
+                        .recommendation(res.getAutoAction())
+                        .build();
+
                 return Optional.of(response);
             }
 
         } catch (Exception ex) {
-            log.warn("LLM ATS Service unavailable or timed out ({}). Using rule-based fallback.", ex.getMessage());
+            log.warn("AI Match Engine unavailable ({}). Using rule-based fallback.", ex.getMessage());
         }
 
         return Optional.empty();
