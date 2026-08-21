@@ -206,6 +206,52 @@ async function runAllTests() {
     `Status: ${authTestRes.status}, Body: ${authTestRes.data}`
   );
 
+  // Test 2.8: POST /auth/forgot-password generates time-limited reset token
+  const forgotPwRes = await request('POST', '/auth/forgot-password', {
+    email: candidateEmail,
+  });
+  const resetToken = forgotPwRes.data?.resetToken;
+  recordResult(
+    'POST /auth/forgot-password generates secure reset token',
+    forgotPwRes.status === 200 && !!resetToken,
+    `Status: ${forgotPwRes.status}, Token: ${resetToken ? resetToken.slice(0, 16) + '...' : 'none'}`
+  );
+
+  // Test 2.9: GET /auth/verify-reset-token validates active token
+  const verifyTokenRes = await request('GET', `/auth/verify-reset-token?token=${resetToken}`);
+  recordResult(
+    'GET /auth/verify-reset-token confirms token is valid and active',
+    verifyTokenRes.status === 200 && verifyTokenRes.data?.valid === true,
+    `Status: ${verifyTokenRes.status}, Valid: ${verifyTokenRes.data?.valid}`
+  );
+
+  // Test 2.10: POST /auth/reset-password updates user password
+  const newCandidatePassword = 'NewSecretPassword@456';
+  const resetPwRes = await request('POST', '/auth/reset-password', {
+    token: resetToken,
+    newPassword: newCandidatePassword,
+    confirmPassword: newCandidatePassword,
+  });
+  recordResult(
+    'POST /auth/reset-password resets candidate password successfully',
+    resetPwRes.status === 200 && resetPwRes.data?.success === true,
+    `Status: ${resetPwRes.status}, Message: ${resetPwRes.data?.message}`
+  );
+
+  // Test 2.11: POST /auth/login with new password validates password update
+  const newLoginRes = await request('POST', '/auth/login', {
+    email: candidateEmail,
+    password: newCandidatePassword,
+  });
+  if (newLoginRes.status === 200 && newLoginRes.data?.accessToken) {
+    candidateToken = newLoginRes.data.accessToken;
+  }
+  recordResult(
+    'POST /auth/login with new password authenticates & issues fresh JWT',
+    newLoginRes.status === 200 && !!newLoginRes.data?.accessToken,
+    `Status: ${newLoginRes.status}, User: ${newLoginRes.data?.email}`
+  );
+
   // =========================================================================
   // 3. USER SELF-SERVICE APIS (/users)
   // =========================================================================

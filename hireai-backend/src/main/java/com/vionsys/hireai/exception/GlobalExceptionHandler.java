@@ -154,6 +154,8 @@ public class GlobalExceptionHandler {
 			org.springframework.dao.DataIntegrityViolationException ex,
 			HttpServletRequest request) {
 
+		log.error("Data integrity violation on {}: {}", request.getRequestURI(), ex.getMessage());
+
 		ErrorResponse response = new ErrorResponse(
 				false,
 				HttpStatus.CONFLICT.value(),
@@ -205,6 +207,29 @@ public class GlobalExceptionHandler {
 
 		return ResponseEntity
 				.status(HttpStatus.UNAUTHORIZED)
+				.body(response);
+	}
+
+
+	// =========================================================
+	// INVALID OR EXPIRED TOKEN
+	// =========================================================
+
+	@ExceptionHandler(InvalidTokenException.class)
+	public ResponseEntity<ErrorResponse> handleInvalidToken(
+			InvalidTokenException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.BAD_REQUEST.value(),
+				"Bad Request",
+				ex.getMessage(),
+				request.getRequestURI()
+		);
+
+		return ResponseEntity
+				.status(HttpStatus.BAD_REQUEST)
 				.body(response);
 	}
 
