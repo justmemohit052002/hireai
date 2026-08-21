@@ -5,7 +5,6 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
-import com.vionsys.hireai.candidate.entity.Candidate;
 import com.vionsys.hireai.candidate.repository.CandidateRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -16,18 +15,18 @@ public class CandidateIdGenerator {
 
     private final CandidateRepository candidateRepository;
 
-    public String generateCandidateId() {
+    public synchronized String generateCandidateId() {
 
         int currentYear = Year.now().getValue();
-        Optional<Candidate> latestCandidate =
-                candidateRepository.findTopByOrderByCreatedAtDesc();
+        Optional<String> latestCandidateIdOpt =
+                candidateRepository.findTopCandidateIdForYear(currentYear);
 
         int nextSequence = 1;
 
-        if (latestCandidate.isPresent() && latestCandidate.get().getCandidateId() != null) {
+        if (latestCandidateIdOpt.isPresent() && latestCandidateIdOpt.get() != null) {
 
             String lastCandidateId =
-                    latestCandidate.get().getCandidateId();
+                    latestCandidateIdOpt.get();
 
             String[] parts = lastCandidateId.split("-");
 
@@ -43,10 +42,21 @@ public class CandidateIdGenerator {
             }
         }
 
-        return String.format(
+        String candidateId = String.format(
                 "CAN-%d-%06d",
                 currentYear,
                 nextSequence
         );
+
+        while (candidateRepository.existsByCandidateIdNative(candidateId)) {
+            nextSequence++;
+            candidateId = String.format(
+                    "CAN-%d-%06d",
+                    currentYear,
+                    nextSequence
+            );
+        }
+
+        return candidateId;
     }
 }
