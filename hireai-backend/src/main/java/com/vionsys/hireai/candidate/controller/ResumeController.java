@@ -43,7 +43,7 @@ public class ResumeController {
 
     @Operation(summary = "Upload candidate's own resume and trigger AI parsing")
     @PreAuthorize("hasRole('CANDIDATE')")
-    @PostMapping("/candidate/resume/upload")
+    @PostMapping(value = "/candidate/resume/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<ResumeResponse>> uploadMyResume(
             Authentication authentication,
             @RequestParam("file") MultipartFile file) {
@@ -98,7 +98,7 @@ public class ResumeController {
 
     @Operation(summary = "Upload resume for a specific candidate (Recruiter/Admin)")
     @PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
-    @PostMapping("/candidates/{candidateId}/resume")
+    @PostMapping(value = "/candidates/{candidateId}/resume", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<ResumeResponse>> uploadResumeForCandidate(
             @PathVariable UUID candidateId,
             @RequestParam("file") MultipartFile file) {

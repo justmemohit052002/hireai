@@ -41,6 +41,9 @@ public class JobApplicationResponse {
     private Integer finalAiScore;
     private String aiClassification;
     private String aiExplanation;
+    private UUID resumeId;
+    private String resumeFileName;
+    private String resumeDownloadUrl;
     private LocalDateTime appliedAt;
     private LocalDateTime updatedAt;
 }

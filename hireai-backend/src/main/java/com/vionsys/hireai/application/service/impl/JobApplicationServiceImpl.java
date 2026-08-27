@@ -27,7 +27,10 @@ import com.vionsys.hireai.job.entity.Job;
 import com.vionsys.hireai.job.enums.JobStatus;
 import com.vionsys.hireai.job.repository.JobRepository;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import com.vionsys.hireai.application.config.AtsProperties;
+import com.vionsys.hireai.candidate.service.ResumeService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,9 +46,21 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     private final CandidateRepository candidateRepository;
     private final AtsMatchScoringService atsMatchScoringService;
     private final AtsProperties atsProperties;
+    private final ResumeService resumeService;
 
     @Override
     public JobApplicationResponse applyToJob(UUID candidateUserId, UUID jobId, JobApplicationRequest request) {
+        return applyToJob(candidateUserId, jobId, request, null);
+    }
+
+    @Override
+    public JobApplicationResponse applyToJob(UUID candidateUserId, UUID jobId, JobApplicationRequest request, MultipartFile resumeFile) {
+
+        // 1. If candidate provided a new resume file during application, upload & parse it first
+        if (resumeFile != null && !resumeFile.isEmpty()) {
+            log.info("Uploading and processing new resume file for candidate user {} during job application", candidateUserId);
+            resumeService.uploadMyResume(candidateUserId, resumeFile);
+        }
 
         Candidate candidate = candidateRepository.findByUserId(candidateUserId)
                 .orElseThrow(() -> new CandidateNotFoundException("Candidate profile not found. Please create your profile before applying."));
@@ -163,5 +178,30 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         }
 
         return JobApplicationMapper.toResponse(application);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public org.springframework.core.io.Resource downloadApplicationResume(UUID currentUserId, UUID applicationId) {
+
+        JobApplication application = jobApplicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ApplicationNotFoundException("Job application not found"));
+
+        boolean isCandidateOwner = application.getCandidate().getUser() != null &&
+                application.getCandidate().getUser().getId().equals(currentUserId);
+
+        boolean isRecruiterOwner = application.getJob().getRecruiterProfile() != null &&
+                application.getJob().getRecruiterProfile().getUser() != null &&
+                application.getJob().getRecruiterProfile().getUser().getId().equals(currentUserId);
+
+        if (!isCandidateOwner && !isRecruiterOwner) {
+            throw new AccessDeniedException("You do not have permission to download this application's resume.");
+        }
+
+        if (application.getCandidate().getResume() == null) {
+            throw new com.vionsys.hireai.candidate.exception.ResumeNotFoundException("No resume attached to this application.");
+        }
+
+        return resumeService.downloadResume(application.getCandidate().getId());
     }
 }
