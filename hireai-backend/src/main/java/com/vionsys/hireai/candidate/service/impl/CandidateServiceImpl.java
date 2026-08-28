@@ -41,6 +41,9 @@ public class CandidateServiceImpl implements CandidateService {
     private final SkillRepository skillRepository;
     private final CandidateIdGenerator candidateIdGenerator;
     private final UserRepository userRepository;
+    private final com.vionsys.hireai.application.repository.JobApplicationRepository jobApplicationRepository;
+    private final com.vionsys.hireai.application.service.AtsMatchScoringService atsMatchScoringService;
+    private final com.vionsys.hireai.application.config.AtsProperties atsProperties;
 
 
     // =========================================================
@@ -247,7 +250,8 @@ public class CandidateServiceImpl implements CandidateService {
          */
         candidate.setSkills(
                 resolveSkills(
-                        request.getSkillIds()
+                        request.getSkillIds(),
+                        request.getSkills()
                 )
         );
 
@@ -311,12 +315,42 @@ public class CandidateServiceImpl implements CandidateService {
          */
         candidate.setSkills(
                 resolveSkills(
-                        request.getSkillIds()
+                        request.getSkillIds(),
+                        request.getSkills()
                 )
         );
 
+        Candidate saved = candidateRepository.save(candidate);
+
+        // Auto-recalculate ATS score for candidate's job applications
+        try {
+            java.util.List<com.vionsys.hireai.application.entity.JobApplication> applications =
+                    jobApplicationRepository.findByCandidateId(saved.getId());
+            for (com.vionsys.hireai.application.entity.JobApplication app : applications) {
+                com.vionsys.hireai.application.dto.AtsMatchResult atsResult =
+                        atsMatchScoringService.computeAtsScore(saved, app.getJob());
+                int newScore = atsResult.getMatchScore();
+                app.setAtsMatchScore(newScore);
+                app.setMatchingSkills(String.join(", ", atsResult.getMatchingSkills()));
+                app.setMissingSkills(String.join(", ", atsResult.getMissingSkills()));
+
+                if (newScore >= atsProperties.getShortlistThreshold()) {
+                    app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.SHORTLISTED);
+                    app.setRecruiterNotes(String.format("Shortlisted for interview by AI ATS (Match Score: %d%% >= %d%% threshold)",
+                            newScore, atsProperties.getShortlistThreshold()));
+                } else {
+                    app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.REJECTED);
+                    app.setRecruiterNotes(String.format("Application Rejected: ATS Skill Match Score (%d%%) is below the required %d%% threshold",
+                            newScore, atsProperties.getShortlistThreshold()));
+                }
+                jobApplicationRepository.save(app);
+            }
+        } catch (Exception ex) {
+            // log silently
+        }
+
         return CandidateMapper.toResponse(
-                candidate
+                saved
         );
     }
 
@@ -434,25 +468,36 @@ public class CandidateServiceImpl implements CandidateService {
 
     private Set<Skill> resolveSkills(
             Set<UUID> skillIds) {
+        return resolveSkills(skillIds, null);
+    }
 
-        if (skillIds == null ||
-                skillIds.isEmpty()) {
+    private Set<Skill> resolveSkills(
+            Set<UUID> skillIds,
+            java.util.List<String> skillNames) {
 
-            return new HashSet<>();
+        Set<Skill> skills = new HashSet<>();
+
+        if (skillIds != null && !skillIds.isEmpty()) {
+            java.util.List<Skill> found =
+                    new java.util.ArrayList<>(skillRepository.findAllById(skillIds));
+
+            if (found.size() != skillIds.size()) {
+                throw new SkillNotFoundException(
+                        "One or more skills were not found"
+                );
+            }
+            skills.addAll(found);
         }
 
-        Set<Skill> skills =
-                new HashSet<>(
-                        skillRepository.findAllById(
-                                skillIds
-                        )
-                );
-
-        if (skills.size() != skillIds.size()) {
-
-            throw new SkillNotFoundException(
-                    "One or more skills were not found"
-            );
+        if (skillNames != null && !skillNames.isEmpty()) {
+            for (String name : skillNames) {
+                if (name != null && !name.isBlank()) {
+                    String trimmed = name.trim();
+                    Skill skill = skillRepository.findByNameIgnoreCase(trimmed)
+                            .orElseGet(() -> skillRepository.save(Skill.builder().name(trimmed).build()));
+                    skills.add(skill);
+                }
+            }
         }
 
         return skills;

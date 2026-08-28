@@ -82,17 +82,21 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         log.info("Calculated ATS Match Score {}% for Candidate {} on Job {}",
                 matchScore, candidate.getCandidateId(), job.getTitle());
 
-        // Automated Workflow Rule: If ATS Match Score >= threshold (e.g. 70%), auto-shortlist
-        ApplicationStatus initialStatus = ApplicationStatus.APPLIED;
-        String autoNotes = null;
+        // Automated Workflow Rule: If ATS Match Score >= threshold (70%), shortlist for interview; otherwise reject
+        ApplicationStatus initialStatus;
+        String autoNotes;
         if (matchScore >= atsProperties.getShortlistThreshold()) {
             initialStatus = ApplicationStatus.SHORTLISTED;
-            autoNotes = String.format("Auto-shortlisted by AI ATS (Match Score: %d%% >= %d%% threshold)",
+            autoNotes = String.format("Shortlisted for interview by AI ATS (Match Score: %d%% >= %d%% threshold)",
                     matchScore, atsProperties.getShortlistThreshold());
             log.info("Candidate {} automatically SHORTLISTED for Job {} (Score: {}%)",
                     candidate.getCandidateId(), job.getTitle(), matchScore);
         } else {
-            autoNotes = String.format("ATS Match Score: %d%% (Awaiting manual recruiter review)", matchScore);
+            initialStatus = ApplicationStatus.REJECTED;
+            autoNotes = String.format("Application Rejected: ATS Skill Match Score (%d%%) is below the required %d%% threshold",
+                    matchScore, atsProperties.getShortlistThreshold());
+            log.info("Candidate {} REJECTED for Job {} (Score: {}% < {}%)",
+                    candidate.getCandidateId(), job.getTitle(), matchScore, atsProperties.getShortlistThreshold());
         }
 
         JobApplication application = JobApplication.builder()
