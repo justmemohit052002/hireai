@@ -56,4 +56,20 @@ public interface CandidateService {
             UUID userId,
             CandidateProfileRequest request
     );
+
+    // =========================================================
+    // CANDIDATE PROFILE PHOTO MANAGEMENT
+    // =========================================================
+
+    CandidateResponse uploadMyProfilePhoto(UUID userId, org.springframework.web.multipart.MultipartFile file);
+
+    org.springframework.core.io.Resource getMyProfilePhoto(UUID userId);
+
+    org.springframework.core.io.Resource getCandidateProfilePhoto(UUID candidateId);
+
+    CandidateResponse deleteMyProfilePhoto(UUID userId);
+
+    String getMyPhotoPath(UUID userId);
+
+    String getCandidatePhotoPath(UUID candidateId);
 }

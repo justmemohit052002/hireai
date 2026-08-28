@@ -42,6 +42,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final com.vionsys.hireai.email.EmailService emailService;
 
     public AuthResponse registerCandidate(RegisterRequest request) {
         return register(request, RoleType.ROLE_CANDIDATE);
@@ -76,6 +77,17 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
 
+        // Send automated welcome email asynchronously
+        try {
+            if (roleType == RoleType.ROLE_CANDIDATE) {
+                emailService.sendWelcomeCandidateEmail(savedUser);
+            } else if (roleType == RoleType.ROLE_RECRUITER) {
+                emailService.sendWelcomeRecruiterEmail(savedUser);
+            }
+        } catch (Exception ex) {
+            // log silently
+        }
+
         CustomUserDetails userDetails =
                 CustomUserDetails.fromUser(savedUser);
 
@@ -106,6 +118,13 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() ->
                         new UserNotFoundException("User not found"));
+
+        // Send security login notification email asynchronously
+        try {
+            emailService.sendLoginAlertEmail(user);
+        } catch (Exception ex) {
+            // log silently
+        }
 
         CustomUserDetails userDetails =
                 CustomUserDetails.fromUser(user);
@@ -145,6 +164,13 @@ public class AuthService {
                 .build();
 
         passwordResetTokenRepository.save(resetToken);
+
+        // Send password reset email asynchronously
+        try {
+            emailService.sendPasswordResetEmail(user, token, expiresAt);
+        } catch (Exception ex) {
+            // log silently
+        }
 
         return ForgotPasswordResponse.builder()
                 .success(true)

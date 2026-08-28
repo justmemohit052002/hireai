@@ -47,6 +47,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     private final AtsMatchScoringService atsMatchScoringService;
     private final AtsProperties atsProperties;
     private final ResumeService resumeService;
+    private final com.vionsys.hireai.email.EmailService emailService;
 
     @Override
     public JobApplicationResponse applyToJob(UUID candidateUserId, UUID jobId, JobApplicationRequest request) {
@@ -111,6 +112,15 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 .build();
 
         JobApplication saved = jobApplicationRepository.save(application);
+
+        // Send automated email notifications asynchronously
+        try {
+            emailService.sendApplicationReceivedToCandidate(saved);
+            emailService.sendNewApplicantAlertToRecruiter(saved);
+        } catch (Exception ex) {
+            log.warn("Failed to dispatch application notification emails: {}", ex.getMessage());
+        }
+
         return JobApplicationMapper.toResponse(saved);
     }
 
@@ -160,6 +170,14 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         }
 
         JobApplication updated = jobApplicationRepository.save(application);
+
+        // Send automated status update email to candidate asynchronously
+        try {
+            emailService.sendStatusUpdateToCandidate(updated, request.getStatus(), request.getRecruiterNotes());
+        } catch (Exception ex) {
+            log.warn("Failed to dispatch status update email: {}", ex.getMessage());
+        }
+
         return JobApplicationMapper.toResponse(updated);
     }
 

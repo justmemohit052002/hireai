@@ -29,6 +29,7 @@ public class RecruiterProfileServiceImpl implements RecruiterProfileService {
 
 	private final RecruiterProfileRepository recruiterProfileRepository;
 	private final UserRepository userRepository;
+	private final com.vionsys.hireai.candidate.storage.ProfilePhotoStorageService photoStorageService;
 
 	@Override
 	public RecruiterProfileResponse createRecruiterProfile(RecruiterProfileRequest request) {
@@ -112,4 +113,107 @@ public class RecruiterProfileServiceImpl implements RecruiterProfileService {
 		return RecruiterProfileMapper.toResponse(updatedProfile);
 	}
 
+	// =========================================================
+	// RECRUITER PROFILE PHOTO MANAGEMENT
+	// =========================================================
+
+	@Override
+	public RecruiterProfileResponse uploadProfilePhoto(org.springframework.web.multipart.MultipartFile file) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+		User user = userRepository.findByEmail(userDetails.getUsername())
+				.orElseThrow(() -> new UserNotFoundException("User not found"));
+
+		RecruiterProfile recruiterProfile = recruiterProfileRepository.findByUserId(user.getId())
+				.orElseThrow(() -> new RecruiterProfileNotFoundException("Recruiter profile not found"));
+
+		// Delete old photo if present
+		if (recruiterProfile.getProfilePhotoPath() != null) {
+			photoStorageService.deletePhoto(recruiterProfile.getProfilePhotoPath());
+		}
+
+		String savedPath = photoStorageService.storePhoto(file);
+		recruiterProfile.setProfilePhotoPath(savedPath);
+		recruiterProfile.setProfilePhotoUrl("/recruiter/profile/photo");
+
+		RecruiterProfile saved = recruiterProfileRepository.save(recruiterProfile);
+		return RecruiterProfileMapper.toResponse(saved);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public org.springframework.core.io.Resource getCurrentProfilePhoto() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+		User user = userRepository.findByEmail(userDetails.getUsername())
+				.orElseThrow(() -> new UserNotFoundException("User not found"));
+
+		RecruiterProfile recruiterProfile = recruiterProfileRepository.findByUserId(user.getId())
+				.orElseThrow(() -> new RecruiterProfileNotFoundException("Recruiter profile not found"));
+
+		if (recruiterProfile.getProfilePhotoPath() == null) {
+			throw new RecruiterProfileNotFoundException("No profile photo uploaded for this recruiter.");
+		}
+
+		return photoStorageService.loadPhotoAsResource(recruiterProfile.getProfilePhotoPath());
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public org.springframework.core.io.Resource getProfilePhotoByUserId(UUID userId) {
+		RecruiterProfile recruiterProfile = recruiterProfileRepository.findByUserId(userId)
+				.orElseThrow(() -> new RecruiterProfileNotFoundException("Recruiter profile not found for user id: " + userId));
+
+		if (recruiterProfile.getProfilePhotoPath() == null) {
+			throw new RecruiterProfileNotFoundException("No profile photo uploaded for recruiter with user id: " + userId);
+		}
+
+		return photoStorageService.loadPhotoAsResource(recruiterProfile.getProfilePhotoPath());
+	}
+
+	@Override
+	public RecruiterProfileResponse deleteProfilePhoto() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+		User user = userRepository.findByEmail(userDetails.getUsername())
+				.orElseThrow(() -> new UserNotFoundException("User not found"));
+
+		RecruiterProfile recruiterProfile = recruiterProfileRepository.findByUserId(user.getId())
+				.orElseThrow(() -> new RecruiterProfileNotFoundException("Recruiter profile not found"));
+
+		if (recruiterProfile.getProfilePhotoPath() != null) {
+			photoStorageService.deletePhoto(recruiterProfile.getProfilePhotoPath());
+			recruiterProfile.setProfilePhotoPath(null);
+			recruiterProfile.setProfilePhotoUrl(null);
+		}
+
+		RecruiterProfile saved = recruiterProfileRepository.save(recruiterProfile);
+		return RecruiterProfileMapper.toResponse(saved);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public String getCurrentPhotoPath() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+		User user = userRepository.findByEmail(userDetails.getUsername())
+				.orElseThrow(() -> new UserNotFoundException("User not found"));
+
+		RecruiterProfile recruiterProfile = recruiterProfileRepository.findByUserId(user.getId())
+				.orElseThrow(() -> new RecruiterProfileNotFoundException("Recruiter profile not found"));
+
+		return recruiterProfile.getProfilePhotoPath();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public String getPhotoPathByUserId(UUID userId) {
+		RecruiterProfile recruiterProfile = recruiterProfileRepository.findByUserId(userId)
+				.orElseThrow(() -> new RecruiterProfileNotFoundException("Recruiter profile not found for user id: " + userId));
+		return recruiterProfile.getProfilePhotoPath();
+	}
 }

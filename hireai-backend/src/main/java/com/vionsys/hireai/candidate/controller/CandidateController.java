@@ -34,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 public class CandidateController {
 
 	private final CandidateService candidateService;
+	private final com.vionsys.hireai.candidate.storage.ProfilePhotoStorageService photoStorageService;
 
 
 	// =========================================================
@@ -90,6 +91,54 @@ public class CandidateController {
 						request
 				);
 
+		return ResponseEntity.ok(response);
+	}
+
+	@PostMapping(value = "/candidate/profile/photo", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<CandidateResponse> uploadMyProfilePhoto(
+			Authentication authentication,
+			@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+
+		CustomUserDetails userDetails = getAuthenticatedUser(authentication);
+		CandidateResponse response = candidateService.uploadMyProfilePhoto(userDetails.getId(), file);
+		return ResponseEntity.ok(response);
+	}
+
+	@GetMapping("/candidate/profile/photo")
+	public ResponseEntity<org.springframework.core.io.Resource> getMyProfilePhoto(
+			Authentication authentication) {
+
+		CustomUserDetails userDetails = getAuthenticatedUser(authentication);
+		org.springframework.core.io.Resource resource = candidateService.getMyProfilePhoto(userDetails.getId());
+		String photoPath = candidateService.getMyPhotoPath(userDetails.getId());
+		org.springframework.http.MediaType mediaType = photoStorageService.determineMediaType(photoPath);
+
+		return ResponseEntity.ok()
+				.contentType(mediaType)
+				.header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "inline")
+				.body(resource);
+	}
+
+	@GetMapping("/candidates/{id}/profile/photo")
+	public ResponseEntity<org.springframework.core.io.Resource> getCandidateProfilePhoto(
+			@PathVariable UUID id) {
+
+		org.springframework.core.io.Resource resource = candidateService.getCandidateProfilePhoto(id);
+		String photoPath = candidateService.getCandidatePhotoPath(id);
+		org.springframework.http.MediaType mediaType = photoStorageService.determineMediaType(photoPath);
+
+		return ResponseEntity.ok()
+				.contentType(mediaType)
+				.header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "inline")
+				.body(resource);
+	}
+
+	@DeleteMapping("/candidate/profile/photo")
+	public ResponseEntity<CandidateResponse> deleteMyProfilePhoto(
+			Authentication authentication) {
+
+		CustomUserDetails userDetails = getAuthenticatedUser(authentication);
+		CandidateResponse response = candidateService.deleteMyProfilePhoto(userDetails.getId());
 		return ResponseEntity.ok(response);
 	}
 

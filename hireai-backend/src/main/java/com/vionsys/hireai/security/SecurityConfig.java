@@ -129,6 +129,10 @@ public class SecurityConfig {
                         // RECRUITER APIs
                         // =====================================================
 
+                        // Shared profile photo viewing
+                        .requestMatchers(HttpMethod.GET, "/candidates/*/profile/photo", "/recruiter/profile/*/photo")
+                        .authenticated()
+
                         .requestMatchers("/recruiter/**")
                         .hasAnyRole("RECRUITER", "ADMIN")
 
