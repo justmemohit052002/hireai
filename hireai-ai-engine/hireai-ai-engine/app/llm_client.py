@@ -16,7 +16,7 @@ import requests
 
 from app.config import (
     LLM_PROVIDER, OLLAMA_MODEL, OLLAMA_BASE_URL,
-    GEMINI_API_KEY, GROQ_API_KEY,
+    GEMINI_API_KEY, GROQ_API_KEY, GROQ_MODEL,
     LLM_TIMEOUT_SECONDS, LLM_MAX_RETRIES, LLM_RETRY_BACKOFF_SECONDS,
     LLM_CALL_LOG_PATH,
 )
@@ -29,29 +29,54 @@ class LLMCallError(Exception):
     """Raised when the configured LLM provider fails after all retries."""
 
 
-def call_llm(prompt: str, task_type: str = "general") -> str:
+ACTIVE_PROVIDER = None
+ACTIVE_MODEL = None
+
+
+def set_active_provider(provider: str, model: str = None) -> None:
+    """Dynamically switch active provider and model at runtime (e.g. from UI)."""
+    global ACTIVE_PROVIDER, ACTIVE_MODEL
+    ACTIVE_PROVIDER = provider
+    ACTIVE_MODEL = model
+
+
+def get_active_provider_info() -> tuple[str, str]:
+    """Returns the currently active (provider, model)."""
+    prov = ACTIVE_PROVIDER or LLM_PROVIDER
+    if prov == "ollama":
+        mdl = ACTIVE_MODEL or OLLAMA_MODEL
+    elif prov == "groq":
+        mdl = ACTIVE_MODEL or GROQ_MODEL
+    else:
+        mdl = "gemini-1.5-flash"
+    return prov, mdl
+
+
+def call_llm(prompt: str, task_type: str = "general", provider_override: str = None, model_override: str = None) -> str:
     last_error = None
+    provider = provider_override or ACTIVE_PROVIDER or LLM_PROVIDER
+    model = model_override or ACTIVE_MODEL
 
     for attempt in range(1, LLM_MAX_RETRIES + 2):  # e.g. 2 retries = 3 total attempts
         start = time.time()
         try:
-            if LLM_PROVIDER == "ollama":
-                text = _call_ollama(prompt)
-            elif LLM_PROVIDER == "gemini":
+            if provider == "ollama":
+                text = _call_ollama(prompt, model=model)
+            elif provider == "gemini":
                 text = _call_gemini(prompt)
-            elif LLM_PROVIDER == "groq":
-                text = _call_groq(prompt)
+            elif provider == "groq":
+                text = _call_groq(prompt, model=model)
             else:
-                raise LLMCallError(f"Unknown LLM_PROVIDER: {LLM_PROVIDER}")
+                raise LLMCallError(f"Unknown LLM_PROVIDER: {provider}")
 
             latency = round(time.time() - start, 2)
-            logger.info(f"[{task_type}] {LLM_PROVIDER} call succeeded in {latency}s (attempt {attempt})")
-            _log_call(prompt, text, task_type, latency, attempt)
+            logger.info(f"[{task_type}] {provider} ({model or 'default'}) call succeeded in {latency}s (attempt {attempt})")
+            _log_call(prompt, text, task_type, latency, attempt, provider=provider)
             return text
 
         except Exception as e:
             last_error = e
-            logger.warning(f"[{task_type}] {LLM_PROVIDER} call failed on attempt {attempt}: {e}")
+            logger.warning(f"[{task_type}] {provider} call failed on attempt {attempt}: {e}")
             if attempt <= LLM_MAX_RETRIES:
                 time.sleep(LLM_RETRY_BACKOFF_SECONDS * attempt)  # simple linear backoff
 
@@ -59,11 +84,31 @@ def call_llm(prompt: str, task_type: str = "general") -> str:
     raise LLMCallError(f"LLM call failed after {LLM_MAX_RETRIES + 1} attempts: {last_error}")
 
 
-def _call_ollama(prompt: str) -> str:
+def _call_ollama(prompt: str, model: str = None) -> str:
+    use_model = model or OLLAMA_MODEL
+    
+    # Detect if prompt requests structured JSON output
+    is_json_request = "json" in prompt.lower() or "{" in prompt
+
+    payload = {
+        "model": use_model,
+        "prompt": prompt,
+        "stream": False,
+        "options": {
+            "temperature": 0.1 if is_json_request else 0.3,
+            "top_p": 0.9,
+            "num_ctx": 4096,
+            "num_predict": 1024,
+            "repeat_penalty": 1.1,
+        },
+    }
+    if is_json_request:
+        payload["format"] = "json"
+
     try:
         response = requests.post(
             f"{OLLAMA_BASE_URL}/api/generate",
-            json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False},
+            json=payload,
             timeout=LLM_TIMEOUT_SECONDS,
         )
         response.raise_for_status()
@@ -90,13 +135,14 @@ def _call_gemini(prompt: str) -> str:
     return response.json()["candidates"][0]["content"]["parts"][0]["text"]
 
 
-def _call_groq(prompt: str) -> str:
+def _call_groq(prompt: str, model: str = None) -> str:
     if not GROQ_API_KEY:
         raise LLMCallError("GROQ_API_KEY not set - required when LLM_PROVIDER=groq.")
+    use_model = model or GROQ_MODEL
     response = requests.post(
         "https://api.groq.com/openai/v1/chat/completions",
         headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
-        json={"model": "llama-3.1-8b-instant", "messages": [{"role": "user", "content": prompt}]},
+        json={"model": use_model, "messages": [{"role": "user", "content": prompt}]},
         timeout=60,
     )
     response.raise_for_status()
@@ -112,10 +158,10 @@ def check_ollama_reachable() -> bool:
         return False
 
 
-def _log_call(prompt: str, response_text: str, task_type: str, latency: float, attempt: int) -> None:
+def _log_call(prompt: str, response_text: str, task_type: str, latency: float, attempt: int, provider: str = None) -> None:
     entry = {
         "task_type": task_type,
-        "provider": LLM_PROVIDER,
+        "provider": provider or LLM_PROVIDER,
         "latency_seconds": latency,
         "attempt": attempt,
         "prompt_preview": prompt[:200],

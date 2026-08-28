@@ -38,6 +38,12 @@ public interface CandidateRepository
 
 	Optional<Candidate> findTopByOrderByCreatedAtDesc();
 
+	@org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"skills"})
+	Optional<Candidate> findById(
+			UUID id
+	);
+
+	@org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"skills"})
 	Optional<Candidate> findByUserId(
 			UUID userId
 	);

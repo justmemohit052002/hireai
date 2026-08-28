@@ -3,6 +3,8 @@ package com.vionsys.hireai.application.service;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import com.vionsys.hireai.application.dto.JobApplicationRequest;
 import com.vionsys.hireai.application.dto.JobApplicationResponse;
 import com.vionsys.hireai.application.dto.UpdateApplicationStatusRequest;
@@ -13,6 +15,11 @@ public interface JobApplicationService {
      * Candidate applies to an open job.
      */
     JobApplicationResponse applyToJob(UUID candidateUserId, UUID jobId, JobApplicationRequest request);
+
+    /**
+     * Candidate applies to an open job with direct resume file upload.
+     */
+    JobApplicationResponse applyToJob(UUID candidateUserId, UUID jobId, JobApplicationRequest request, MultipartFile resumeFile);
 
     /**
      * Candidate views all their active job applications.
@@ -33,4 +40,9 @@ public interface JobApplicationService {
      * Get specific application details by ID (for candidate or recruiter).
      */
     JobApplicationResponse getApplicationById(UUID currentUserId, UUID applicationId);
+
+    /**
+     * Download the resume attached to a specific job application.
+     */
+    org.springframework.core.io.Resource downloadApplicationResume(UUID currentUserId, UUID applicationId);
 }

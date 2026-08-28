@@ -175,3 +175,9 @@ def interview_evaluate(request: InterviewEvaluateRequest):
 def decision_finalize(request: DecisionRequest):
     result = finalize_decision(request.resume_score, request.interview_score, request.chatbot_signal_score)
     return DecisionResponse(**result)
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+

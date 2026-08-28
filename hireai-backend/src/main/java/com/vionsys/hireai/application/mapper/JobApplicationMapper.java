@@ -3,6 +3,7 @@ package com.vionsys.hireai.application.mapper;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import com.vionsys.hireai.application.dto.JobApplicationResponse;
 import com.vionsys.hireai.application.entity.JobApplication;
@@ -25,6 +26,18 @@ public final class JobApplicationMapper {
                 ? Arrays.stream(app.getMissingSkills().split(",")).map(String::trim).toList()
                 : Collections.emptyList();
 
+        UUID resumeId = app.getCandidate() != null && app.getCandidate().getResume() != null
+                ? app.getCandidate().getResume().getId()
+                : null;
+
+        String resumeFileName = app.getCandidate() != null && app.getCandidate().getResume() != null
+                ? app.getCandidate().getResume().getOriginalFileName()
+                : null;
+
+        String resumeDownloadUrl = resumeId != null
+                ? "/applications/" + app.getId() + "/resume/download"
+                : null;
+
         return JobApplicationResponse.builder()
                 .id(app.getId())
                 .jobId(app.getJob().getId())
@@ -46,6 +59,9 @@ public final class JobApplicationMapper {
                 .finalAiScore(app.getFinalAiScore())
                 .aiClassification(app.getAiClassification())
                 .aiExplanation(app.getAiExplanation())
+                .resumeId(resumeId)
+                .resumeFileName(resumeFileName)
+                .resumeDownloadUrl(resumeDownloadUrl)
                 .appliedAt(app.getCreatedAt())
                 .updatedAt(app.getUpdatedAt())
                 .build();

@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -60,6 +61,10 @@ public class ResumeServiceImpl implements ResumeService {
     private final AiEngineClient aiEngineClient;
     private final AiEngineProperties aiEngineProperties;
     private final ObjectMapper objectMapper;
+    private final org.springframework.transaction.support.TransactionTemplate transactionTemplate;
+    private final com.vionsys.hireai.application.repository.JobApplicationRepository jobApplicationRepository;
+    private final com.vionsys.hireai.application.service.AtsMatchScoringService atsMatchScoringService;
+    private final com.vionsys.hireai.application.config.AtsProperties atsProperties;
 
     @Override
     public ResumeResponse uploadResume(UUID candidateId, MultipartFile file) {
@@ -72,7 +77,8 @@ public class ResumeServiceImpl implements ResumeService {
     @Override
     public ResumeResponse uploadMyResume(UUID userId, MultipartFile file) {
         Candidate candidate = candidateRepository.findByUserId(userId)
-                .orElseThrow(() -> new CandidateNotFoundException("Candidate profile not found for authenticated user."));
+                .orElseThrow(
+                        () -> new CandidateNotFoundException("Candidate profile not found for authenticated user."));
 
         return handleResumeUpload(candidate, file);
     }
@@ -164,11 +170,15 @@ public class ResumeServiceImpl implements ResumeService {
 
                         if ("complete".equalsIgnoreCase(jobStatus) && statusResponse.getResult() != null) {
                             log.info("AI Resume parsing job {} COMPLETED successfully on attempt {}", jobId, attempts);
-                            processParsedResumeResult(resumeId, statusResponse.getResult());
+                            transactionTemplate.executeWithoutResult(status -> {
+                                processParsedResumeResult(resumeId, statusResponse.getResult());
+                            });
                             break;
                         } else if ("failed".equalsIgnoreCase(jobStatus)) {
                             log.warn("AI Resume parsing job {} FAILED on attempt {}", jobId, attempts);
-                            markResumeParseFailed(resumeId);
+                            transactionTemplate.executeWithoutResult(status -> {
+                                markResumeParseFailed(resumeId);
+                            });
                             break;
                         }
                     }
@@ -176,7 +186,7 @@ public class ResumeServiceImpl implements ResumeService {
                     Thread.currentThread().interrupt();
                     break;
                 } catch (Exception ex) {
-                    log.error("Error during AI parsing polling for job {}: {}", jobId, ex.getMessage());
+                    log.error("Error during AI parsing polling for job {}: {}", jobId, ex.getMessage(), ex);
                 }
             }
         });
@@ -211,7 +221,8 @@ public class ResumeServiceImpl implements ResumeService {
                     : new HashSet<>();
 
             for (String skillName : parsedResult.getSkills()) {
-                if (skillName == null || skillName.isBlank()) continue;
+                if (skillName == null || skillName.isBlank())
+                    continue;
                 String trimmedName = skillName.trim();
                 Skill skill = skillRepository.findByNameIgnoreCase(trimmedName)
                         .orElseGet(() -> skillRepository.save(Skill.builder().name(trimmedName).build()));
@@ -226,6 +237,37 @@ public class ResumeServiceImpl implements ResumeService {
                 candidate.setExperience(BigDecimal.valueOf(parsedResult.getYearsExperience()));
             }
             candidateRepository.save(candidate);
+
+            // Auto-recalculate ATS score for all candidate's job applications
+            try {
+                List<com.vionsys.hireai.application.entity.JobApplication> applications = jobApplicationRepository
+                        .findByCandidateId(candidate.getId());
+                for (com.vionsys.hireai.application.entity.JobApplication app : applications) {
+                    com.vionsys.hireai.application.dto.AtsMatchResult atsResult = atsMatchScoringService
+                            .computeAtsScore(candidate, app.getJob());
+                    int newScore = atsResult.getMatchScore();
+                    app.setAtsMatchScore(newScore);
+                    app.setMatchingSkills(String.join(", ", atsResult.getMatchingSkills()));
+                    app.setMissingSkills(String.join(", ", atsResult.getMissingSkills()));
+
+                    if (newScore >= atsProperties.getShortlistThreshold()) {
+                        app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.SHORTLISTED);
+                        app.setRecruiterNotes(
+                                String.format("Shortlisted for interview by AI ATS (Match Score: %d%% >= %d%% threshold)",
+                                        newScore, atsProperties.getShortlistThreshold()));
+                    } else {
+                        app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.REJECTED);
+                        app.setRecruiterNotes(
+                                String.format("Application Rejected: ATS Skill Match Score (%d%%) is below the required %d%% threshold",
+                                        newScore, atsProperties.getShortlistThreshold()));
+                    }
+                    jobApplicationRepository.save(app);
+                    log.info("Auto-updated Application {} with freshly calculated ATS Match Score: {}%", app.getId(),
+                            newScore);
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to auto-update ATS score on existing applications: {}", ex.getMessage());
+            }
         }
 
         resumeRepository.save(resume);
@@ -245,7 +287,8 @@ public class ResumeServiceImpl implements ResumeService {
         }
 
         if (file.getSize() > maxFileSize) {
-            throw new FileStorageException("Resume file size exceeds maximum limit of " + (maxFileSize / (1024 * 1024)) + " MB.");
+            throw new FileStorageException(
+                    "Resume file size exceeds maximum limit of " + (maxFileSize / (1024 * 1024)) + " MB.");
         }
 
         String fileName = file.getOriginalFilename();
@@ -265,7 +308,8 @@ public class ResumeServiceImpl implements ResumeService {
     @Transactional(readOnly = true)
     public ResumeResponse getResume(UUID candidateId) {
         Resume resume = resumeRepository.findByCandidateIdAndDeletedFalse(candidateId)
-                .orElseThrow(() -> new ResumeNotFoundException("Resume not found for candidate with id: " + candidateId));
+                .orElseThrow(
+                        () -> new ResumeNotFoundException("Resume not found for candidate with id: " + candidateId));
         return resumeMapper.toResponse(resume);
     }
 
@@ -281,7 +325,8 @@ public class ResumeServiceImpl implements ResumeService {
     @Transactional(readOnly = true)
     public ResumeResponse getResumeStatus(UUID candidateId) {
         Resume resume = resumeRepository.findByCandidateIdAndDeletedFalse(candidateId)
-                .orElseThrow(() -> new ResumeNotFoundException("Resume not found for candidate with id: " + candidateId));
+                .orElseThrow(
+                        () -> new ResumeNotFoundException("Resume not found for candidate with id: " + candidateId));
         return resumeMapper.toResponse(resume);
     }
 
@@ -289,7 +334,8 @@ public class ResumeServiceImpl implements ResumeService {
     @Transactional(readOnly = true)
     public Resource downloadResume(UUID candidateId) {
         Resume resume = resumeRepository.findByCandidateIdAndDeletedFalse(candidateId)
-                .orElseThrow(() -> new ResumeNotFoundException("Resume not found for candidate with id: " + candidateId));
+                .orElseThrow(
+                        () -> new ResumeNotFoundException("Resume not found for candidate with id: " + candidateId));
 
         try {
             return fileStorageService.loadAsResource(resume.getFilePath());
@@ -314,7 +360,8 @@ public class ResumeServiceImpl implements ResumeService {
     @Override
     public void deleteResume(UUID candidateId) {
         Resume resume = resumeRepository.findByCandidateIdAndDeletedFalse(candidateId)
-                .orElseThrow(() -> new ResumeNotFoundException("Resume not found for candidate with id: " + candidateId));
+                .orElseThrow(
+                        () -> new ResumeNotFoundException("Resume not found for candidate with id: " + candidateId));
 
         softDeleteResume(resume);
     }
