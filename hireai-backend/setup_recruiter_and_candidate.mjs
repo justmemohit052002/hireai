@@ -62,7 +62,7 @@ async function main() {
       lastName: email.includes('sharma') ? 'Sharma' : 'Mishra',
       email: email,
       password: 'Password@123',
-      phoneNumber: '9876543210'
+      companyName: 'Vionsys Technologies'
     });
 
     if (regRes.status === 201) {

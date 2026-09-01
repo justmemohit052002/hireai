@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import com.vionsys.hireai.job.enums.Currency;
 import com.vionsys.hireai.job.enums.EmploymentType;
 import com.vionsys.hireai.job.enums.ExperienceLevel;
 import com.vionsys.hireai.job.enums.JobStatus;
@@ -45,7 +46,7 @@ public class JobResponse {
 
     private BigDecimal salaryMax;
 
-    private String currency;
+    private Currency currency;
 
     private List<String> skills;
 

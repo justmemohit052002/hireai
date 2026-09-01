@@ -19,12 +19,15 @@ import com.vionsys.hireai.job.dto.JobRequest;
 import com.vionsys.hireai.job.dto.JobResponse;
 import com.vionsys.hireai.job.service.JobService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/jobs")
 @RequiredArgsConstructor
+@Tag(name = "Job Postings & Discovery", description = "Endpoints for recruiter job posting lifecycle and candidate job discovery")
 public class JobController {
 
     private final JobService jobService;
@@ -34,6 +37,7 @@ public class JobController {
     // RECRUITER - CREATE JOB
     // =========================================================
 
+    @Operation(summary = "Create Job Posting (Recruiter)", description = "Publish a new job opening with skills, salary range, experience level, currency (INR, USD, EUR, GBP, AED), and deadline")
     @PostMapping
     @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<JobResponse> createJob(
@@ -52,6 +56,7 @@ public class JobController {
     // RECRUITER - MY JOBS
     // =========================================================
 
+    @Operation(summary = "List My Job Postings (Recruiter)", description = "Fetch all job postings created by the authenticated recruiter")
     @GetMapping
     @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<List<JobResponse>> getMyJobs() {
@@ -67,6 +72,7 @@ public class JobController {
     // CANDIDATE - OPEN JOBS
     // =========================================================
 
+    @Operation(summary = "Browse Open Jobs (Candidate & Recruiter)", description = "List all active, open job postings available for applications")
     @GetMapping("/open")
     @PreAuthorize("hasAnyRole('CANDIDATE', 'RECRUITER')")
     public ResponseEntity<List<JobResponse>> getOpenJobs() {
@@ -82,6 +88,7 @@ public class JobController {
     // RECRUITER - GET OWN JOB
     // =========================================================
 
+    @Operation(summary = "Get Job by ID (Recruiter)", description = "Fetch details of a specific job posting owned by the recruiter")
     @GetMapping("/{jobId}")
     @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<JobResponse> getJobById(
@@ -98,6 +105,7 @@ public class JobController {
     // RECRUITER - UPDATE JOB
     // =========================================================
 
+    @Operation(summary = "Update Job Posting (Recruiter)", description = "Update job title, description, skills, salary, location, or deadline")
     @PutMapping("/{jobId}")
     @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<JobResponse> updateJob(
@@ -118,6 +126,7 @@ public class JobController {
     // RECRUITER - CLOSE JOB
     // =========================================================
 
+    @Operation(summary = "Close Job Posting (Recruiter)", description = "Change job status to CLOSED so candidates can no longer apply")
     @PatchMapping("/{jobId}/close")
     @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<Void> closeJob(

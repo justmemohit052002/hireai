@@ -47,6 +47,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     private final AtsMatchScoringService atsMatchScoringService;
     private final AtsProperties atsProperties;
     private final ResumeService resumeService;
+    private final com.vionsys.hireai.email.EmailService emailService;
 
     @Override
     public JobApplicationResponse applyToJob(UUID candidateUserId, UUID jobId, JobApplicationRequest request) {
@@ -111,7 +112,25 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 .build();
 
         JobApplication saved = jobApplicationRepository.save(application);
-        return JobApplicationMapper.toResponse(saved);
+        JobApplicationResponse response = JobApplicationMapper.toResponse(saved);
+
+        // Send automated email notifications asynchronously using thread-safe DTO
+        try {
+            String recruiterEmail = job.getRecruiterProfile() != null && job.getRecruiterProfile().getCompanyEmail() != null
+                    ? job.getRecruiterProfile().getCompanyEmail()
+                    : (job.getRecruiterProfile() != null && job.getRecruiterProfile().getUser() != null
+                            ? job.getRecruiterProfile().getUser().getEmail()
+                            : null);
+
+            emailService.sendApplicationReceivedToCandidate(response);
+            if (recruiterEmail != null && !recruiterEmail.isBlank()) {
+                emailService.sendNewApplicantAlertToRecruiter(response, recruiterEmail);
+            }
+        } catch (Exception ex) {
+            log.warn("Failed to dispatch application notification emails: {}", ex.getMessage());
+        }
+
+        return response;
     }
 
     @Override
@@ -160,7 +179,16 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         }
 
         JobApplication updated = jobApplicationRepository.save(application);
-        return JobApplicationMapper.toResponse(updated);
+        JobApplicationResponse response = JobApplicationMapper.toResponse(updated);
+
+        // Send automated status update email to candidate asynchronously
+        try {
+            emailService.sendStatusUpdateToCandidate(response, request.getStatus(), request.getRecruiterNotes());
+        } catch (Exception ex) {
+            log.warn("Failed to dispatch status update email: {}", ex.getMessage());
+        }
+
+        return response;
     }
 
     @Override

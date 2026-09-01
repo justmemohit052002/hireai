@@ -27,6 +27,7 @@ import com.vionsys.hireai.candidate.service.ResumeService;
 import com.vionsys.hireai.security.CustomUserDetails;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
@@ -41,11 +42,12 @@ public class ResumeController {
     // CANDIDATE SELF-SERVICE RESUME ENDPOINTS
     // =========================================================================
 
-    @Operation(summary = "Upload candidate's own resume and trigger AI parsing")
+    @Operation(summary = "Upload candidate's own resume and trigger AI parsing", description = "Upload PDF/DOCX resume file to extract skills, experience, and contact details via AI Engine")
     @PreAuthorize("hasRole('CANDIDATE')")
     @PostMapping(value = "/candidate/resume/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<ResumeResponse>> uploadMyResume(
             Authentication authentication,
+            @Parameter(description = "Resume document file (PDF or DOCX)", required = true)
             @RequestParam("file") MultipartFile file) {
 
         UUID userId = getUserId(authentication);
@@ -96,11 +98,12 @@ public class ResumeController {
     // RECRUITER / ADMIN RESUME ENDPOINTS
     // =========================================================================
 
-    @Operation(summary = "Upload resume for a specific candidate (Recruiter/Admin)")
+    @Operation(summary = "Upload resume for a specific candidate (Recruiter/Admin)", description = "Upload PDF/DOCX resume file for a candidate in the talent directory")
     @PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
     @PostMapping(value = "/candidates/{candidateId}/resume", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<ResumeResponse>> uploadResumeForCandidate(
             @PathVariable UUID candidateId,
+            @Parameter(description = "Resume document file (PDF or DOCX)", required = true)
             @RequestParam("file") MultipartFile file) {
 
         ResumeResponse response = resumeService.uploadResume(candidateId, file);

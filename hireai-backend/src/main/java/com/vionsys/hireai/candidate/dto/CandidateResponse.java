@@ -38,6 +38,8 @@ public class CandidateResponse {
 
     private String portfolioUrl;
 
+    private String profilePhotoUrl;
+
     private String currentCompany;
 
     private String currentDesignation;

@@ -48,6 +48,7 @@ public final class JobApplicationMapper {
                 .candidateName(app.getCandidate().getFirstName() + " " + app.getCandidate().getLastName())
                 .candidateEmail(app.getCandidate().getEmail())
                 .candidatePhone(app.getCandidate().getPhone())
+                .candidateProfilePhotoUrl(app.getCandidate().getProfilePhotoUrl())
                 .status(app.getStatus())
                 .atsMatchScore(app.getAtsMatchScore())
                 .matchingSkills(matchingSkills)

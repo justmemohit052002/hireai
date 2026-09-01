@@ -31,7 +31,9 @@ import com.vionsys.hireai.user.entity.User;
 import com.vionsys.hireai.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -44,6 +46,7 @@ public class CandidateServiceImpl implements CandidateService {
     private final com.vionsys.hireai.application.repository.JobApplicationRepository jobApplicationRepository;
     private final com.vionsys.hireai.application.service.AtsMatchScoringService atsMatchScoringService;
     private final com.vionsys.hireai.application.config.AtsProperties atsProperties;
+    private final com.vionsys.hireai.candidate.storage.ProfilePhotoStorageService photoStorageService;
 
 
     // =========================================================
@@ -567,5 +570,86 @@ public class CandidateServiceImpl implements CandidateService {
         candidate.setLocation(
                 request.getLocation()
         );
+    }
+
+    // =========================================================
+    // CANDIDATE PROFILE PHOTO MANAGEMENT
+    // =========================================================
+
+    @Override
+    public CandidateResponse uploadMyProfilePhoto(UUID userId, org.springframework.web.multipart.MultipartFile file) {
+        Candidate candidate = candidateRepository.findByUserId(userId)
+                .orElseThrow(() -> new CandidateNotFoundException("Candidate profile not found for user: " + userId));
+
+        // Delete previous photo if it exists
+        if (candidate.getProfilePhotoPath() != null) {
+            photoStorageService.deletePhoto(candidate.getProfilePhotoPath());
+        }
+
+        String savedPath = photoStorageService.storePhoto(file);
+        candidate.setProfilePhotoPath(savedPath);
+        candidate.setProfilePhotoUrl("/candidate/profile/photo");
+
+        Candidate saved = candidateRepository.save(candidate);
+        log.info("Updated profile photo for Candidate: {}", candidate.getCandidateId());
+        return CandidateMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public org.springframework.core.io.Resource getMyProfilePhoto(UUID userId) {
+        Candidate candidate = candidateRepository.findByUserId(userId)
+                .orElseThrow(() -> new CandidateNotFoundException("Candidate profile not found for user: " + userId));
+
+        if (candidate.getProfilePhotoPath() == null) {
+            throw new CandidateNotFoundException("No profile photo uploaded for this candidate.");
+        }
+
+        return photoStorageService.loadPhotoAsResource(candidate.getProfilePhotoPath());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public org.springframework.core.io.Resource getCandidateProfilePhoto(UUID candidateId) {
+        Candidate candidate = candidateRepository.findById(candidateId)
+                .orElseThrow(() -> new CandidateNotFoundException("Candidate not found with id: " + candidateId));
+
+        if (candidate.getProfilePhotoPath() == null) {
+            throw new CandidateNotFoundException("No profile photo uploaded for candidate: " + candidateId);
+        }
+
+        return photoStorageService.loadPhotoAsResource(candidate.getProfilePhotoPath());
+    }
+
+    @Override
+    public CandidateResponse deleteMyProfilePhoto(UUID userId) {
+        Candidate candidate = candidateRepository.findByUserId(userId)
+                .orElseThrow(() -> new CandidateNotFoundException("Candidate profile not found for user: " + userId));
+
+        if (candidate.getProfilePhotoPath() != null) {
+            photoStorageService.deletePhoto(candidate.getProfilePhotoPath());
+            candidate.setProfilePhotoPath(null);
+            candidate.setProfilePhotoUrl(null);
+        }
+
+        Candidate saved = candidateRepository.save(candidate);
+        log.info("Deleted profile photo for Candidate: {}", candidate.getCandidateId());
+        return CandidateMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String getMyPhotoPath(UUID userId) {
+        Candidate candidate = candidateRepository.findByUserId(userId)
+                .orElseThrow(() -> new CandidateNotFoundException("Candidate profile not found for user: " + userId));
+        return candidate.getProfilePhotoPath();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String getCandidatePhotoPath(UUID candidateId) {
+        Candidate candidate = candidateRepository.findById(candidateId)
+                .orElseThrow(() -> new CandidateNotFoundException("Candidate not found with id: " + candidateId));
+        return candidate.getProfilePhotoPath();
     }
 }

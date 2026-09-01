@@ -188,7 +188,7 @@ public class JobServiceImpl implements JobService {
         );
 
         job.setCurrency(
-                request.getCurrency()
+                request.getCurrency() != null ? request.getCurrency() : com.vionsys.hireai.job.enums.Currency.INR
         );
 
         job.setSkills(

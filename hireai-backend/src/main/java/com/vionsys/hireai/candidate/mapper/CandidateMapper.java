@@ -100,6 +100,7 @@ public final class CandidateMapper {
 				.linkedinUrl(candidate.getLinkedinUrl())
 				.githubUrl(candidate.getGithubUrl())
 				.portfolioUrl(candidate.getPortfolioUrl())
+				.profilePhotoUrl(candidate.getProfilePhotoUrl())
 				.currentCompany(candidate.getCurrentCompany())
 				.currentDesignation(candidate.getCurrentDesignation())
 				.experience(candidate.getExperience())

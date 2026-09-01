@@ -30,6 +30,7 @@ public class JobApplicationResponse {
     private String candidateName;
     private String candidateEmail;
     private String candidatePhone;
+    private String candidateProfilePhotoUrl;
     private ApplicationStatus status;
     private Integer atsMatchScore;
     private List<String> matchingSkills;

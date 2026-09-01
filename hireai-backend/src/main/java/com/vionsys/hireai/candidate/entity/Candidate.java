@@ -126,6 +126,12 @@ public class Candidate extends BaseEntity {
     @Column(name = "portfolio_url")
     private String portfolioUrl;
 
+    @Column(name = "profile_photo_url", length = 500)
+    private String profilePhotoUrl;
+
+    @Column(name = "profile_photo_path", length = 500)
+    private String profilePhotoPath;
+
     @Column(name = "current_company")
     private String currentCompany;
 

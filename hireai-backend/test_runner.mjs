@@ -143,7 +143,7 @@ async function runAllTests() {
     lastName: `Manager${seed}`,
     email: recruiterEmail,
     password: testPassword,
-    phoneNumber: '97' + Math.floor(10000000 + Math.random() * 90000000),
+    companyName: 'Acme Technologies Ltd',
   };
   const regRecRes = await request('POST', '/auth/register/recruiter', regRecPayload);
   const recRegistered = regRecRes.status === 201 && regRecRes.data?.accessToken && regRecRes.data?.role === 'ROLE_RECRUITER';
