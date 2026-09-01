@@ -4,5 +4,5 @@ public enum JobStatus {
     DRAFT,
     OPEN,
     CLOSED,
-    EXPIRED
+    PAUSED
 }

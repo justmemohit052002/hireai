@@ -25,6 +25,7 @@ import com.vionsys.hireai.security.CustomUserDetails;
 import com.vionsys.hireai.security.annotation.CurrentUser;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -43,13 +44,16 @@ public class JobApplicationController {
     @PostMapping(value = "/jobs/{jobId}/apply", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('CANDIDATE')")
     @Operation(
+            operationId = "applyToJobWithResume",
             summary = "Apply to Job with Resume Upload (Candidate)",
             description = "Submit an application with cover note and optional resume file. Uploads & parses resume skills, then calculates ATS match percentage against candidate profile."
     )
     public ResponseEntity<ApiResponse<JobApplicationResponse>> applyToJobWithResume(
             @CurrentUser CustomUserDetails currentUser,
             @PathVariable UUID jobId,
+            @Parameter(description = "Optional cover note for the employer")
             @RequestParam(value = "coverNote", required = false) String coverNote,
+            @Parameter(description = "Optional resume file (.pdf or .docx)")
             @RequestParam(value = "file", required = false) MultipartFile file) {
 
         JobApplicationRequest request = JobApplicationRequest.builder()
@@ -71,6 +75,7 @@ public class JobApplicationController {
     @PostMapping(value = "/jobs/{jobId}/apply", consumes = MediaType.APPLICATION_JSON_VALUE)
     @PreAuthorize("hasRole('CANDIDATE')")
     @Operation(
+            operationId = "applyToJobJson",
             summary = "Apply to Job with JSON (Candidate)",
             description = "Submit an application using candidate profile and already uploaded resume."
     )

@@ -14,6 +14,7 @@ import com.vionsys.hireai.auth.dto.AuthResponse;
 import com.vionsys.hireai.auth.dto.ForgotPasswordRequest;
 import com.vionsys.hireai.auth.dto.ForgotPasswordResponse;
 import com.vionsys.hireai.auth.dto.LoginRequest;
+import com.vionsys.hireai.auth.dto.RecruiterRegisterRequest;
 import com.vionsys.hireai.auth.dto.RegisterRequest;
 import com.vionsys.hireai.auth.dto.ResetPasswordRequest;
 import com.vionsys.hireai.auth.dto.VerifyTokenResponse;
@@ -46,10 +47,10 @@ public class AuthController {
                 .body(response);
     }
 
-    @Operation(summary = "Register Recruiter", description = "Creates a new recruiter account and returns JWT tokens")
+    @Operation(summary = "Register Recruiter", description = "Creates a new recruiter account with company name and returns JWT tokens")
     @PostMapping("/register/recruiter")
     public ResponseEntity<AuthResponse> registerRecruiter(
-            @Valid @RequestBody RegisterRequest request) {
+            @Valid @RequestBody RecruiterRegisterRequest request) {
 
         AuthResponse response = authService.registerRecruiter(request);
 

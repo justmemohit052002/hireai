@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import com.vionsys.hireai.job.dto.JobRequest;
 import com.vionsys.hireai.job.dto.JobResponse;
 import com.vionsys.hireai.job.entity.Job;
+import com.vionsys.hireai.job.enums.Currency;
 
 
 public final class JobMapper {
@@ -27,7 +28,7 @@ public final class JobMapper {
                 .remote(request.getRemote())
                 .salaryMin(request.getSalaryMin())
                 .salaryMax(request.getSalaryMax())
-                .currency(request.getCurrency())
+                .currency(request.getCurrency() != null ? request.getCurrency() : Currency.INR)
                 .skills(request.getSkills())
                 .education(request.getEducation())
                 .openings(request.getOpenings())

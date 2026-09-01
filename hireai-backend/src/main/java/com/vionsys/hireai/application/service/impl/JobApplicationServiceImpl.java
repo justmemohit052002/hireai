@@ -112,16 +112,25 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 .build();
 
         JobApplication saved = jobApplicationRepository.save(application);
+        JobApplicationResponse response = JobApplicationMapper.toResponse(saved);
 
-        // Send automated email notifications asynchronously
+        // Send automated email notifications asynchronously using thread-safe DTO
         try {
-            emailService.sendApplicationReceivedToCandidate(saved);
-            emailService.sendNewApplicantAlertToRecruiter(saved);
+            String recruiterEmail = job.getRecruiterProfile() != null && job.getRecruiterProfile().getCompanyEmail() != null
+                    ? job.getRecruiterProfile().getCompanyEmail()
+                    : (job.getRecruiterProfile() != null && job.getRecruiterProfile().getUser() != null
+                            ? job.getRecruiterProfile().getUser().getEmail()
+                            : null);
+
+            emailService.sendApplicationReceivedToCandidate(response);
+            if (recruiterEmail != null && !recruiterEmail.isBlank()) {
+                emailService.sendNewApplicantAlertToRecruiter(response, recruiterEmail);
+            }
         } catch (Exception ex) {
             log.warn("Failed to dispatch application notification emails: {}", ex.getMessage());
         }
 
-        return JobApplicationMapper.toResponse(saved);
+        return response;
     }
 
     @Override
@@ -170,15 +179,16 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         }
 
         JobApplication updated = jobApplicationRepository.save(application);
+        JobApplicationResponse response = JobApplicationMapper.toResponse(updated);
 
         // Send automated status update email to candidate asynchronously
         try {
-            emailService.sendStatusUpdateToCandidate(updated, request.getStatus(), request.getRecruiterNotes());
+            emailService.sendStatusUpdateToCandidate(response, request.getStatus(), request.getRecruiterNotes());
         } catch (Exception ex) {
             log.warn("Failed to dispatch status update email: {}", ex.getMessage());
         }
 
-        return JobApplicationMapper.toResponse(updated);
+        return response;
     }
 
     @Override

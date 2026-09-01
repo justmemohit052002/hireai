@@ -3,11 +3,15 @@ package com.vionsys.hireai.candidate.controller;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +21,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.vionsys.hireai.candidate.dto.CandidateProfileRequest;
 import com.vionsys.hireai.candidate.dto.CandidateRequest;
@@ -24,24 +29,31 @@ import com.vionsys.hireai.candidate.dto.CandidateResponse;
 import com.vionsys.hireai.candidate.enums.CandidateStatus;
 import com.vionsys.hireai.candidate.filter.CandidateFilter;
 import com.vionsys.hireai.candidate.service.CandidateService;
+import com.vionsys.hireai.candidate.storage.ProfilePhotoStorageService;
 import com.vionsys.hireai.security.CustomUserDetails;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
+@Tag(name = "Candidate Profile & Directory", description = "Endpoints for candidate self-service profile management, photo upload, and recruiter candidate directory")
 public class CandidateController {
 
 	private final CandidateService candidateService;
-	private final com.vionsys.hireai.candidate.storage.ProfilePhotoStorageService photoStorageService;
+	private final ProfilePhotoStorageService photoStorageService;
 
 
 	// =========================================================
 	// AUTHENTICATED CANDIDATE PROFILE
 	// =========================================================
 
+	@Operation(summary = "Create Candidate Profile (Self-Service)", description = "Create initial candidate profile with work experience, CTC, skills, and links")
 	@PostMapping("/candidate/profile")
+	@PreAuthorize("hasRole('CANDIDATE')")
 	public ResponseEntity<CandidateResponse> createMyProfile(
 			Authentication authentication,
 			@Valid @RequestBody CandidateProfileRequest request) {
@@ -61,7 +73,9 @@ public class CandidateController {
 	}
 
 
+	@Operation(summary = "Get Candidate Profile (Self-Service)", description = "Fetch profile data, skills, and parsed resume info for authenticated candidate")
 	@GetMapping("/candidate/profile")
+	@PreAuthorize("hasRole('CANDIDATE')")
 	public ResponseEntity<CandidateResponse> getMyProfile(
 			Authentication authentication) {
 
@@ -77,7 +91,9 @@ public class CandidateController {
 	}
 
 
+	@Operation(summary = "Update Candidate Profile (Self-Service)", description = "Update skills, experience, designation, CTC, or location")
 	@PutMapping("/candidate/profile")
+	@PreAuthorize("hasRole('CANDIDATE')")
 	public ResponseEntity<CandidateResponse> updateMyProfile(
 			Authentication authentication,
 			@Valid @RequestBody CandidateProfileRequest request) {
@@ -94,46 +110,55 @@ public class CandidateController {
 		return ResponseEntity.ok(response);
 	}
 
-	@PostMapping(value = "/candidate/profile/photo", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+	@Operation(summary = "Upload Candidate Profile Photo", description = "Upload candidate profile picture (.jpg, .jpeg, .png)")
+	@PostMapping(value = "/candidate/profile/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PreAuthorize("hasRole('CANDIDATE')")
 	public ResponseEntity<CandidateResponse> uploadMyProfilePhoto(
 			Authentication authentication,
-			@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+			@Parameter(description = "Image file (.jpg, .jpeg, .png)", required = true)
+			@RequestParam("file") MultipartFile file) {
 
 		CustomUserDetails userDetails = getAuthenticatedUser(authentication);
 		CandidateResponse response = candidateService.uploadMyProfilePhoto(userDetails.getId(), file);
 		return ResponseEntity.ok(response);
 	}
 
+	@Operation(summary = "Get Candidate's Own Profile Photo Binary", description = "View/download the authenticated candidate's profile picture")
 	@GetMapping("/candidate/profile/photo")
-	public ResponseEntity<org.springframework.core.io.Resource> getMyProfilePhoto(
+	@PreAuthorize("hasRole('CANDIDATE')")
+	public ResponseEntity<Resource> getMyProfilePhoto(
 			Authentication authentication) {
 
 		CustomUserDetails userDetails = getAuthenticatedUser(authentication);
-		org.springframework.core.io.Resource resource = candidateService.getMyProfilePhoto(userDetails.getId());
+		Resource resource = candidateService.getMyProfilePhoto(userDetails.getId());
 		String photoPath = candidateService.getMyPhotoPath(userDetails.getId());
-		org.springframework.http.MediaType mediaType = photoStorageService.determineMediaType(photoPath);
+		MediaType mediaType = photoStorageService.determineMediaType(photoPath);
 
 		return ResponseEntity.ok()
 				.contentType(mediaType)
-				.header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "inline")
+				.header(HttpHeaders.CONTENT_DISPOSITION, "inline")
 				.body(resource);
 	}
 
+	@Operation(summary = "Get Candidate Profile Photo by Candidate ID", description = "Recruiters and candidates can view a candidate's profile photo")
 	@GetMapping("/candidates/{id}/profile/photo")
-	public ResponseEntity<org.springframework.core.io.Resource> getCandidateProfilePhoto(
+	@PreAuthorize("hasAnyRole('CANDIDATE', 'RECRUITER', 'ADMIN')")
+	public ResponseEntity<Resource> getCandidateProfilePhoto(
 			@PathVariable UUID id) {
 
-		org.springframework.core.io.Resource resource = candidateService.getCandidateProfilePhoto(id);
+		Resource resource = candidateService.getCandidateProfilePhoto(id);
 		String photoPath = candidateService.getCandidatePhotoPath(id);
-		org.springframework.http.MediaType mediaType = photoStorageService.determineMediaType(photoPath);
+		MediaType mediaType = photoStorageService.determineMediaType(photoPath);
 
 		return ResponseEntity.ok()
 				.contentType(mediaType)
-				.header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "inline")
+				.header(HttpHeaders.CONTENT_DISPOSITION, "inline")
 				.body(resource);
 	}
 
+	@Operation(summary = "Delete Candidate Profile Photo", description = "Remove candidate's profile picture")
 	@DeleteMapping("/candidate/profile/photo")
+	@PreAuthorize("hasRole('CANDIDATE')")
 	public ResponseEntity<CandidateResponse> deleteMyProfilePhoto(
 			Authentication authentication) {
 
@@ -144,10 +169,12 @@ public class CandidateController {
 
 
 	// =========================================================
-	// GENERAL CANDIDATE MANAGEMENT
+	// GENERAL CANDIDATE MANAGEMENT (RECRUITER / ADMIN)
 	// =========================================================
 
+	@Operation(summary = "Create Candidate in Directory (Recruiter/Admin)", description = "Manually add a new candidate to the employer talent directory")
 	@PostMapping("/candidates")
+	@PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
 	public ResponseEntity<CandidateResponse> createCandidate(
 			@Valid @RequestBody CandidateRequest request) {
 
@@ -160,7 +187,9 @@ public class CandidateController {
 	}
 
 
+	@Operation(summary = "Get Candidate by ID (Recruiter/Admin)", description = "Fetch full candidate details from the talent pool")
 	@GetMapping("/candidates/{candidateId}")
+	@PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
 	public ResponseEntity<CandidateResponse> getCandidateById(
 			@PathVariable UUID candidateId) {
 
@@ -173,7 +202,9 @@ public class CandidateController {
 	}
 
 
+	@Operation(summary = "Search & Filter Candidates (Recruiter/Admin)", description = "Paginated talent search by skill, experience, location, status, or name")
 	@GetMapping("/candidates")
+	@PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
 	public ResponseEntity<Page<CandidateResponse>> getAllCandidates(
 
 			@RequestParam(required = false)
@@ -253,7 +284,9 @@ public class CandidateController {
 	}
 
 
+	@Operation(summary = "Update Candidate Details (Recruiter/Admin)", description = "Update candidate information in talent directory")
 	@PutMapping("/candidates/{candidateId}")
+	@PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
 	public ResponseEntity<CandidateResponse> updateCandidate(
 			@PathVariable UUID candidateId,
 			@Valid @RequestBody CandidateRequest request) {
@@ -268,7 +301,9 @@ public class CandidateController {
 	}
 
 
+	@Operation(summary = "Delete Candidate (Recruiter/Admin)", description = "Soft-delete a candidate record from the talent directory")
 	@DeleteMapping("/candidates/{candidateId}")
+	@PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
 	public ResponseEntity<Void> deleteCandidate(
 			@PathVariable UUID candidateId) {
 

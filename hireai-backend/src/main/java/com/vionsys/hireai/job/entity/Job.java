@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.hibernate.annotations.UuidGenerator;
 
 import com.vionsys.hireai.common.base.BaseEntity;
+import com.vionsys.hireai.job.enums.Currency;
 import com.vionsys.hireai.job.enums.EmploymentType;
 import com.vionsys.hireai.job.enums.ExperienceLevel;
 import com.vionsys.hireai.job.enums.JobStatus;
@@ -76,9 +77,10 @@ public class Job extends BaseEntity {
     @Column(precision = 12, scale = 2)
     private BigDecimal salaryMax;
 
+    @Enumerated(EnumType.STRING)
     @Builder.Default
     @Column(length = 10, nullable = false)
-    private String currency = "INR";
+    private Currency currency = Currency.INR;
 
     @ElementCollection
     @CollectionTable(

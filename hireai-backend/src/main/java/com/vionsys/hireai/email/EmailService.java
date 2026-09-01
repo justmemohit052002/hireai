@@ -1,6 +1,6 @@
 package com.vionsys.hireai.email;
 
-import com.vionsys.hireai.application.entity.JobApplication;
+import com.vionsys.hireai.application.dto.JobApplicationResponse;
 import com.vionsys.hireai.application.enums.ApplicationStatus;
 
 public interface EmailService {
@@ -8,17 +8,17 @@ public interface EmailService {
     /**
      * Send automatic confirmation email to the candidate after submitting a job application.
      */
-    void sendApplicationReceivedToCandidate(JobApplication application);
+    void sendApplicationReceivedToCandidate(JobApplicationResponse application);
 
     /**
      * Send automatic alert email to the recruiter when a new candidate applies to their job.
      */
-    void sendNewApplicantAlertToRecruiter(JobApplication application);
+    void sendNewApplicantAlertToRecruiter(JobApplicationResponse application, String recruiterEmail);
 
     /**
      * Send status update email to the candidate when their recruitment pipeline stage changes.
      */
-    void sendStatusUpdateToCandidate(JobApplication application, ApplicationStatus newStatus, String recruiterNotes);
+    void sendStatusUpdateToCandidate(JobApplicationResponse application, ApplicationStatus newStatus, String recruiterNotes);
 
     /**
      * Send welcome email to newly registered candidate.

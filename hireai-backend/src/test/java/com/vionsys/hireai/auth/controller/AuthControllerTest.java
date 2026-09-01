@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vionsys.hireai.auth.dto.AuthResponse;
 import com.vionsys.hireai.auth.dto.LoginRequest;
+import com.vionsys.hireai.auth.dto.RecruiterRegisterRequest;
 import com.vionsys.hireai.auth.dto.RegisterRequest;
 import com.vionsys.hireai.auth.service.AuthService;
 import com.vionsys.hireai.security.jwt.JwtAccessDeniedHandler;
@@ -82,12 +83,12 @@ class AuthControllerTest {
 
     @Test
     void testRegisterRecruiter_Success() throws Exception {
-        RegisterRequest request = new RegisterRequest();
+        RecruiterRegisterRequest request = new RecruiterRegisterRequest();
         request.setFirstName("Alice");
         request.setLastName("Smith");
         request.setEmail("recruiter@vionsys.com");
         request.setPassword("SecurePass123!");
-        request.setPhoneNumber("9876543211");
+        request.setCompanyName("Vionsys Technologies");
 
         AuthResponse authResponse = AuthResponse.builder()
                 .userId(UUID.randomUUID())

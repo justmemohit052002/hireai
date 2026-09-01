@@ -9,11 +9,8 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import com.vionsys.hireai.application.entity.JobApplication;
+import com.vionsys.hireai.application.dto.JobApplicationResponse;
 import com.vionsys.hireai.application.enums.ApplicationStatus;
-import com.vionsys.hireai.candidate.entity.Candidate;
-import com.vionsys.hireai.job.entity.Job;
-import com.vionsys.hireai.recruiter.entity.RecruiterProfile;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -36,21 +33,17 @@ public class EmailServiceImpl implements EmailService {
 
     @Async
     @Override
-    public void sendApplicationReceivedToCandidate(JobApplication application) {
-        if (!emailProperties.isEnabled() || application == null || application.getCandidate() == null) {
+    public void sendApplicationReceivedToCandidate(JobApplicationResponse application) {
+        if (!emailProperties.isEnabled() || application == null || application.getCandidateEmail() == null) {
             return;
         }
 
-        Candidate candidate = application.getCandidate();
-        Job job = application.getJob();
-        String candidateEmail = candidate.getEmail();
-        String candidateName = candidate.getFirstName() + " " + candidate.getLastName();
-        String jobTitle = job != null ? job.getTitle() : "Job Position";
-        String companyName = job != null && job.getRecruiterProfile() != null
-                ? job.getRecruiterProfile().getCompanyName()
-                : "Vionsys Technologies";
+        String candidateEmail = application.getCandidateEmail();
+        String candidateName = application.getCandidateName() != null ? application.getCandidateName() : "Candidate";
+        String jobTitle = application.getJobTitle() != null ? application.getJobTitle() : "Job Position";
+        String companyName = application.getCompanyName() != null ? application.getCompanyName() : "Vionsys Technologies";
 
-        int score = application.getAtsMatchScore() != null ? application.getAtsMatchScore() : 0;
+        int score = application.getAtsMatchScore() != null ? application.getAtsMatchScore().intValue() : 0;
         ApplicationStatus status = application.getStatus();
 
         String statusBadgeColor = status == ApplicationStatus.SHORTLISTED ? "#10b981" : (status == ApplicationStatus.REJECTED ? "#ef4444" : "#3b82f6");
@@ -152,29 +145,24 @@ public class EmailServiceImpl implements EmailService {
 
     @Async
     @Override
-    public void sendNewApplicantAlertToRecruiter(JobApplication application) {
-        if (!emailProperties.isEnabled() || application == null || application.getJob() == null) {
+    public void sendNewApplicantAlertToRecruiter(JobApplicationResponse application, String recruiterEmail) {
+        if (!emailProperties.isEnabled() || application == null || recruiterEmail == null || recruiterEmail.isBlank()) {
             return;
         }
 
-        Job job = application.getJob();
-        RecruiterProfile recruiterProfile = job.getRecruiterProfile();
-        String recruiterEmail = recruiterProfile != null && recruiterProfile.getCompanyEmail() != null
-                ? recruiterProfile.getCompanyEmail()
-                : (recruiterProfile != null && recruiterProfile.getUser() != null ? recruiterProfile.getUser().getEmail() : null);
-
-        if (recruiterEmail == null || recruiterEmail.isBlank()) {
-            log.warn("No recruiter email found for job application {}", application.getId());
-            return;
-        }
-
-        Candidate candidate = application.getCandidate();
-        String candidateName = candidate != null ? candidate.getFirstName() + " " + candidate.getLastName() : "Candidate";
-        String candidateEmail = candidate != null ? candidate.getEmail() : "N/A";
-        String candidatePhone = candidate != null ? candidate.getPhone() : "N/A";
-        String jobTitle = job.getTitle();
-        int score = application.getAtsMatchScore() != null ? application.getAtsMatchScore() : 0;
+        String candidateName = application.getCandidateName() != null ? application.getCandidateName() : "Candidate";
+        String candidateEmail = application.getCandidateEmail() != null ? application.getCandidateEmail() : "N/A";
+        String candidatePhone = application.getCandidatePhone() != null ? application.getCandidatePhone() : "N/A";
+        String jobTitle = application.getJobTitle() != null ? application.getJobTitle() : "Job Position";
+        int score = application.getAtsMatchScore() != null ? application.getAtsMatchScore().intValue() : 0;
         String status = application.getStatus() != null ? application.getStatus().name() : "APPLIED";
+
+        String matchingSkills = application.getMatchingSkills() != null && !application.getMatchingSkills().isEmpty()
+                ? String.join(", ", application.getMatchingSkills())
+                : "None";
+        String missingSkills = application.getMissingSkills() != null && !application.getMissingSkills().isEmpty()
+                ? String.join(", ", application.getMissingSkills())
+                : "None";
 
         String subject = String.format("New Applicant Alert: %s applied for %s (ATS Score: %d%%)", candidateName, jobTitle, score);
 
@@ -242,8 +230,8 @@ public class EmailServiceImpl implements EmailService {
                 candidatePhone,
                 status,
                 score,
-                application.getMatchingSkills() != null && !application.getMatchingSkills().isBlank() ? application.getMatchingSkills() : "None",
-                application.getMissingSkills() != null && !application.getMissingSkills().isBlank() ? application.getMissingSkills() : "None"
+                matchingSkills,
+                missingSkills
         );
 
         sendHtmlEmail(recruiterEmail, subject, htmlContent);
@@ -255,19 +243,15 @@ public class EmailServiceImpl implements EmailService {
 
     @Async
     @Override
-    public void sendStatusUpdateToCandidate(JobApplication application, ApplicationStatus newStatus, String recruiterNotes) {
-        if (!emailProperties.isEnabled() || application == null || application.getCandidate() == null) {
+    public void sendStatusUpdateToCandidate(JobApplicationResponse application, ApplicationStatus newStatus, String recruiterNotes) {
+        if (!emailProperties.isEnabled() || application == null || application.getCandidateEmail() == null) {
             return;
         }
 
-        Candidate candidate = application.getCandidate();
-        Job job = application.getJob();
-        String candidateEmail = candidate.getEmail();
-        String candidateName = candidate.getFirstName() + " " + candidate.getLastName();
-        String jobTitle = job != null ? job.getTitle() : "Job Position";
-        String companyName = job != null && job.getRecruiterProfile() != null
-                ? job.getRecruiterProfile().getCompanyName()
-                : "Vionsys Technologies";
+        String candidateEmail = application.getCandidateEmail();
+        String candidateName = application.getCandidateName() != null ? application.getCandidateName() : "Candidate";
+        String jobTitle = application.getJobTitle() != null ? application.getJobTitle() : "Job Position";
+        String companyName = application.getCompanyName() != null ? application.getCompanyName() : "Vionsys Technologies";
 
         String headline;
         String statusDescription;
