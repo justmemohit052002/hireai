@@ -56,6 +56,17 @@ public class User extends BaseEntity {
     @Builder.Default
     private Boolean accountNonLocked = true;
 
+    @Column(name = "failed_login_attempts", columnDefinition = "integer default 0")
+    @Builder.Default
+    private Integer failedLoginAttempts = 0;
+
+    @Column(name = "lockout_until")
+    private java.time.LocalDateTime lockoutUntil;
+
+    public Integer getFailedLoginAttempts() {
+        return failedLoginAttempts != null ? failedLoginAttempts : 0;
+    }
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;

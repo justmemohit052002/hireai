@@ -131,4 +131,46 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").value("mock-logged-in-token"));
     }
+
+    @Test
+    void testRefreshToken_Success() throws Exception {
+        com.vionsys.hireai.auth.dto.RefreshTokenRequest request = new com.vionsys.hireai.auth.dto.RefreshTokenRequest();
+        request.setRefreshToken("mock-valid-refresh-token");
+
+        AuthResponse authResponse = AuthResponse.builder()
+                .userId(UUID.randomUUID())
+                .email("user@example.com")
+                .role("CANDIDATE")
+                .accessToken("mock-new-access-token")
+                .refreshToken("mock-new-refresh-token")
+                .build();
+
+        when(authService.refreshToken(any())).thenReturn(authResponse);
+
+        mockMvc.perform(post("/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("mock-new-access-token"))
+                .andExpect(jsonPath("$.refreshToken").value("mock-new-refresh-token"));
+    }
+
+    @Test
+    void testLogout_Success() throws Exception {
+        com.vionsys.hireai.auth.dto.RefreshTokenRequest request = new com.vionsys.hireai.auth.dto.RefreshTokenRequest();
+        request.setRefreshToken("mock-valid-refresh-token");
+
+        com.vionsys.hireai.auth.dto.LogoutResponse logoutResponse = com.vionsys.hireai.auth.dto.LogoutResponse.builder()
+                .success(true)
+                .message("User logged out successfully. Session has been terminated.")
+                .build();
+
+        when(authService.logout(any())).thenReturn(logoutResponse);
+
+        mockMvc.perform(post("/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
 }
