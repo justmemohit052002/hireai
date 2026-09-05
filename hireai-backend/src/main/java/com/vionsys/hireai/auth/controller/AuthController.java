@@ -69,6 +69,26 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Refresh Access Token", description = "Rotates refresh token and issues a new access token pair (Refresh Token Rotation with reuse detection)")
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refreshToken(
+            @Valid @RequestBody com.vionsys.hireai.auth.dto.RefreshTokenRequest request) {
+
+        AuthResponse response = authService.refreshToken(request);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "User Logout", description = "Revokes the active refresh token and invalidates the session")
+    @PostMapping("/logout")
+    public ResponseEntity<com.vionsys.hireai.auth.dto.LogoutResponse> logout(
+            @RequestBody(required = false) com.vionsys.hireai.auth.dto.RefreshTokenRequest request) {
+
+        com.vionsys.hireai.auth.dto.LogoutResponse response = authService.logout(request);
+
+        return ResponseEntity.ok(response);
+    }
+
     @Operation(summary = "Forgot Password", description = "Generates a 15-minute time-limited password reset token for the specified user email")
     @PostMapping("/forgot-password")
     public ResponseEntity<ForgotPasswordResponse> forgotPassword(

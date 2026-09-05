@@ -42,7 +42,7 @@ public class JobApplicationController {
     // =========================================================
 
     @PostMapping(value = "/jobs/{jobId}/apply", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('CANDIDATE')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('application:create')")
     @Operation(
             operationId = "applyToJobWithResume",
             summary = "Apply to Job with Resume Upload (Candidate)",
@@ -73,7 +73,7 @@ public class JobApplicationController {
     }
 
     @PostMapping(value = "/jobs/{jobId}/apply", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('CANDIDATE')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('application:create')")
     @Operation(
             operationId = "applyToJobJson",
             summary = "Apply to Job with JSON (Candidate)",
@@ -100,7 +100,7 @@ public class JobApplicationController {
     // =========================================================
 
     @GetMapping("/candidate/applications")
-    @PreAuthorize("hasRole('CANDIDATE')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CANDIDATE')")
     @Operation(
             summary = "View My Applications (Candidate)",
             description = "Fetch all applications submitted by the authenticated candidate, with live stage status and ATS scores."
@@ -119,7 +119,7 @@ public class JobApplicationController {
     // =========================================================
 
     @GetMapping("/jobs/{jobId}/applications")
-    @PreAuthorize("hasRole('RECRUITER')")
+    @PreAuthorize("hasRole('ADMIN') or (hasAuthority('application:read') and @jobSecurity.isJobOwner(#jobId, principal.id))")
     @Operation(
             summary = "List Job Applicants (Recruiter)",
             description = "Fetch all applicants for a job posting owned by the recruiter, ranked automatically by highest ATS match score."
@@ -139,7 +139,7 @@ public class JobApplicationController {
     // =========================================================
 
     @PatchMapping("/applications/{applicationId}/status")
-    @PreAuthorize("hasRole('RECRUITER')")
+    @PreAuthorize("hasRole('ADMIN') or (hasAuthority('application:update_status') and @applicationSecurity.canManageApplication(#applicationId, principal.id))")
     @Operation(
             summary = "Update Application Stage (Recruiter)",
             description = "Move applicant through recruitment stages (SCREENING, SHORTLISTED, INTERVIEW_SCHEDULED, OFFERED, REJECTED) with optional feedback notes."
@@ -163,7 +163,7 @@ public class JobApplicationController {
     // =========================================================
 
     @GetMapping("/applications/{applicationId}")
-    @PreAuthorize("hasAnyRole('CANDIDATE', 'RECRUITER', 'ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @applicationSecurity.canAccessApplication(#applicationId, principal.id)")
     @Operation(
             summary = "Get Application Details",
             description = "Retrieve details and ATS breakdown for a specific job application."
@@ -185,7 +185,7 @@ public class JobApplicationController {
     // =========================================================
 
     @GetMapping("/applications/{applicationId}/resume/download")
-    @PreAuthorize("hasAnyRole('CANDIDATE', 'RECRUITER', 'ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @applicationSecurity.canAccessApplication(#applicationId, principal.id)")
     @Operation(
             summary = "Download Applicant Resume by Application ID",
             description = "Allows recruiters (or applicant) to download the resume attached to a specific job application."

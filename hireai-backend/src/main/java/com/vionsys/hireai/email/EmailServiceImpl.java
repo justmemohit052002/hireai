@@ -492,7 +492,7 @@ public class EmailServiceImpl implements EmailService {
 
         String name = user.getFirstName() + " " + user.getLastName();
         String timeStr = java.time.LocalDateTime.now().format(DATE_FORMATTER);
-        String subject = "Security Alert: Successful Login to HireAI";
+        String subject = "New Sign-in to your HireAI account";
 
         String htmlContent = String.format("""
             <!DOCTYPE html>
@@ -631,7 +631,15 @@ public class EmailServiceImpl implements EmailService {
             helper.setFrom(emailProperties.getFrom(), emailProperties.getSenderName());
             helper.setTo(toEmail);
             helper.setSubject(subject);
-            helper.setText(htmlContent, true);
+
+            // Generate a clean plain-text fallback for multipart/alternative (significantly reduces spam score)
+            String plainText = htmlToPlainText(htmlContent);
+            helper.setText(plainText, htmlContent);
+
+            // Add standard transactional headers to inform spam filters this is an automated system email
+            message.setHeader("Auto-Submitted", "auto-generated");
+            message.setHeader("X-Auto-Response-Suppress", "All");
+            message.setHeader("X-Mailer", "HireAI-Notification-Service/1.0");
 
             mailSender.send(message);
             log.info("Email successfully dispatched to {}", toEmail);
@@ -643,5 +651,25 @@ public class EmailServiceImpl implements EmailService {
         } catch (Exception ex) {
             log.warn("SMTP host unreachable ({}). Simulated email dispatch for {}", ex.getMessage(), toEmail);
         }
+    }
+
+    private String htmlToPlainText(String html) {
+        if (html == null || html.isBlank()) {
+            return "";
+        }
+        return html
+                .replaceAll("(?i)<style[^>]*>[\\s\\S]*?</style>", "")
+                .replaceAll("(?i)<head[^>]*>[\\s\\S]*?</head>", "")
+                .replaceAll("(?i)<br\\s*/?>", "\n")
+                .replaceAll("(?i)</p>", "\n\n")
+                .replaceAll("(?i)</div>", "\n")
+                .replaceAll("(?i)</h1>|</h2>|</h3>", "\n\n")
+                .replaceAll("<[^>]+>", "")
+                .replaceAll("&nbsp;", " ")
+                .replaceAll("&amp;", "&")
+                .replaceAll("&lt;", "<")
+                .replaceAll("&gt;", ">")
+                .replaceAll("\n{3,}", "\n\n")
+                .trim();
     }
 }

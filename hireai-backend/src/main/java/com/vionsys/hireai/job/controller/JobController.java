@@ -39,7 +39,7 @@ public class JobController {
 
     @Operation(summary = "Create Job Posting (Recruiter)", description = "Publish a new job opening with skills, salary range, experience level, currency (INR, USD, EUR, GBP, AED), and deadline")
     @PostMapping
-    @PreAuthorize("hasRole('RECRUITER')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('job:create')")
     public ResponseEntity<JobResponse> createJob(
             @Valid @RequestBody JobRequest request) {
 
@@ -58,7 +58,7 @@ public class JobController {
 
     @Operation(summary = "List My Job Postings (Recruiter)", description = "Fetch all job postings created by the authenticated recruiter")
     @GetMapping
-    @PreAuthorize("hasRole('RECRUITER')")
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('job:read')")
     public ResponseEntity<List<JobResponse>> getMyJobs() {
 
         List<JobResponse> response =
@@ -74,7 +74,7 @@ public class JobController {
 
     @Operation(summary = "Browse Open Jobs (Candidate & Recruiter)", description = "List all active, open job postings available for applications")
     @GetMapping("/open")
-    @PreAuthorize("hasAnyRole('CANDIDATE', 'RECRUITER')")
+    @PreAuthorize("hasAnyRole('CANDIDATE', 'RECRUITER', 'ADMIN')")
     public ResponseEntity<List<JobResponse>> getOpenJobs() {
 
         List<JobResponse> response =
@@ -90,7 +90,7 @@ public class JobController {
 
     @Operation(summary = "Get Job by ID (Recruiter)", description = "Fetch details of a specific job posting owned by the recruiter")
     @GetMapping("/{jobId}")
-    @PreAuthorize("hasRole('RECRUITER')")
+    @PreAuthorize("hasRole('ADMIN') or @jobSecurity.isJobOwner(#jobId, principal.id)")
     public ResponseEntity<JobResponse> getJobById(
             @PathVariable UUID jobId) {
 
@@ -107,7 +107,7 @@ public class JobController {
 
     @Operation(summary = "Update Job Posting (Recruiter)", description = "Update job title, description, skills, salary, location, or deadline")
     @PutMapping("/{jobId}")
-    @PreAuthorize("hasRole('RECRUITER')")
+    @PreAuthorize("hasRole('ADMIN') or (hasAuthority('job:update') and @jobSecurity.isJobOwner(#jobId, principal.id))")
     public ResponseEntity<JobResponse> updateJob(
             @PathVariable UUID jobId,
             @Valid @RequestBody JobRequest request) {
@@ -128,7 +128,7 @@ public class JobController {
 
     @Operation(summary = "Close Job Posting (Recruiter)", description = "Change job status to CLOSED so candidates can no longer apply")
     @PatchMapping("/{jobId}/close")
-    @PreAuthorize("hasRole('RECRUITER')")
+    @PreAuthorize("hasRole('ADMIN') or (hasAuthority('job:delete') and @jobSecurity.isJobOwner(#jobId, principal.id))")
     public ResponseEntity<Void> closeJob(
             @PathVariable UUID jobId) {
 

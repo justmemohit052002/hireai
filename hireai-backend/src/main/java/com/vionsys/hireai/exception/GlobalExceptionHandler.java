@@ -1,195 +1,30 @@
 package com.vionsys.hireai.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import com.vionsys.hireai.ai.exception.AiEngineException;
 import com.vionsys.hireai.candidate.exception.DuplicateResourceException;
 import com.vionsys.hireai.candidate.exception.FileStorageException;
+import com.vionsys.hireai.candidate.exception.ResumeNotFoundException;
 
-import lombok.extern.slf4j.Slf4j;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
 	// =========================================================
-	// DUPLICATE RESOURCE
-	// =========================================================
-
-	@ExceptionHandler(DuplicateResourceException.class)
-	public ResponseEntity<ErrorResponse> handleDuplicateResource(
-			DuplicateResourceException ex,
-			HttpServletRequest request) {
-
-		ErrorResponse response = new ErrorResponse(
-				false,
-				HttpStatus.CONFLICT.value(),
-				HttpStatus.CONFLICT.getReasonPhrase(),
-				ex.getMessage(),
-				request.getRequestURI()
-		);
-
-		return ResponseEntity
-				.status(HttpStatus.CONFLICT)
-				.body(response);
-	}
-
-
-	// =========================================================
-	// FILE STORAGE & RESUME
-	// =========================================================
-
-	@ExceptionHandler(FileStorageException.class)
-	public ResponseEntity<ErrorResponse> handleFileStorageException(
-			FileStorageException ex,
-			HttpServletRequest request) {
-
-		ErrorResponse response = new ErrorResponse(
-				false,
-				HttpStatus.BAD_REQUEST.value(),
-				HttpStatus.BAD_REQUEST.getReasonPhrase(),
-				ex.getMessage(),
-				request.getRequestURI()
-		);
-
-		return ResponseEntity
-				.status(HttpStatus.BAD_REQUEST)
-				.body(response);
-	}
-
-	@ExceptionHandler(com.vionsys.hireai.candidate.exception.ResumeNotFoundException.class)
-	public ResponseEntity<ErrorResponse> handleResumeNotFound(
-			com.vionsys.hireai.candidate.exception.ResumeNotFoundException ex,
-			HttpServletRequest request) {
-
-		ErrorResponse response = new ErrorResponse(
-				false,
-				HttpStatus.NOT_FOUND.value(),
-				HttpStatus.NOT_FOUND.getReasonPhrase(),
-				ex.getMessage(),
-				request.getRequestURI()
-		);
-
-		return ResponseEntity
-				.status(HttpStatus.NOT_FOUND)
-				.body(response);
-	}
-
-	@ExceptionHandler(com.vionsys.hireai.ai.exception.AiEngineException.class)
-	public ResponseEntity<ErrorResponse> handleAiEngineException(
-			com.vionsys.hireai.ai.exception.AiEngineException ex,
-			HttpServletRequest request) {
-
-		ErrorResponse response = new ErrorResponse(
-				false,
-				HttpStatus.BAD_GATEWAY.value(),
-				"AI Service Error",
-				ex.getMessage(),
-				request.getRequestURI()
-		);
-
-		return ResponseEntity
-				.status(HttpStatus.BAD_GATEWAY)
-				.body(response);
-	}
-
-
-	// =========================================================
-	// VALIDATION & JSON PARSING
-	// =========================================================
-
-	@ExceptionHandler(MethodArgumentNotValidException.class)
-	public ResponseEntity<ErrorResponse> handleValidationException(
-			MethodArgumentNotValidException ex,
-			HttpServletRequest request) {
-
-		String message = ex.getBindingResult()
-				.getFieldErrors()
-				.stream()
-				.findFirst()
-				.map(error ->
-						error.getField()
-								+ " : "
-								+ error.getDefaultMessage())
-				.orElse("Validation failed.");
-
-		ErrorResponse response = new ErrorResponse(
-				false,
-				HttpStatus.BAD_REQUEST.value(),
-				HttpStatus.BAD_REQUEST.getReasonPhrase(),
-				message,
-				request.getRequestURI()
-		);
-
-		return ResponseEntity
-				.status(HttpStatus.BAD_REQUEST)
-				.body(response);
-	}
-
-	@ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
-	public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
-			org.springframework.http.converter.HttpMessageNotReadableException ex,
-			HttpServletRequest request) {
-
-		ErrorResponse response = new ErrorResponse(
-				false,
-				HttpStatus.BAD_REQUEST.value(),
-				HttpStatus.BAD_REQUEST.getReasonPhrase(),
-				"Malformed JSON request or invalid field format",
-				request.getRequestURI()
-		);
-
-		return ResponseEntity
-				.status(HttpStatus.BAD_REQUEST)
-				.body(response);
-	}
-
-	@ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
-	public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
-			org.springframework.dao.DataIntegrityViolationException ex,
-			HttpServletRequest request) {
-
-		log.error("Data integrity violation on {}: {}", request.getRequestURI(), ex.getMessage());
-
-		ErrorResponse response = new ErrorResponse(
-				false,
-				HttpStatus.CONFLICT.value(),
-				HttpStatus.CONFLICT.getReasonPhrase(),
-				"Database constraint violation: duplicate record or unique field conflict",
-				request.getRequestURI()
-		);
-
-		return ResponseEntity
-				.status(HttpStatus.CONFLICT)
-				.body(response);
-	}
-
-	@ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
-	public ResponseEntity<ErrorResponse> handleNoResourceFound(
-			org.springframework.web.servlet.resource.NoResourceFoundException ex,
-			HttpServletRequest request) {
-
-		ErrorResponse response = new ErrorResponse(
-				false,
-				HttpStatus.NOT_FOUND.value(),
-				HttpStatus.NOT_FOUND.getReasonPhrase(),
-				"Requested resource was not found",
-				request.getRequestURI()
-		);
-
-		return ResponseEntity
-				.status(HttpStatus.NOT_FOUND)
-				.body(response);
-	}
-
-
-	// =========================================================
-	// BAD CREDENTIALS
+	// AUTHENTICATION & SECURITY EXCEPTIONS
 	// =========================================================
 
 	@ExceptionHandler(BadCredentialsException.class)
@@ -201,19 +36,47 @@ public class GlobalExceptionHandler {
 				false,
 				HttpStatus.UNAUTHORIZED.value(),
 				HttpStatus.UNAUTHORIZED.getReasonPhrase(),
-				"Invalid email or password",
-				request.getRequestURI()
-		);
+				ex.getMessage() != null ? ex.getMessage() : "Invalid email or password",
+				request.getRequestURI());
 
 		return ResponseEntity
 				.status(HttpStatus.UNAUTHORIZED)
 				.body(response);
 	}
 
+	@ExceptionHandler(AccountLockedException.class)
+	public ResponseEntity<ErrorResponse> handleAccountLocked(
+			AccountLockedException ex,
+			HttpServletRequest request) {
 
-	// =========================================================
-	// INVALID OR EXPIRED TOKEN
-	// =========================================================
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.LOCKED.value(),
+				HttpStatus.LOCKED.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.LOCKED)
+				.body(response);
+	}
+
+	@ExceptionHandler(TokenReuseDetectedException.class)
+	public ResponseEntity<ErrorResponse> handleTokenReuseDetected(
+			TokenReuseDetectedException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.UNAUTHORIZED.value(),
+				HttpStatus.UNAUTHORIZED.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.UNAUTHORIZED)
+				.body(response);
+	}
 
 	@ExceptionHandler(InvalidTokenException.class)
 	public ResponseEntity<ErrorResponse> handleInvalidToken(
@@ -222,43 +85,36 @@ public class GlobalExceptionHandler {
 
 		ErrorResponse response = new ErrorResponse(
 				false,
-				HttpStatus.BAD_REQUEST.value(),
-				"Bad Request",
+				HttpStatus.UNAUTHORIZED.value(),
+				HttpStatus.UNAUTHORIZED.getReasonPhrase(),
 				ex.getMessage(),
-				request.getRequestURI()
-		);
+				request.getRequestURI());
 
 		return ResponseEntity
-				.status(HttpStatus.BAD_REQUEST)
+				.status(HttpStatus.UNAUTHORIZED)
 				.body(response);
 	}
 
-
-	// =========================================================
-	// USER ALREADY EXISTS
-	// =========================================================
-
-	@ExceptionHandler(UserAlreadyExistsException.class)
-	public ResponseEntity<ErrorResponse> handleUserAlreadyExists(
-			UserAlreadyExistsException ex,
+	@ExceptionHandler(AccessDeniedException.class)
+	public ResponseEntity<ErrorResponse> handleAccessDenied(
+			AccessDeniedException ex,
 			HttpServletRequest request) {
 
 		ErrorResponse response = new ErrorResponse(
 				false,
-				HttpStatus.CONFLICT.value(),
-				"Conflict",
-				ex.getMessage(),
-				request.getRequestURI()
-		);
+				HttpStatus.FORBIDDEN.value(),
+				HttpStatus.FORBIDDEN.getReasonPhrase(),
+				ex.getMessage() != null ? ex.getMessage()
+						: "Access Denied: You do not have permission to access this resource",
+				request.getRequestURI());
 
 		return ResponseEntity
-				.status(HttpStatus.CONFLICT)
+				.status(HttpStatus.FORBIDDEN)
 				.body(response);
 	}
 
-
 	// =========================================================
-	// USER NOT FOUND
+	// NOT FOUND EXCEPTIONS
 	// =========================================================
 
 	@ExceptionHandler(UserNotFoundException.class)
@@ -269,20 +125,14 @@ public class GlobalExceptionHandler {
 		ErrorResponse response = new ErrorResponse(
 				false,
 				HttpStatus.NOT_FOUND.value(),
-				"Not Found",
+				HttpStatus.NOT_FOUND.getReasonPhrase(),
 				ex.getMessage(),
-				request.getRequestURI()
-		);
+				request.getRequestURI());
 
 		return ResponseEntity
 				.status(HttpStatus.NOT_FOUND)
 				.body(response);
 	}
-
-
-	// =========================================================
-	// RECRUITER PROFILE NOT FOUND
-	// =========================================================
 
 	@ExceptionHandler(RecruiterProfileNotFoundException.class)
 	public ResponseEntity<ErrorResponse> handleRecruiterProfileNotFound(
@@ -292,43 +142,14 @@ public class GlobalExceptionHandler {
 		ErrorResponse response = new ErrorResponse(
 				false,
 				HttpStatus.NOT_FOUND.value(),
-				"Not Found",
+				HttpStatus.NOT_FOUND.getReasonPhrase(),
 				ex.getMessage(),
-				request.getRequestURI()
-		);
+				request.getRequestURI());
 
 		return ResponseEntity
 				.status(HttpStatus.NOT_FOUND)
 				.body(response);
 	}
-
-
-	// =========================================================
-	// RECRUITER PROFILE ALREADY EXISTS
-	// =========================================================
-
-	@ExceptionHandler(RecruiterProfileAlreadyExistsException.class)
-	public ResponseEntity<ErrorResponse> handleRecruiterProfileAlreadyExists(
-			RecruiterProfileAlreadyExistsException ex,
-			HttpServletRequest request) {
-
-		ErrorResponse response = new ErrorResponse(
-				false,
-				HttpStatus.CONFLICT.value(),
-				"Conflict",
-				ex.getMessage(),
-				request.getRequestURI()
-		);
-
-		return ResponseEntity
-				.status(HttpStatus.CONFLICT)
-				.body(response);
-	}
-
-
-	// =========================================================
-	// ROLE NOT FOUND
-	// =========================================================
 
 	@ExceptionHandler(RoleNotFoundException.class)
 	public ResponseEntity<ErrorResponse> handleRoleNotFound(
@@ -338,20 +159,14 @@ public class GlobalExceptionHandler {
 		ErrorResponse response = new ErrorResponse(
 				false,
 				HttpStatus.NOT_FOUND.value(),
-				"Not Found",
+				HttpStatus.NOT_FOUND.getReasonPhrase(),
 				ex.getMessage(),
-				request.getRequestURI()
-		);
+				request.getRequestURI());
 
 		return ResponseEntity
 				.status(HttpStatus.NOT_FOUND)
 				.body(response);
 	}
-
-
-	// =========================================================
-	// JOB NOT FOUND
-	// =========================================================
 
 	@ExceptionHandler(JobNotFoundException.class)
 	public ResponseEntity<ErrorResponse> handleJobNotFound(
@@ -361,20 +176,14 @@ public class GlobalExceptionHandler {
 		ErrorResponse response = new ErrorResponse(
 				false,
 				HttpStatus.NOT_FOUND.value(),
-				"Not Found",
+				HttpStatus.NOT_FOUND.getReasonPhrase(),
 				ex.getMessage(),
-				request.getRequestURI()
-		);
+				request.getRequestURI());
 
 		return ResponseEntity
 				.status(HttpStatus.NOT_FOUND)
 				.body(response);
 	}
-
-
-	// =========================================================
-	// APPLICATION NOT FOUND
-	// =========================================================
 
 	@ExceptionHandler(ApplicationNotFoundException.class)
 	public ResponseEntity<ErrorResponse> handleApplicationNotFound(
@@ -384,20 +193,14 @@ public class GlobalExceptionHandler {
 		ErrorResponse response = new ErrorResponse(
 				false,
 				HttpStatus.NOT_FOUND.value(),
-				"Not Found",
+				HttpStatus.NOT_FOUND.getReasonPhrase(),
 				ex.getMessage(),
-				request.getRequestURI()
-		);
+				request.getRequestURI());
 
 		return ResponseEntity
 				.status(HttpStatus.NOT_FOUND)
 				.body(response);
 	}
-
-
-	// =========================================================
-	// CANDIDATE NOT FOUND
-	// =========================================================
 
 	@ExceptionHandler(CandidateNotFoundException.class)
 	public ResponseEntity<ErrorResponse> handleCandidateNotFound(
@@ -407,20 +210,14 @@ public class GlobalExceptionHandler {
 		ErrorResponse response = new ErrorResponse(
 				false,
 				HttpStatus.NOT_FOUND.value(),
-				"Not Found",
+				HttpStatus.NOT_FOUND.getReasonPhrase(),
 				ex.getMessage(),
-				request.getRequestURI()
-		);
+				request.getRequestURI());
 
 		return ResponseEntity
 				.status(HttpStatus.NOT_FOUND)
 				.body(response);
 	}
-
-
-	// =========================================================
-	// SKILL NOT FOUND
-	// =========================================================
 
 	@ExceptionHandler(SkillNotFoundException.class)
 	public ResponseEntity<ErrorResponse> handleSkillNotFound(
@@ -430,43 +227,184 @@ public class GlobalExceptionHandler {
 		ErrorResponse response = new ErrorResponse(
 				false,
 				HttpStatus.NOT_FOUND.value(),
-				"Not Found",
+				HttpStatus.NOT_FOUND.getReasonPhrase(),
 				ex.getMessage(),
-				request.getRequestURI()
-		);
+				request.getRequestURI());
 
 		return ResponseEntity
 				.status(HttpStatus.NOT_FOUND)
 				.body(response);
 	}
 
-
-	// =========================================================
-	// ACCESS DENIED
-	// =========================================================
-
-	@ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
-	public ResponseEntity<ErrorResponse> handleAccessDenied(
-			org.springframework.security.access.AccessDeniedException ex,
+	@ExceptionHandler(ResumeNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handleResumeNotFound(
+			ResumeNotFoundException ex,
 			HttpServletRequest request) {
 
 		ErrorResponse response = new ErrorResponse(
 				false,
-				HttpStatus.FORBIDDEN.value(),
-				HttpStatus.FORBIDDEN.getReasonPhrase(),
-				"Access denied: You do not have permission to access this resource",
-				request.getRequestURI()
-		);
+				HttpStatus.NOT_FOUND.value(),
+				HttpStatus.NOT_FOUND.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI());
 
 		return ResponseEntity
-				.status(HttpStatus.FORBIDDEN)
+				.status(HttpStatus.NOT_FOUND)
 				.body(response);
 	}
 
+	@ExceptionHandler(NoResourceFoundException.class)
+	public ResponseEntity<ErrorResponse> handleNoResourceFound(
+			NoResourceFoundException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.NOT_FOUND.value(),
+				HttpStatus.NOT_FOUND.getReasonPhrase(),
+				"Requested endpoint or static resource was not found",
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.NOT_FOUND)
+				.body(response);
+	}
 
 	// =========================================================
-	// ILLEGAL ARGUMENT
+	// CONFLICT & DUPLICATE RESOURCE EXCEPTIONS
 	// =========================================================
+
+	@ExceptionHandler(UserAlreadyExistsException.class)
+	public ResponseEntity<ErrorResponse> handleUserAlreadyExists(
+			UserAlreadyExistsException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.CONFLICT.value(),
+				HttpStatus.CONFLICT.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.CONFLICT)
+				.body(response);
+	}
+
+	@ExceptionHandler(RecruiterProfileAlreadyExistsException.class)
+	public ResponseEntity<ErrorResponse> handleRecruiterProfileAlreadyExists(
+			RecruiterProfileAlreadyExistsException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.CONFLICT.value(),
+				HttpStatus.CONFLICT.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.CONFLICT)
+				.body(response);
+	}
+
+	@ExceptionHandler(DuplicateResourceException.class)
+	public ResponseEntity<ErrorResponse> handleDuplicateResource(
+			DuplicateResourceException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.CONFLICT.value(),
+				HttpStatus.CONFLICT.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.CONFLICT)
+				.body(response);
+	}
+
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
+			DataIntegrityViolationException ex,
+			HttpServletRequest request) {
+
+		log.error("Data integrity violation on {}: {}", request.getRequestURI(), ex.getMessage());
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.CONFLICT.value(),
+				HttpStatus.CONFLICT.getReasonPhrase(),
+				"Database constraint violation: duplicate record or unique field conflict",
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.CONFLICT)
+				.body(response);
+	}
+
+	// =========================================================
+	// VALIDATION & CLIENT REQUEST EXCEPTIONS
+	// =========================================================
+
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<ErrorResponse> handleValidationException(
+			MethodArgumentNotValidException ex,
+			HttpServletRequest request) {
+
+		String message = ex.getBindingResult()
+				.getFieldErrors()
+				.stream()
+				.findFirst()
+				.map(error -> error.getField() + ": " + error.getDefaultMessage())
+				.orElse("Validation failed.");
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.BAD_REQUEST.value(),
+				HttpStatus.BAD_REQUEST.getReasonPhrase(),
+				message,
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.BAD_REQUEST)
+				.body(response);
+	}
+
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
+			HttpMessageNotReadableException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.BAD_REQUEST.value(),
+				HttpStatus.BAD_REQUEST.getReasonPhrase(),
+				"Malformed JSON request or invalid field format",
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.BAD_REQUEST)
+				.body(response);
+	}
+
+	@ExceptionHandler(FileStorageException.class)
+	public ResponseEntity<ErrorResponse> handleFileStorageException(
+			FileStorageException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.BAD_REQUEST.value(),
+				HttpStatus.BAD_REQUEST.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.BAD_REQUEST)
+				.body(response);
+	}
 
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ResponseEntity<ErrorResponse> handleIllegalArgument(
@@ -478,18 +416,12 @@ public class GlobalExceptionHandler {
 				HttpStatus.BAD_REQUEST.value(),
 				HttpStatus.BAD_REQUEST.getReasonPhrase(),
 				ex.getMessage(),
-				request.getRequestURI()
-		);
+				request.getRequestURI());
 
 		return ResponseEntity
 				.status(HttpStatus.BAD_REQUEST)
 				.body(response);
 	}
-
-
-	// =========================================================
-	// ILLEGAL STATE
-	// =========================================================
 
 	@ExceptionHandler(IllegalStateException.class)
 	public ResponseEntity<ErrorResponse> handleIllegalState(
@@ -501,17 +433,36 @@ public class GlobalExceptionHandler {
 				HttpStatus.BAD_REQUEST.value(),
 				HttpStatus.BAD_REQUEST.getReasonPhrase(),
 				ex.getMessage(),
-				request.getRequestURI()
-		);
+				request.getRequestURI());
 
 		return ResponseEntity
 				.status(HttpStatus.BAD_REQUEST)
 				.body(response);
 	}
 
+	// =========================================================
+	// THIRD PARTY / AI SERVICE EXCEPTIONS
+	// =========================================================
+
+	@ExceptionHandler(AiEngineException.class)
+	public ResponseEntity<ErrorResponse> handleAiEngineException(
+			AiEngineException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.BAD_GATEWAY.value(),
+				"AI Service Error",
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.BAD_GATEWAY)
+				.body(response);
+	}
 
 	// =========================================================
-	// GENERIC EXCEPTION
+	// GENERIC FALLBACK EXCEPTION
 	// =========================================================
 
 	@ExceptionHandler(Exception.class)
@@ -526,8 +477,7 @@ public class GlobalExceptionHandler {
 				HttpStatus.INTERNAL_SERVER_ERROR.value(),
 				HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
 				ex.getMessage() != null ? ex.getMessage() : "Something went wrong.",
-				request.getRequestURI()
-		);
+				request.getRequestURI());
 
 		return ResponseEntity
 				.status(HttpStatus.INTERNAL_SERVER_ERROR)
