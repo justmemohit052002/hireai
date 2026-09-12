@@ -32,8 +32,8 @@ public class CreateCandidateRequest {
 
     @NotBlank(message = "Phone number is required")
     @Pattern(
-            regexp = "^[6-9]\\d{9}$",
-            message = "Invalid phone number"
+            regexp = "^\\+?[0-9\\s\\-\\(\\)]{7,25}$",
+            message = "Invalid phone number format"
     )
     private String phone;
 

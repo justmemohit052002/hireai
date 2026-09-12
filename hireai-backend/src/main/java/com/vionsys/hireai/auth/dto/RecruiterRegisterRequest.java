@@ -43,4 +43,11 @@ public class RecruiterRegisterRequest {
     @Size(max = 150, message = "Company name must not exceed 150 characters")
     private String companyName;
 
+    @Schema(description = "Optional recruiter phone number with country code", example = "+91 9876543210")
+    @jakarta.validation.constraints.Pattern(
+            regexp = "^$|^\\+?[0-9\\s\\-\\(\\)]{7,25}$",
+            message = "Invalid phone number format"
+    )
+    private String phoneNumber;
+
 }

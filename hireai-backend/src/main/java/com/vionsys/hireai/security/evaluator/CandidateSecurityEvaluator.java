@@ -3,6 +3,7 @@ package com.vionsys.hireai.security.evaluator;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.vionsys.hireai.candidate.repository.CandidateRepository;
 
@@ -19,14 +20,13 @@ public class CandidateSecurityEvaluator {
     /**
      * Checks if the candidate entity is linked to the authenticated user ID.
      */
+    @Transactional(readOnly = true)
     public boolean isCandidateOwner(UUID candidateId, UUID userId) {
         if (candidateId == null || userId == null) {
             return false;
         }
 
-        return candidateRepository.findById(candidateId)
-                .map(candidate -> candidate.getUser() != null && userId.equals(candidate.getUser().getId()))
-                .orElse(false);
+        return candidateRepository.existsByIdAndUserId(candidateId, userId);
     }
 
     /**

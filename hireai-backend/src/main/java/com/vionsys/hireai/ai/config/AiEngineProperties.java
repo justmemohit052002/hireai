@@ -20,7 +20,7 @@ public class AiEngineProperties {
     /**
      * HTTP request timeout in milliseconds.
      */
-    private int timeoutMs = 30000;
+    private int timeoutMs = 120000;
 
     /**
      * Polling interval in milliseconds for async jobs (e.g. resume parsing).

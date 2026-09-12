@@ -3,6 +3,7 @@ package com.vionsys.hireai.security.evaluator;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.vionsys.hireai.job.repository.JobRepository;
 
@@ -19,15 +20,12 @@ public class JobSecurityEvaluator {
     /**
      * Verifies if the authenticated user is the recruiter owner of the specified job.
      */
+    @Transactional(readOnly = true)
     public boolean isJobOwner(UUID jobId, UUID userId) {
         if (jobId == null || userId == null) {
             return false;
         }
 
-        return jobRepository.findById(jobId)
-                .map(job -> job.getRecruiterProfile() != null
-                        && job.getRecruiterProfile().getUser() != null
-                        && userId.equals(job.getRecruiterProfile().getUser().getId()))
-                .orElse(false);
+        return jobRepository.existsByIdAndRecruiterUserId(jobId, userId);
     }
 }

@@ -35,10 +35,10 @@ public class RegisterRequest {
             message = "Password must be between 8 and 20 characters")
     private String password;
 
-    @Schema(description = "Optional 10-digit Indian phone number", example = "9876543210")
+    @Schema(description = "Optional phone number with country code", example = "+91 9876543210")
     @Pattern(
-            regexp = "^$|^[6-9]\\d{9}$",
-            message = "Invalid phone number"
+            regexp = "^$|^\\+?[0-9\\s\\-\\(\\)]{7,25}$",
+            message = "Invalid phone number format"
     )
     private String phoneNumber;
 

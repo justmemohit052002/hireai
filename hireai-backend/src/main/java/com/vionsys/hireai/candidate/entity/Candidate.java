@@ -113,7 +113,7 @@ public class Candidate extends BaseEntity {
             name = "phone",
             nullable = false,
             unique = true,
-            length = 15
+            length = 30
     )
     private String phone;
 

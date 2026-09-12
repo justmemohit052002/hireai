@@ -60,11 +60,11 @@ public class CandidateRequest {
     )
     private String email;
 
-    @Schema(description = "10-digit Indian phone number", example = "9876543210")
+    @Schema(description = "Phone number with optional country code", example = "+91 9876543210")
     @NotBlank(message = "Phone number is required")
     @Pattern(
-            regexp = "^[0-9]{10}$",
-            message = "Phone number must contain exactly 10 digits"
+            regexp = "^\\+?[0-9\\s\\-\\(\\)]{7,25}$",
+            message = "Invalid phone number format"
     )
     private String phone;
 

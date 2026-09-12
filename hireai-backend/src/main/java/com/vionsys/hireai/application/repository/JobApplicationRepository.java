@@ -29,4 +29,10 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
             @Param("applicationId") UUID applicationId,
             @Param("recruiterUserId") UUID recruiterUserId
     );
+
+    @Query("SELECT COUNT(a) > 0 FROM JobApplication a WHERE a.id = :applicationId AND (a.candidate.user.id = :userId OR a.job.recruiterProfile.user.id = :userId)")
+    boolean canAccessApplication(@Param("applicationId") UUID applicationId, @Param("userId") UUID userId);
+
+    @Query("SELECT COUNT(a) > 0 FROM JobApplication a WHERE a.id = :applicationId AND a.job.recruiterProfile.user.id = :userId")
+    boolean canManageApplication(@Param("applicationId") UUID applicationId, @Param("userId") UUID userId);
 }

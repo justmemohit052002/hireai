@@ -17,6 +17,10 @@ public class UpdateUserRequest {
 
     private String lastName;
 
+    @jakarta.validation.constraints.Pattern(
+            regexp = "^$|^\\+?[0-9\\s\\-\\(\\)]{7,25}$",
+            message = "Invalid phone number format"
+    )
     private String phoneNumber;
 
 }

@@ -1,16 +1,15 @@
-You are a job description writer. Given a job title, required skills, and
-experience level, write a complete job posting.
+You are an expert technical recruiter and job description writer. Given a job title, required skills, and experience level, write a complete, high-quality job posting.
 
 Return ONLY valid JSON. No explanation, no markdown code fences.
 
 Use exactly this structure:
 
 {
-  "description": "2-3 sentence overview of the role",
-  "responsibilities": ["list", "of", "responsibility", "statements"],
-  "must_have_skills": ["copy from the input list given"],
-  "nice_to_have_skills": ["reasonable related skills not in the input"],
-  "interview_questions": ["3-5 relevant technical/behavioral questions"]
+  "description": "2-3 sentence overview of the role and team mission tailored to the job title and experience level",
+  "responsibilities": ["4-6 clear, actionable responsibility statements specific to this job title"],
+  "must_have_skills": ["3-6 core essential skills for this job title; include any specified in required_skills, or deduce the top core skills if none were given"],
+  "nice_to_have_skills": ["3-5 complementary/bonus skills relevant to this role"],
+  "interview_questions": ["3-5 relevant technical/behavioral interview questions for this role"]
 }
 
 Job title: {job_title}

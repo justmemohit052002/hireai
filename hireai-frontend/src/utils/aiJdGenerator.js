@@ -42,7 +42,19 @@ const DOMAIN_TEMPLATES = [
     ],
   },
   {
-    matches: ['backend', 'java', 'spring', 'node', 'python developer', 'golang', 'c#', '.net', 'api developer', 'systems engineer'],
+    matches: ['python developer', 'python engineer', 'python backend', 'django', 'fastapi', 'flask', 'python'],
+    skills: ['Python', 'Django / FastAPI / Flask', 'RESTful APIs', 'PostgreSQL / MySQL', 'SQLAlchemy / ORM', 'Redis', 'Docker', 'Git', 'PyTest', 'Celery'],
+    education: "Bachelor's or Master's degree in Computer Science, Information Technology, Software Engineering, or related discipline.",
+    responsibilities: [
+      'Design, develop, and maintain robust, scalable backend microservices and RESTful APIs in Python.',
+      'Architect efficient database schemas, optimize queries with PostgreSQL/MySQL, and implement caching using Redis.',
+      'Write clean, modular, and maintainable Python code with comprehensive unit and integration test coverage.',
+      'Collaborate with cross-functional frontend, product, and DevOps teams to ship high-impact features.',
+      'Implement asynchronous task processing with Celery/Redis and integrate third-party APIs seamlessly.'
+    ],
+  },
+  {
+    matches: ['backend', 'java', 'spring', 'node', 'golang', 'c#', '.net', 'api developer', 'systems engineer'],
     skills: ['Java', 'Spring Boot', 'Microservices', 'PostgreSQL', 'REST APIs', 'Redis', 'Docker', 'Kafka', 'System Design', 'Git'],
     education: "Bachelor's or Master's degree in Computer Science, Information Technology, or related technical discipline.",
     responsibilities: [
