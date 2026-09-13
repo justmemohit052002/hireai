@@ -366,6 +366,7 @@ export const JobsProvider = ({ children }) => {
         isLoadingJobs,
         isLoadingApps,
         fetchJobs,
+        refreshJobs: fetchJobs,
         fetchApplications,
         createOrUpdateJob,
         closeJob,

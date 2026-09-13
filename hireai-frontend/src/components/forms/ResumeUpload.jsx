@@ -1,16 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useId } from 'react';
 import {
   Upload,
   FileText,
   CheckCircle2,
-  X,
   Sparkles,
   Loader2,
   Eye,
   RefreshCw,
   Trash2,
-  ExternalLink,
-  Download
+  AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { candidateApi } from '@/services/api/candidate.api';
@@ -28,14 +26,17 @@ export const ResumeUpload = ({
   autoUpload = false,
   fetchRemoteOnMount = true,
 }) => {
+  const inputId = useId();
+  const fileInputRef = useRef(null);
+
   const [file, setFile] = useState(initialFile);
   const [isUploading, setIsUploading] = useState(false);
   const [isViewing, setIsViewing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [parsedData, setParsedData] = useState(null);
   const [error, setError] = useState('');
   const [isFetchingInitial, setIsFetchingInitial] = useState(false);
-  const fileInputRef = useRef(null);
 
   // Sync initialFile if passed as prop
   useEffect(() => {
@@ -83,9 +84,24 @@ export const ResumeUpload = ({
     };
   }, [fetchRemoteOnMount]);
 
-  const handleFileChange = async (e) => {
-    const selected = e.target.files?.[0];
+  const processFile = async (selected) => {
     if (!selected) return;
+
+    // Validate size (max 10MB)
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (selected.size > MAX_SIZE) {
+      setError('File exceeds 10MB limit. Please upload a smaller document.');
+      return;
+    }
+
+    // Validate type
+    const validExtensions = ['.pdf', '.docx', '.doc'];
+    const fileName = selected.name.toLowerCase();
+    const isValid = validExtensions.some((ext) => fileName.endsWith(ext));
+    if (!isValid) {
+      setError('Unsupported file type. Please upload a PDF or Word (.docx) document.');
+      return;
+    }
 
     setError('');
     const fileObj = {
@@ -111,6 +127,10 @@ export const ResumeUpload = ({
           id: result?.id,
           name: result?.originalFileName || selected.name,
           resumeStatus: result?.resumeStatus || 'PARSED',
+          parsedRole: result?.parsedRole,
+          parsedExperience: result?.parsedExperience,
+          parsedDomain: result?.parsedDomain,
+          parsedDataJson: result?.parsedDataJson,
         };
         setFile(updated);
         if (onFileSelect) {
@@ -124,31 +144,90 @@ export const ResumeUpload = ({
     }
   };
 
+  const handleFileChange = async (e) => {
+    const selected = e.target.files?.[0];
+    if (selected) {
+      await processFile(selected);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const droppedFiles = e.dataTransfer?.files;
+    if (droppedFiles && droppedFiles.length > 0) {
+      await processFile(droppedFiles[0]);
+    }
+  };
+
+  const triggerUploadClick = (e) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
+  };
+
   const handleViewResume = async () => {
     if (!file) return;
     setError('');
 
-    // If local file object is held in memory
+    // If local raw file exists in state
     if (file.raw) {
       const localUrl = URL.createObjectURL(file.raw);
       window.open(localUrl, '_blank');
       return;
     }
 
-    // If already uploaded on the server
+    // If already stored on backend
     if (file.isRemote) {
       setIsViewing(true);
       try {
         const blob = await candidateApi.downloadResume();
-        if (blob instanceof Blob) {
-          // If the backend returned a binary octet/pdf stream
-          const blobType = file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream';
-          const fileBlob = new Blob([blob], { type: blobType });
+        if (blob instanceof Blob && blob.size > 0) {
+          const isPdf = file.name?.toLowerCase().endsWith('.pdf') !== false;
+          const fileBlob = new Blob([blob], {
+            type: isPdf ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          });
           const blobUrl = URL.createObjectURL(fileBlob);
-          window.open(blobUrl, '_blank');
+
+          if (isPdf) {
+            const newTab = window.open(blobUrl, '_blank');
+            if (!newTab) {
+              const link = document.createElement('a');
+              link.href = blobUrl;
+              link.download = file.name || 'resume.pdf';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }
+          } else {
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = file.name || 'resume.docx';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
         } else {
-          // If download url is provided in response
-          window.open('/api/v1/candidate/resume/download', '_blank');
+          setError('Resume document is empty or could not be loaded.');
         }
       } catch (err) {
         setError(err.message || 'Could not open resume preview.');
@@ -158,7 +237,9 @@ export const ResumeUpload = ({
     }
   };
 
-  const handleRemove = async () => {
+  const handleRemove = async (e) => {
+    if (e) e.stopPropagation();
+
     if (file?.isRemote) {
       setIsDeleting(true);
       try {
@@ -181,23 +262,30 @@ export const ResumeUpload = ({
     }
   };
 
-  const triggerUploadClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
   if (isFetchingInitial) {
     return (
       <div className="flex items-center justify-center p-6 rounded-2xl bg-surface-2/60 border border-border/60">
         <Loader2 className="w-5 h-5 text-primary animate-spin mr-2" />
-        <span className="text-xs text-muted-foreground">Checking existing resume...</span>
+        <span className="text-xs text-muted-foreground font-medium">Loading existing profile resume...</span>
       </div>
     );
   }
 
   return (
     <div className="w-full space-y-2">
+      {/* Hidden File Input */}
+      <input
+        id={inputId}
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.docx,.doc,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        onChange={handleFileChange}
+        onClick={(e) => {
+          e.target.value = null;
+        }}
+        className="hidden"
+      />
+
       {file ? (
         <div className="flex flex-col gap-3 p-4 rounded-2xl bg-surface-2 border border-border/70 shadow-sm transition-all">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -217,7 +305,7 @@ export const ResumeUpload = ({
                   <span>{file.size}</span>
                   <span>•</span>
                   <span className="inline-flex items-center gap-1 font-semibold text-emerald-400">
-                    <CheckCircle2 className="w-3 h-3" />
+                    <CheckCircle2 className="w-3.5 h-3.5" />
                     {isUploading ? 'AI Engine parsing...' : 'Attached & Verified'}
                   </span>
                 </div>
@@ -284,23 +372,43 @@ export const ResumeUpload = ({
           )}
         </div>
       ) : (
-        <label className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-border/80 hover:border-primary/50 bg-background/50 hover:bg-surface-2/40 transition-colors cursor-pointer text-center">
-          <Upload className="w-8 h-8 text-primary mb-2" />
-          <span className="text-xs font-bold text-foreground">Click to upload or drag & drop</span>
-          <span className="text-[10px] text-muted-foreground mt-0.5">PDF or DOCX up to 10MB</span>
-        </label>
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={triggerUploadClick}
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              triggerUploadClick();
+            }
+          }}
+          className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer text-center select-none group ${
+            isDragging
+              ? 'border-[#F56681] bg-[#F56681]/10 scale-[1.01]'
+              : 'border-border/80 hover:border-[#F56681]/60 bg-background/50 hover:bg-surface-2/60'
+          }`}
+        >
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#C63FC5]/15 to-[#F56681]/15 text-[#F56681] flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+            <Upload className="w-6 h-6" />
+          </div>
+          <span className="text-xs font-bold text-foreground">
+            <span className="text-[#F56681] underline underline-offset-2">Click to upload</span> or drag & drop
+          </span>
+          <span className="text-[10px] text-muted-foreground mt-1">PDF or DOCX up to 10MB</span>
+        </div>
       )}
 
-      {/* Hidden File Input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        onChange={handleFileChange}
-        className="hidden"
-      />
-
-      {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
+      {error && (
+        <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-medium flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
     </div>
   );
 };
+

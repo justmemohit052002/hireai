@@ -271,17 +271,12 @@ public class CandidateServiceImpl implements CandidateService {
 
 
     @Override
-    @Transactional(readOnly = true)
     public CandidateResponse getMyProfile(
             UUID userId) {
 
         Candidate candidate =
                 candidateRepository.findByUserId(userId)
-                        .orElseThrow(() ->
-                                new CandidateNotFoundException(
-                                        "Candidate profile not found"
-                                )
-                        );
+                        .orElseGet(() -> createDefaultCandidateForUser(userId));
 
         return CandidateMapper.toResponse(
                 candidate
@@ -296,11 +291,7 @@ public class CandidateServiceImpl implements CandidateService {
 
         Candidate candidate =
                 candidateRepository.findByUserId(userId)
-                        .orElseThrow(() ->
-                                new CandidateNotFoundException(
-                                        "Candidate profile not found"
-                                )
-                        );
+                        .orElseGet(() -> createDefaultCandidateForUser(userId));
 
         /*
          * Update only candidate-specific profile fields.
@@ -651,5 +642,23 @@ public class CandidateServiceImpl implements CandidateService {
         Candidate candidate = candidateRepository.findById(candidateId)
                 .orElseThrow(() -> new CandidateNotFoundException("Candidate not found with id: " + candidateId));
         return candidate.getProfilePhotoPath();
+    }
+
+    private Candidate createDefaultCandidateForUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CandidateNotFoundException("Candidate user not found with id: " + userId));
+
+        Candidate candidate = Candidate.builder()
+                .user(user)
+                .candidateId(candidateIdGenerator.generateCandidateId())
+                .firstName(user.getFirstName() != null ? user.getFirstName() : "Candidate")
+                .lastName(user.getLastName() != null ? user.getLastName() : "")
+                .email(user.getEmail())
+                .phone(user.getPhoneNumber())
+                .candidateStatus(CandidateStatus.ACTIVE)
+                .deleted(false)
+                .build();
+
+        return candidateRepository.save(candidate);
     }
 }

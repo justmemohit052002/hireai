@@ -30,8 +30,9 @@ export const candidateApi = {
 
   /** Upload resume and trigger AI parsing */
   uploadResume: async (file) => {
+    const rawFile = file?.raw || (file instanceof File ? file : file);
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', rawFile);
     return apiClient.upload('/candidate/resume/upload', formData);
   },
 

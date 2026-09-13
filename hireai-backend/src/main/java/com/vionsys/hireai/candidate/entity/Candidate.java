@@ -111,8 +111,7 @@ public class Candidate extends BaseEntity {
 
     @Column(
             name = "phone",
-            nullable = false,
-            unique = true,
+            nullable = true,
             length = 30
     )
     private String phone;

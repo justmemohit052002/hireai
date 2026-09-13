@@ -6,9 +6,10 @@ export const applicationsApi = {
    * Supports both multipart (with fresh resume file) and JSON (using existing profile resume).
    */
   applyToJob: async (jobId, { coverNote = '', file = null } = {}) => {
-    if (file) {
+    const rawFile = file?.raw || (file instanceof File ? file : null);
+    if (rawFile) {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', rawFile);
       if (coverNote) {
         formData.append('coverNote', coverNote);
       }
@@ -39,6 +40,16 @@ export const applicationsApi = {
   /** Get details for a specific application */
   getApplicationById: async (applicationId) => {
     return apiClient.get(`/applications/${applicationId}`);
+  },
+
+  /** Download applicant resume binary via authenticated request */
+  downloadApplicationResume: async (applicationId) => {
+    return apiClient.get(`/applications/${applicationId}/resume/download`);
+  },
+
+  /** Download candidate resume binary by candidateId (Recruiter/Admin) */
+  downloadCandidateResume: async (candidateId) => {
+    return apiClient.get(`/candidates/${candidateId}/resume/download`);
   },
 
   /** Download applicant resume binary URL */

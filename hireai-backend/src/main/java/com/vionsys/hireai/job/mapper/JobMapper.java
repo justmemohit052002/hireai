@@ -37,6 +37,10 @@ public final class JobMapper {
     }
 
     public static JobResponse toResponse(Job job) {
+        return toResponse(job, 0L);
+    }
+
+    public static JobResponse toResponse(Job job, Long applicantsCount) {
 
         if (job == null) {
             return null;
@@ -44,8 +48,8 @@ public final class JobMapper {
 
         return JobResponse.builder()
                 .id(job.getId())
-                .recruiterProfileId(job.getRecruiterProfile().getId())
-                .companyName(job.getRecruiterProfile().getCompanyName())
+                .recruiterProfileId(job.getRecruiterProfile() != null ? job.getRecruiterProfile().getId() : null)
+                .companyName(job.getRecruiterProfile() != null ? job.getRecruiterProfile().getCompanyName() : null)
                 .title(job.getTitle())
                 .description(job.getDescription())
                 .employmentType(job.getEmploymentType())
@@ -62,6 +66,8 @@ public final class JobMapper {
                 .openings(job.getOpenings())
                 .applicationDeadline(job.getApplicationDeadline())
                 .status(job.getStatus())
+                .applicantsCount(applicantsCount != null ? applicantsCount : 0L)
+                .aiParsedCount(applicantsCount != null ? applicantsCount : 0L)
                 .createdAt(job.getCreatedAt())
                 .updatedAt(job.getUpdatedAt())
                 .build();

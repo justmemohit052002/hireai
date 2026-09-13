@@ -98,6 +98,10 @@ export async function request(endpoint, options = {}) {
 
   const requestHeaders = new Headers(headers);
 
+  if (!requestHeaders.has('Accept')) {
+    requestHeaders.set('Accept', 'application/json, text/plain, */*');
+  }
+
   if (!isFormData && !requestHeaders.has('Content-Type')) {
     requestHeaders.set('Content-Type', 'application/json');
   }

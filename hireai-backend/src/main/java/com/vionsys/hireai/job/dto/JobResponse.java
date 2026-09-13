@@ -58,6 +58,10 @@ public class JobResponse {
 
     private JobStatus status;
 
+    private Long applicantsCount;
+
+    private Long aiParsedCount;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
