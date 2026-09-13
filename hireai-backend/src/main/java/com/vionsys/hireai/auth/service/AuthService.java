@@ -32,6 +32,10 @@ import com.vionsys.hireai.exception.RoleNotFoundException;
 import com.vionsys.hireai.exception.TokenReuseDetectedException;
 import com.vionsys.hireai.exception.UserAlreadyExistsException;
 import com.vionsys.hireai.exception.UserNotFoundException;
+import com.vionsys.hireai.candidate.entity.Candidate;
+import com.vionsys.hireai.candidate.enums.CandidateStatus;
+import com.vionsys.hireai.candidate.repository.CandidateRepository;
+import com.vionsys.hireai.candidate.util.CandidateIdGenerator;
 import com.vionsys.hireai.recruiter.entity.RecruiterProfile;
 import com.vionsys.hireai.recruiter.repository.RecruiterProfileRepository;
 import com.vionsys.hireai.role.entity.Role;
@@ -59,6 +63,8 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final RecruiterProfileRepository recruiterProfileRepository;
+    private final CandidateRepository candidateRepository;
+    private final CandidateIdGenerator candidateIdGenerator;
     private final com.vionsys.hireai.email.EmailService emailService;
 
     @Transactional
@@ -140,6 +146,26 @@ public class AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
+
+        // Auto-create Candidate Profile for candidate users
+        if (roleType == RoleType.ROLE_CANDIDATE) {
+            try {
+                Candidate candidate = Candidate.builder()
+                        .user(savedUser)
+                        .candidateId(candidateIdGenerator.generateCandidateId())
+                        .firstName(savedUser.getFirstName())
+                        .lastName(savedUser.getLastName())
+                        .email(savedUser.getEmail())
+                        .phone(savedUser.getPhoneNumber())
+                        .candidateStatus(CandidateStatus.ACTIVE)
+                        .deleted(false)
+                        .build();
+                candidateRepository.save(candidate);
+                log.info("Auto-created Candidate profile for user: {}", savedUser.getEmail());
+            } catch (Exception ex) {
+                log.warn("Failed to auto-create Candidate profile: {}", ex.getMessage());
+            }
+        }
 
         // Send automated welcome email asynchronously
         try {

@@ -32,44 +32,44 @@ export const Modal = ({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+                className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
               />
             </DialogPrimitive.Overlay>
 
             {/* Modal Box */}
             <DialogPrimitive.Content asChild>
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 10 }}
                   transition={{ type: 'spring', damping: 25, stiffness: 350 }}
                   className={cn(
-                    'relative w-full rounded-[24px] glass border border-white/20 dark:border-white/10 p-6 md:p-8 shadow-2xl overflow-hidden',
+                    'relative w-full my-auto rounded-3xl glass border border-white/20 dark:border-white/10 p-5 sm:p-6 md:p-8 shadow-2xl max-h-[90vh] flex flex-col',
                     maxWidthMap[maxWidth]
                   )}
                 >
                   {/* Close button */}
-                  <DialogPrimitive.Close className="absolute top-4 right-4 rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus:outline-none">
+                  <DialogPrimitive.Close className="absolute top-4 right-4 rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus:outline-none z-10">
                     <X className="w-5 h-5" />
                   </DialogPrimitive.Close>
 
                   {(title || description) && (
-                    <div className="mb-5 space-y-1 pr-6">
+                    <div className="mb-4 space-y-1 pr-8 shrink-0">
                       {title && (
-                        <DialogPrimitive.Title className="text-2xl font-bold font-heading text-foreground tracking-tight">
+                        <DialogPrimitive.Title className="text-xl sm:text-2xl font-bold font-heading text-foreground tracking-tight">
                           {title}
                         </DialogPrimitive.Title>
                       )}
                       {description && (
-                        <DialogPrimitive.Description className="text-sm text-muted-foreground">
+                        <DialogPrimitive.Description className="text-xs sm:text-sm text-muted-foreground">
                           {description}
                         </DialogPrimitive.Description>
                       )}
                     </div>
                   )}
 
-                  <div>{children}</div>
+                  <div className="overflow-y-auto pr-1 -mr-1">{children}</div>
                 </motion.div>
               </div>
             </DialogPrimitive.Content>

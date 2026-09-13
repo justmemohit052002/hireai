@@ -16,6 +16,8 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
 
     boolean existsByJobIdAndCandidateId(UUID jobId, UUID candidateId);
 
+    long countByJobId(UUID jobId);
+
     List<JobApplication> findByCandidateId(UUID candidateId);
 
     @Query("SELECT a FROM JobApplication a WHERE a.candidate.user.id = :userId ORDER BY a.createdAt DESC")
