@@ -33,11 +33,30 @@ export const CandidateJobsPage = () => {
     }
 
     if (filters.jobType && filters.jobType.length > 0) {
-      if (!filters.jobType.includes(job.type) && !filters.jobType.includes(job.jobType)) return false;
+      const normJobType = (job.type || job.employmentType || '').toLowerCase().replace(/_/g, '-');
+      const matches = filters.jobType.some(
+        (ft) =>
+          ft.toLowerCase().replace(/_/g, '-') === normJobType ||
+          (job.jobType && job.jobType.toLowerCase().replace(/_/g, '-') === ft.toLowerCase().replace(/_/g, '-'))
+      );
+      if (!matches) return false;
     }
 
     if (filters.level && filters.level.length > 0) {
-      if (!filters.level.includes(job.level) && !filters.level.includes(job.experienceLevel)) return false;
+      const normLevel = (job.level || '').toLowerCase();
+      const rawExpLevel = (job.experienceLevel || '').toLowerCase();
+      const matches = filters.level.some((fl) => {
+        const target = fl.toLowerCase();
+        return (
+          normLevel === target ||
+          rawExpLevel === target ||
+          (target === 'entry' && (rawExpLevel === 'fresher' || rawExpLevel === 'entry')) ||
+          (target === 'mid' && (rawExpLevel === 'mid_level' || rawExpLevel === 'mid-level')) ||
+          (target === 'senior' && rawExpLevel === 'senior') ||
+          (target === 'lead' && (rawExpLevel === 'lead' || rawExpLevel === 'executive'))
+        );
+      });
+      if (!matches) return false;
     }
 
     if (filters.location && filters.location.trim() !== '') {
@@ -45,7 +64,7 @@ export const CandidateJobsPage = () => {
     }
 
     if (filters.salaryMin !== undefined) {
-      const jobMax = Number(job.salary?.max || job.salaryMax || 0);
+      const jobMax = Number(job.salary?.max ?? job.salaryMax ?? 0);
       if (jobMax > 0 && jobMax < filters.salaryMin) return false;
     }
 

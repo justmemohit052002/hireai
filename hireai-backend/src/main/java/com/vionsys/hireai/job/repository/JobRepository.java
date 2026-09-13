@@ -37,4 +37,10 @@ public interface JobRepository extends JpaRepository<Job, UUID> {
      * Get all open jobs.
      */
     List<Job> findByStatus(JobStatus status);
+
+    /**
+     * Check if a job is owned by the recruiter with the given user ID.
+     */
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(j) > 0 FROM Job j WHERE j.id = :jobId AND j.recruiterProfile.user.id = :userId")
+    boolean existsByIdAndRecruiterUserId(@org.springframework.data.repository.query.Param("jobId") UUID jobId, @org.springframework.data.repository.query.Param("userId") UUID userId);
 }

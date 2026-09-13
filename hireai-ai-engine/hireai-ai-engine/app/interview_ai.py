@@ -1,17 +1,21 @@
-"""Module 5: Interview AI. Generates questions, then evaluates answers."""
-
+import os
 from app.llm_client import call_llm
-from app.utils import extract_json
+from app.utils import extract_json, to_str_list
 
-QUESTIONS_PROMPT_PATH = "prompts/interview_questions_prompt.txt"
-EVAL_PROMPT_PATH = "prompts/interview_eval_prompt.txt"
+QUESTIONS_PROMPT_PATH = os.path.join(os.path.dirname(__file__), "..", "prompts", "interview_questions_prompt.txt")
+EVAL_PROMPT_PATH = os.path.join(os.path.dirname(__file__), "..", "prompts", "interview_eval_prompt.txt")
 
 
 def generate_questions(skills: list[str]) -> dict:
-    with open(QUESTIONS_PROMPT_PATH) as f:
-        template = f.read()
+    prompt_file = QUESTIONS_PROMPT_PATH if os.path.exists(QUESTIONS_PROMPT_PATH) else "prompts/interview_questions_prompt.txt"
+    if os.path.exists(prompt_file):
+        with open(prompt_file, encoding="utf-8") as f:
+            template = f.read()
+    else:
+        template = "Generate interview questions for skills: {skills}"
 
-    prompt = template.replace("{skills}", ", ".join(skills))
+    skills_str = ", ".join(to_str_list(skills)) if skills else ""
+    prompt = template.replace("{skills}", skills_str)
     raw_text = call_llm(prompt, task_type="interview_questions")
 
     parsed = extract_json(raw_text)

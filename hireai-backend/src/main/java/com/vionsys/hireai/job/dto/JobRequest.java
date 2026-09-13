@@ -4,9 +4,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.vionsys.hireai.job.enums.Currency;
 import com.vionsys.hireai.job.enums.EmploymentType;
 import com.vionsys.hireai.job.enums.ExperienceLevel;
+import com.vionsys.hireai.job.enums.JobStatus;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
@@ -42,10 +44,12 @@ public class JobRequest {
 
     @Schema(description = "Employment type", example = "FULL_TIME")
     @NotNull(message = "Employment type is required")
+    @JsonAlias({"jobType", "type", "employment_type"})
     private EmploymentType employmentType;
 
     @Schema(description = "Required experience level", example = "SENIOR")
     @NotNull(message = "Experience level is required")
+    @JsonAlias({"level", "experience_level"})
     private ExperienceLevel experienceLevel;
 
     @Schema(description = "Job office location / city", example = "Bengaluru, Karnataka, India")
@@ -55,14 +59,17 @@ public class JobRequest {
 
     @Schema(description = "Whether the position allows 100% remote work", example = "false")
     @Builder.Default
+    @JsonAlias({"workplaceType", "workplace_type", "isRemote"})
     private Boolean remote = false;
 
     @Schema(description = "Minimum annual compensation", example = "1800000")
     @DecimalMin(value = "0.0", inclusive = true)
+    @JsonAlias({"minSalary", "min_salary", "salary_min"})
     private BigDecimal salaryMin;
 
     @Schema(description = "Maximum annual compensation", example = "2800000")
     @DecimalMin(value = "0.0", inclusive = true)
+    @JsonAlias({"maxSalary", "max_salary", "salary_max"})
     private BigDecimal salaryMax;
 
     @Schema(description = "Salary currency (INR, USD, EUR, GBP, AED)", example = "INR")
@@ -75,14 +82,20 @@ public class JobRequest {
 
     @Schema(description = "Minimum educational qualification", example = "B.Tech / B.E in Computer Science or equivalent")
     @Size(max = 200)
+    @JsonAlias({"educationRequirements", "education_requirements"})
     private String education;
 
     @Schema(description = "Number of open positions", example = "2")
     @NotNull(message = "Number of openings is required")
     @Min(value = 1, message = "Openings must be at least 1")
-    private Integer openings;
+    @Builder.Default
+    private Integer openings = 1;
 
     @Schema(description = "Application deadline date (YYYY-MM-DD)", example = "2026-12-31")
     @Future(message = "Application deadline must be a future date")
+    @JsonAlias({"deadline", "application_deadline"})
     private LocalDate applicationDeadline;
+
+    @Schema(description = "Job listing status (OPEN, PAUSED, CLOSED)", example = "OPEN")
+    private JobStatus status;
 }

@@ -3,6 +3,7 @@ package com.vionsys.hireai.security.evaluator;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.vionsys.hireai.application.repository.JobApplicationRepository;
 
@@ -19,40 +20,24 @@ public class ApplicationSecurityEvaluator {
     /**
      * Checks if the user is authorized to view an application (either the applicant candidate or the job recruiter).
      */
+    @Transactional(readOnly = true)
     public boolean canAccessApplication(UUID applicationId, UUID userId) {
         if (applicationId == null || userId == null) {
             return false;
         }
 
-        return jobApplicationRepository.findById(applicationId)
-                .map(app -> {
-                    boolean isApplicant = app.getCandidate() != null
-                            && app.getCandidate().getUser() != null
-                            && userId.equals(app.getCandidate().getUser().getId());
-
-                    boolean isJobOwner = app.getJob() != null
-                            && app.getJob().getRecruiterProfile() != null
-                            && app.getJob().getRecruiterProfile().getUser() != null
-                            && userId.equals(app.getJob().getRecruiterProfile().getUser().getId());
-
-                    return isApplicant || isJobOwner;
-                })
-                .orElse(false);
+        return jobApplicationRepository.canAccessApplication(applicationId, userId);
     }
 
     /**
      * Checks if the user is authorized to manage/update the application (must be the recruiter who posted the job).
      */
+    @Transactional(readOnly = true)
     public boolean canManageApplication(UUID applicationId, UUID userId) {
         if (applicationId == null || userId == null) {
             return false;
         }
 
-        return jobApplicationRepository.findById(applicationId)
-                .map(app -> app.getJob() != null
-                        && app.getJob().getRecruiterProfile() != null
-                        && app.getJob().getRecruiterProfile().getUser() != null
-                        && userId.equals(app.getJob().getRecruiterProfile().getUser().getId()))
-                .orElse(false);
+        return jobApplicationRepository.canManageApplication(applicationId, userId);
     }
 }

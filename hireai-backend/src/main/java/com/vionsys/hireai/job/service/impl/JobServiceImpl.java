@@ -207,6 +207,10 @@ public class JobServiceImpl implements JobService {
                 request.getApplicationDeadline()
         );
 
+        if (request.getStatus() != null) {
+            job.setStatus(request.getStatus());
+        }
+
         return JobMapper.toResponse(
                 job
         );

@@ -5,14 +5,16 @@ time (the LLM has no memory of its own), we return the next reply plus
 whatever fields we've extracted so far.
 """
 
+import os
 from app.llm_client import call_llm
 from app.utils import extract_json
 
-PROMPT_PATH = "prompts/chatbot_prompt.txt"
+PROMPT_PATH = os.path.join(os.path.dirname(__file__), "..", "prompts", "chatbot_prompt.txt")
 
 
 def handle_message(conversation_history: list[dict], new_message: str) -> dict:
-    with open(PROMPT_PATH) as f:
+    prompt_file = PROMPT_PATH if os.path.exists(PROMPT_PATH) else "prompts/chatbot_prompt.txt"
+    with open(prompt_file, encoding="utf-8") as f:
         template = f.read()
 
     history_text = "\n".join(

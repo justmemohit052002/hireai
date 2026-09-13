@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Sparkles, Eye, Building2, Calendar, Loader2, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Sparkles, Eye, Building2, Calendar, Loader2, CheckCircle2, AlertCircle, ArrowLeft, Users } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
@@ -26,8 +26,9 @@ export const CreateJobPage = () => {
   const { jobs, createOrUpdateJob } = useJobs();
 
   const detectedCurrency = detectUserCurrency();
+  const defaultFutureDeadline = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-  // All fields clean & empty on initial creation (no demo data)
+  // All fields clean & empty on initial creation
   const [title, setTitle] = useState('');
   const [department, setDepartment] = useState('');
   const [jobType, setJobType] = useState('full-time');
@@ -40,7 +41,8 @@ export const CreateJobPage = () => {
   const [skills, setSkills] = useState('');
   const [education, setEducation] = useState('');
   const [benefits, setBenefits] = useState('');
-  const [deadline, setDeadline] = useState('');
+  const [openings, setOpenings] = useState(1);
+  const [deadline, setDeadline] = useState(defaultFutureDeadline);
   const [description, setDescription] = useState('');
 
   const [isAiGenerating, setIsAiGenerating] = useState(false);
@@ -57,16 +59,18 @@ export const CreateJobPage = () => {
         setOriginalJob(jobToEdit);
         setTitle(jobToEdit.title || '');
         setDepartment(jobToEdit.department || 'Engineering');
-        setJobType(jobToEdit.type || 'full-time');
-        setLevel(jobToEdit.level || 'senior');
+        setJobType(jobToEdit.type || jobToEdit.jobType || 'full-time');
+        setLevel(jobToEdit.level || jobToEdit.experienceLevel || 'senior');
         setLocation(jobToEdit.location || '');
-        setSalaryMin(jobToEdit.salary?.min || 100000);
-        setSalaryMax(jobToEdit.salary?.max || 150000);
-        setCurrency(jobToEdit.salary?.currency || 'USD');
+        setSalaryMin(jobToEdit.salary?.min ?? jobToEdit.salaryMin ?? '');
+        setSalaryMax(jobToEdit.salary?.max ?? jobToEdit.salaryMax ?? '');
+        setCurrency(jobToEdit.salary?.currency || jobToEdit.currency || 'INR');
         setWorkplaceType(jobToEdit.workplaceType || 'hybrid');
         setSkills(Array.isArray(jobToEdit.skills) ? jobToEdit.skills.join(', ') : jobToEdit.skills || '');
+        setEducation(jobToEdit.education || (Array.isArray(jobToEdit.educationRequirements) ? jobToEdit.educationRequirements.join(', ') : ''));
         setDescription(jobToEdit.description || '');
-        setDeadline(jobToEdit.applicationDeadline || '2026-12-31');
+        setOpenings(jobToEdit.openings || 1);
+        setDeadline(jobToEdit.applicationDeadline || defaultFutureDeadline);
       }
     }
   }, [id, jobs]);
@@ -127,11 +131,26 @@ export const CreateJobPage = () => {
   const handlePublish = async (e) => {
     e.preventDefault();
     setErrorMsg('');
-    setIsSubmitting(true);
+
+    if (!title.trim()) {
+      setErrorMsg('Job title is required.');
+      return;
+    }
+
+    if (!description.trim()) {
+      setErrorMsg('Job description is required.');
+      return;
+    }
 
     const skillArray = skills.split(',').map((s) => s.trim()).filter(Boolean);
-    const benefitArray = benefits.split(',').map((b) => b.trim()).filter(Boolean);
+    if (skillArray.length === 0) {
+      setErrorMsg('Please enter at least one required skill (e.g. Java, Python, React).');
+      return;
+    }
 
+    setIsSubmitting(true);
+
+    const benefitArray = benefits.split(',').map((b) => b.trim()).filter(Boolean);
     const minSal = salaryMin !== '' && !isNaN(Number(salaryMin)) ? Number(salaryMin) : null;
     const maxSal = salaryMax !== '' && !isNaN(Number(salaryMax)) ? Number(salaryMax) : null;
 
@@ -139,17 +158,21 @@ export const CreateJobPage = () => {
       ...(originalJob || {}),
       id: id || originalJob?.id,
       title: title.trim(),
-      department: department?.trim() || null,
-      location: location?.trim() || null,
+      department: department?.trim() || 'Engineering',
+      location: location?.trim() || 'Remote',
       jobType,
       workplaceType,
       experienceLevel: level,
+      salaryMin: minSal,
+      salaryMax: maxSal,
       minSalary: minSal,
       maxSalary: maxSal,
       currency,
       skills: skillArray,
+      education: education?.trim() || '',
       educationRequirements: education?.trim() ? [education.trim()] : [],
       benefits: benefitArray,
+      openings: Number(openings) > 0 ? Number(openings) : 1,
       applicationDeadline: deadline || null,
       description: description.trim(),
     };
@@ -158,7 +181,9 @@ export const CreateJobPage = () => {
       await createOrUpdateJob(jobPayload);
       navigate(ROUTES.RECRUITER_JOBS);
     } catch (err) {
-      setErrorMsg(err.message || 'Failed to publish job. Please try again.');
+      console.error('Job publication error:', err);
+      const msg = err.data?.message || err.message || 'Failed to publish job. Please check all fields.';
+      setErrorMsg(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -245,7 +270,7 @@ export const CreateJobPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                Employment Type
+                Employment Type *
               </label>
               <Select
                 value={jobType}
@@ -256,7 +281,7 @@ export const CreateJobPage = () => {
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                Workplace Model
+                Workplace Model *
               </label>
               <Select
                 value={workplaceType}
@@ -267,7 +292,7 @@ export const CreateJobPage = () => {
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                Experience Level
+                Experience Level *
               </label>
               <Select
                 value={level}
@@ -277,15 +302,31 @@ export const CreateJobPage = () => {
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-              Office / Regional Location
-            </label>
-            <Input
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. Bengaluru, India / San Francisco, CA / Remote"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+                Office / Regional Location
+              </label>
+              <Input
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g. Pune, India / Bengaluru, India / Remote"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+                Number of Openings *
+              </label>
+              <Input
+                type="number"
+                min="1"
+                required
+                value={openings}
+                onChange={(e) => setOpenings(Math.max(1, parseInt(e.target.value) || 1))}
+                placeholder="e.g. 1"
+              />
+            </div>
           </div>
         </Card>
 
@@ -351,9 +392,10 @@ export const CreateJobPage = () => {
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-              Required Skills (Comma-separated for ATS Matching)
+              Required Skills * (Comma-separated for ATS Matching)
             </label>
             <Input
+              required
               value={skills}
               onChange={(e) => setSkills(e.target.value)}
               placeholder="e.g. React, Node.js, Spring Boot, Java, PostgreSQL, Docker"

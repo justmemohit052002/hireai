@@ -15,37 +15,55 @@ function seedMockJobs() {
 
 function normalizeJob(backendJob) {
   if (!backendJob) return null;
+  const rawType = backendJob.employmentType || backendJob.jobType || 'FULL_TIME';
+  const rawLevel = backendJob.experienceLevel || backendJob.level || 'MID_LEVEL';
+  const statusStr = String(backendJob.status || 'OPEN').toUpperCase();
+
+  let listingStatus = 'open';
+  if (statusStr === 'PAUSED') listingStatus = 'paused';
+  else if (statusStr === 'CLOSED') listingStatus = 'closed';
+
   return {
     id: backendJob.id,
     title: backendJob.title,
     description: backendJob.description,
-    department: backendJob.department || 'General',
+    department: backendJob.department || 'Engineering',
     location: backendJob.location || 'Remote',
-    type: (backendJob.jobType || 'FULL_TIME').toLowerCase().replace('_', '-'),
-    jobType: backendJob.jobType,
-    workplaceType: (backendJob.workplaceType || 'HYBRID').toLowerCase().replace('_', '-'),
-    level: (backendJob.experienceLevel || 'MID').toLowerCase().replace('_', '-'),
-    experienceLevel: backendJob.experienceLevel,
+    employmentType: rawType,
+    type: rawType.toLowerCase().replace(/_/g, '-'),
+    jobType: rawType,
+    workplaceType: backendJob.remote
+      ? 'remote'
+      : (backendJob.workplaceType || 'HYBRID').toLowerCase().replace(/_/g, '-'),
+    remote: Boolean(backendJob.remote),
+    level: rawLevel.toLowerCase().replace(/_/g, '-'),
+    experienceLevel: rawLevel,
     salary: {
       min: backendJob.salaryMin ?? backendJob.minSalary ?? 0,
       max: backendJob.salaryMax ?? backendJob.maxSalary ?? 0,
       currency: backendJob.currency || 'INR',
       period: backendJob.salaryPeriod || 'year',
     },
+    salaryMin: backendJob.salaryMin ?? backendJob.minSalary ?? 0,
+    salaryMax: backendJob.salaryMax ?? backendJob.maxSalary ?? 0,
+    currency: backendJob.currency || 'INR',
     skills: Array.isArray(backendJob.skills) ? backendJob.skills : [],
-    educationRequirements: backendJob.educationRequirements || [],
+    educationRequirements: backendJob.education ? [backendJob.education] : backendJob.educationRequirements || [],
+    education: backendJob.education || '',
     benefits: backendJob.benefits || [],
+    openings: backendJob.openings || 1,
     applicationDeadline: backendJob.applicationDeadline,
     postedAt: backendJob.createdAt || new Date().toISOString(),
     applicantsCount: Number(backendJob.applicantsCount || 0),
-    listingStatus: (backendJob.status || 'OPEN').toLowerCase() === 'open' ? 'open' : 'closed',
-    status: (backendJob.status || 'OPEN').toLowerCase() === 'open' ? 'active' : 'closed',
+    listingStatus,
+    status: listingStatus === 'open' ? 'active' : listingStatus,
     company: {
-      id: backendJob.companyId || 'comp-1',
+      id: backendJob.companyId || backendJob.recruiterProfileId || 'comp-1',
       name: backendJob.companyName || 'HireAI Partner',
       industry: 'Technology',
       location: backendJob.location || 'Global',
     },
+    companyName: backendJob.companyName || 'HireAI Partner',
     raw: backendJob,
   };
 }
@@ -172,19 +190,22 @@ export const JobsProvider = ({ children }) => {
   const createOrUpdateJob = useCallback(async (jobData) => {
     try {
       let result;
-      if (jobData.id && !jobData.id.startsWith('job-')) {
+      if (jobData.id && !String(jobData.id).startsWith('job-')) {
         result = await jobsApi.updateJob(jobData.id, jobData);
       } else {
         result = await jobsApi.createJob(jobData);
       }
-      const normalized = normalizeJob(result) || {
-        ...jobData,
-        id: jobData.id || `job-${Date.now()}`,
-      };
-      setJobs((prev) => [normalized, ...prev.filter((j) => j.id !== normalized.id)]);
-      return normalized;
+      const normalized = normalizeJob(result);
+      if (normalized) {
+        setJobs((prev) => [normalized, ...prev.filter((j) => j.id !== normalized.id)]);
+        return normalized;
+      }
+      return result;
     } catch (err) {
-      console.warn('[JobsContext] Remote create job failed, applying locally:', err);
+      console.error('[JobsContext] Remote create/update job failed:', err);
+      if (isAuthenticated) {
+        throw err;
+      }
       const localJob = {
         ...jobData,
         id: jobData.id || `job-${Date.now()}`,
@@ -196,14 +217,14 @@ export const JobsProvider = ({ children }) => {
       setJobs((prev) => [localJob, ...prev.filter((j) => j.id !== localJob.id)]);
       return localJob;
     }
-  }, []);
+  }, [isAuthenticated]);
 
   /** Close a job */
   const closeJob = useCallback(async (id) => {
     try {
       await jobsApi.closeJob(id);
     } catch (err) {
-      console.warn('[JobsContext] Remote close failed, applying locally:', err);
+      console.warn('[JobsContext] Remote close failed:', err);
     }
     setJobs((prev) =>
       prev.map((j) =>
@@ -213,47 +234,83 @@ export const JobsProvider = ({ children }) => {
   }, []);
 
   /** Pause or toggle a job */
-  const toggleJobStatus = useCallback((id) => {
+  const toggleJobStatus = useCallback(async (id) => {
+    const targetJob = jobs.find((j) => j.id === id);
+    const nextListing = targetJob?.listingStatus === 'open' ? 'paused' : 'open';
+    const nextStatus = nextListing === 'open' ? 'OPEN' : 'PAUSED';
+
     setJobs((prev) =>
       prev.map((j) => {
         if (j.id !== id) return j;
-        const nextStatus = j.listingStatus === 'open' ? 'paused' : 'open';
         return {
           ...j,
-          listingStatus: nextStatus,
-          status: nextStatus === 'open' ? 'active' : 'paused',
+          listingStatus: nextListing,
+          status: nextListing === 'open' ? 'active' : 'paused',
         };
       })
     );
-  }, []);
+
+    if (targetJob && !String(id).startsWith('job-')) {
+      try {
+        await jobsApi.updateJob(id, { ...targetJob, status: nextStatus });
+      } catch (err) {
+        console.warn('[JobsContext] Failed to sync job status with backend:', err);
+      }
+    }
+  }, [jobs]);
 
   /** Resume a job */
-  const resumeJob = useCallback((id) => {
+  const resumeJob = useCallback(async (id) => {
     setJobs((prev) =>
       prev.map((j) =>
         j.id === id ? { ...j, listingStatus: 'open', status: 'active' } : j
       )
     );
-  }, []);
+    const targetJob = jobs.find((j) => j.id === id);
+    if (targetJob && !String(id).startsWith('job-')) {
+      try {
+        await jobsApi.updateJob(id, { ...targetJob, status: 'OPEN' });
+      } catch (err) {
+        console.warn('[JobsContext] Failed to resume job on backend:', err);
+      }
+    }
+  }, [jobs]);
 
   /** Pause a job */
-  const pauseJob = useCallback((id) => {
+  const pauseJob = useCallback(async (id) => {
     setJobs((prev) =>
       prev.map((j) =>
         j.id === id ? { ...j, listingStatus: 'paused', status: 'paused' } : j
       )
     );
-  }, []);
+    const targetJob = jobs.find((j) => j.id === id);
+    if (targetJob && !String(id).startsWith('job-')) {
+      try {
+        await jobsApi.updateJob(id, { ...targetJob, status: 'PAUSED' });
+      } catch (err) {
+        console.warn('[JobsContext] Failed to pause job on backend:', err);
+      }
+    }
+  }, [jobs]);
 
-  /** Delete a job */
-  const deleteJob = useCallback((id) => {
+  /** Delete / Close a job */
+  const deleteJob = useCallback(async (id) => {
+    if (!String(id).startsWith('job-')) {
+      try {
+        await jobsApi.closeJob(id);
+      } catch (err) {
+        console.warn('[JobsContext] Remote delete/close failed:', err);
+      }
+    }
     setJobs((prev) => prev.filter((j) => j.id !== id));
   }, []);
 
   /** Submit candidate application */
-  const submitApplication = useCallback(async ({ jobId, coverLetter, resumeFile }) => {
+  const submitApplication = useCallback(async ({ jobId, coverLetter, coverNote, resumeFile, file }) => {
+    const note = coverNote || coverLetter || '';
+    const resume = file || resumeFile || null;
     try {
-      const response = await applicationsApi.applyToJob(jobId, coverLetter, resumeFile);
+      const response = await applicationsApi.applyToJob(jobId, { coverNote: note, file: resume });
       const normalized = normalizeApplication(response);
       if (normalized) {
         setApplications((prev) => [normalized, ...prev]);
@@ -263,15 +320,18 @@ export const JobsProvider = ({ children }) => {
           j.id === jobId ? { ...j, applicantsCount: (j.applicantsCount || 0) + 1 } : j
         )
       );
-      return normalized;
+      return normalized || response;
     } catch (err) {
-      console.warn('[JobsContext] Remote apply failed, using local mock:', err.message);
+      console.warn('[JobsContext] Remote apply failed:', err.message);
+      if (isAuthenticated) {
+        throw err;
+      }
       const newApp = {
         id: `app-${Date.now()}`,
         jobId,
-        candidateName: 'Alex Rivera',
-        candidateEmail: 'alex.rivera@example.com',
-        coverLetter: coverLetter || '',
+        candidateName: 'Candidate',
+        candidateEmail: '',
+        coverLetter: note,
         status: 'applied',
         aiScore: 85,
         appliedAt: new Date().toISOString(),
@@ -284,12 +344,12 @@ export const JobsProvider = ({ children }) => {
       );
       return newApp;
     }
-  }, []);
+  }, [isAuthenticated]);
 
   /** Update application stage */
   const updateApplicationStatus = useCallback(async (appId, newStage, feedback = '') => {
     try {
-      await applicationsApi.updateStatus(appId, newStage.toUpperCase(), feedback);
+      await applicationsApi.updateApplicationStatus(appId, { status: newStage.toUpperCase(), feedbackNotes: feedback });
     } catch (err) {
       console.warn('[JobsContext] Remote stage update failed, applying locally:', err);
     }

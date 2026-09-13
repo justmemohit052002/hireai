@@ -80,6 +80,7 @@ public class AuthService {
                 .lastName(request.getLastName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
+                .phoneNumber(request.getPhoneNumber())
                 .enabled(true)
                 .accountNonLocked(true)
                 .failedLoginAttempts(0)

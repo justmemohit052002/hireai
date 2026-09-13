@@ -4,14 +4,16 @@ Zero-shot extraction - no training data needed. The LLM already knows what
 resumes look like; we just tell it what shape to return data in.
 """
 
+import os
 from app.llm_client import call_llm
 from app.utils import extract_json
 
-PROMPT_PATH = "prompts/resume_parser_prompt.txt"
+PROMPT_PATH = os.path.join(os.path.dirname(__file__), "..", "prompts", "resume_parser_prompt.txt")
 
 
 def parse_resume(resume_text: str) -> dict:
-    with open(PROMPT_PATH) as f:
+    prompt_file = PROMPT_PATH if os.path.exists(PROMPT_PATH) else "prompts/resume_parser_prompt.txt"
+    with open(prompt_file, encoding="utf-8") as f:
         template = f.read()
 
     prompt = template.replace("{resume_text}", resume_text)
