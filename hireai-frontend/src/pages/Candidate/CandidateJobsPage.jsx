@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
+import { AlertCircle, RotateCcw } from 'lucide-react';
 import { DynamicIslandSearch } from '@/components/common/DynamicIslandSearch';
 import { JobCard } from '@/features/jobs/JobCard';
 import { JobDetailDrawer } from '@/features/jobs/JobDetailDrawer';
 import { ApplyModal } from '@/features/jobs/ApplyModal';
 import { FilterPanel } from '@/features/jobs/FilterPanel';
 import { EmptyState } from '@/components/common/EmptyState';
-import { useJobs } from '@/context/JobsContext';
+import { JobCardSkeleton } from '@/components/common/LoadingSkeleton';
+import { Button } from '@/components/ui/Button';
+import { useJobs, useApplyJob } from '@/hooks';
 
 export const CandidateJobsPage = () => {
-  const { jobs, submitApplication } = useJobs();
+  const { jobs, isLoading, isError, error, refetch } = useJobs();
+  const applyMutation = useApplyJob();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -20,7 +24,7 @@ export const CandidateJobsPage = () => {
   //   closed  → hidden entirely
   //   paused  → shown with Apply disabled
   //   open    → shown with Apply active
-  const visibleJobs = jobs.filter((j) => j.listingStatus !== 'closed');
+  const visibleJobs = (jobs || []).filter((j) => j.listingStatus !== 'closed');
 
   // Apply search + filter on top of the visible set
   const filteredJobs = visibleJobs.filter((job) => {
@@ -79,6 +83,27 @@ export const CandidateJobsPage = () => {
         onFilterToggle={() => setShowFilters(!showFilters)}
       />
 
+      {/* Error State Banner */}
+      {isError && (
+        <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold">Unable to load active positions</p>
+              <p className="text-xs opacity-80">{error?.message || 'A network error occurred while reaching HireAI servers.'}</p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => refetch()}
+            className="shrink-0 font-semibold gap-1.5"
+          >
+            <RotateCcw className="w-3.5 h-3.5" /> Retry
+          </Button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Expandable Filter Panel */}
         {showFilters && (
@@ -93,7 +118,13 @@ export const CandidateJobsPage = () => {
 
         {/* Jobs List */}
         <div className={showFilters ? 'lg:col-span-3' : 'lg:col-span-4'}>
-          {filteredJobs.length > 0 ? (
+          {isLoading ? (
+            <div className="flex flex-col gap-4">
+              <JobCardSkeleton />
+              <JobCardSkeleton />
+              <JobCardSkeleton />
+            </div>
+          ) : filteredJobs.length > 0 ? (
             <div className="flex flex-col gap-4">
               {filteredJobs.map((job) => (
                 <JobCard
@@ -136,8 +167,8 @@ export const CandidateJobsPage = () => {
         job={applyingJob}
         isOpen={Boolean(applyingJob)}
         onClose={() => setApplyingJob(null)}
-        onSubmit={(jobId, coverLetter) => {
-          submitApplication({ jobId, coverLetter });
+        onSubmit={async (jobId, coverLetter, resumeFile) => {
+          await applyMutation.mutateAsync({ jobId, coverNote: coverLetter, file: resumeFile });
           setApplyingJob(null);
         }}
       />

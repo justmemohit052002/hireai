@@ -32,7 +32,7 @@ export const Modal = ({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+                className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs"
               />
             </DialogPrimitive.Overlay>
 
@@ -40,17 +40,17 @@ export const Modal = ({
             <DialogPrimitive.Content asChild>
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  initial={{ opacity: 0, scale: 0.95, y: 8 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 8 }}
                   transition={{ type: 'spring', damping: 25, stiffness: 350 }}
                   className={cn(
-                    'relative w-full rounded-[24px] glass border border-white/20 dark:border-white/10 p-6 md:p-8 shadow-2xl overflow-hidden',
+                    'relative w-full rounded-xl bg-surface border border-border p-6 md:p-8 shadow-xl overflow-hidden text-foreground',
                     maxWidthMap[maxWidth]
                   )}
                 >
                   {/* Close button */}
-                  <DialogPrimitive.Close className="absolute top-4 right-4 rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus:outline-none">
+                  <DialogPrimitive.Close className="absolute top-4 right-4 rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-brand-blue">
                     <X className="w-5 h-5" />
                   </DialogPrimitive.Close>
 

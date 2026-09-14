@@ -47,7 +47,7 @@ export const JobDetailDrawer = ({
             <div>
               <h2 className="text-xl md:text-2xl font-bold font-heading text-foreground">{job.title}</h2>
               <p className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                <Building2 className="w-4 h-4 text-primary" />
+                <Building2 className="w-4 h-4 text-accent" />
                 <span>{companyName}</span>
                 {job.department && <span>• {job.department}</span>}
               </p>
@@ -56,7 +56,7 @@ export const JobDetailDrawer = ({
 
           <div className="flex flex-col items-start sm:items-end gap-1 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5 font-mono font-bold text-foreground text-sm bg-surface-2/80 px-3 py-1.5 rounded-xl border border-border/60">
-              <DollarSign className="w-4 h-4 text-primary" />
+              <DollarSign className="w-4 h-4 text-accent" />
               <span>{salaryText}</span>
             </div>
             {job.applicationDeadline && (
@@ -73,7 +73,7 @@ export const JobDetailDrawer = ({
           <Badge variant="secondary" className="capitalize">{job.workplaceType || 'Hybrid'}</Badge>
           <Badge variant="secondary">{getExperienceLevelLabel(job.level) || job.experienceLevel || 'Mid Level'}</Badge>
           <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-2 border border-border/50 text-xs text-muted-foreground">
-            <MapPin className="w-3.5 h-3.5 text-primary" />
+            <MapPin className="w-3.5 h-3.5 text-accent" />
             <span>{job.location || 'Remote'}</span>
           </div>
           {job.postedAt && (
@@ -132,7 +132,7 @@ export const JobDetailDrawer = ({
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {job.requirements.map((item, idx) => (
               <li key={idx} className="flex items-start gap-2.5 text-xs text-muted-foreground bg-surface-2/40 p-2.5 rounded-xl border border-border/40">
-                <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
                 <span>{item}</span>
               </li>
             ))}
@@ -156,7 +156,7 @@ export const JobDetailDrawer = ({
 
       {/* Sticky Bottom Apply Action Bar */}
       <div className="pt-4 border-t border-border/50 sticky bottom-0 bg-background/95 backdrop-blur-md flex items-center justify-end gap-3">
-        <Button variant="ghost" size="md" onClick={onClose}>
+        <Button variant="secondary" size="md" onClick={onClose}>
           Close
         </Button>
         {isPaused ? (

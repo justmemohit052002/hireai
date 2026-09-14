@@ -7,7 +7,7 @@ import { ThemeToggle } from '@/components/common/ThemeToggle';
 export const RecruiterSettingsPage = () => {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <Card glass className="p-8 space-y-6">
+      <Card surface-nested className="p-8 space-y-6">
         <h2 className="text-2xl font-bold font-heading text-foreground pb-4 border-b border-border/50">
           Recruiter Studio Settings
         </h2>

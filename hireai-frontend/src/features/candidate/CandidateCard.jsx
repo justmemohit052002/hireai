@@ -64,7 +64,7 @@ export const CandidateCard = ({
 
         <div className="flex items-center gap-2">
           {onMessage && (
-            <Button size="sm" variant="ghost" onClick={() => onMessage(candidate)}>
+            <Button size="sm" variant="secondary" onClick={() => onMessage(candidate)}>
               <MessageSquare className="w-3.5 h-3.5 mr-1" /> Message
             </Button>
           )}

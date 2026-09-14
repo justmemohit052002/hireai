@@ -2,27 +2,29 @@ import React from 'react';
 import { cn } from '@/utils';
 
 export const Card = React.forwardRef(
-  ({ className, glass = true, hoverable = false, glow = 'none', children, ...props }, ref) => {
-    const glowClasses = {
-      none: '',
-      primary: 'glow-primary',
-      secondary: 'glow-secondary',
-      accent: 'glow-accent',
-    };
+  ({ className, variant = 'surface', interactive = false, hoverable = false, glow = 'none', children, ...props }, ref) => {
+    const isNested = props['surface-nested'] ?? props.nested ?? props.surfaceNested ?? false;
+    const isGlass = variant === 'glass' || props.glass;
+    const isInteractive = interactive || hoverable;
+    const { 'surface-nested': _sn, nested: _n, surfaceNested: _snn, glass: _g, ...restProps } = props;
+
+    const variantClass = isGlass
+      ? 'glass-card'
+      : (variant === 'nested' || isNested)
+        ? 'surface-nested'
+        : 'surface';
 
     return (
       <div
         ref={ref}
         className={cn(
-          'rounded-[18px] p-6 transition-all duration-200 border',
-          glass
-            ? 'glass border-white/20 dark:border-white/10'
-            : 'bg-surface border-border shadow-sm',
-          hoverable && 'hover-lift cursor-pointer hover:border-blue-500/40',
-          glowClasses[glow],
+          'p-6 transition-all duration-150',
+          variantClass,
+          isInteractive && 'interactive-card cursor-pointer',
+          glow === 'primary' && 'focus-ring',
           className
         )}
-        {...props}
+        {...restProps}
       >
         {children}
       </div>
@@ -48,5 +50,5 @@ export const CardContent = ({ className, ...props }) => (
 );
 
 export const CardFooter = ({ className, ...props }) => (
-  <div className={cn('flex items-center pt-4 border-t border-border/50', className)} {...props} />
+  <div className={cn('flex items-center pt-4 border-t border-border', className)} {...props} />
 );

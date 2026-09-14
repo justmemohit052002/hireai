@@ -41,7 +41,7 @@ export const JobCard = ({ job, onSelect, onApply, isPaused = false }) => {
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-bold text-base sm:text-lg font-heading text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                  <h3 className="font-bold text-base sm:text-lg font-heading text-foreground group-hover:text-accent transition-colors line-clamp-1">
                     {job.title}
                   </h3>
                   <Badge variant="default" className="shrink-0 font-mono text-[10px]">
@@ -57,7 +57,7 @@ export const JobCard = ({ job, onSelect, onApply, isPaused = false }) => {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5 mt-0.5">
-                  <Building2 className="w-3.5 h-3.5 text-primary" />
+                  <Building2 className="w-3.5 h-3.5 text-accent" />
                   <span>{companyName}</span>
                   {job.department && <span>• {job.department}</span>}
                 </p>
@@ -94,7 +94,7 @@ export const JobCard = ({ job, onSelect, onApply, isPaused = false }) => {
           <div className="flex flex-col gap-1.5 text-xs text-muted-foreground w-full md:items-end">
             <div className="flex items-center gap-2 flex-wrap md:justify-end">
               <div className="flex items-center gap-1.5 bg-surface-2/80 px-2.5 py-1 rounded-lg border border-border/40 text-xs text-muted-foreground">
-                <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                <MapPin className="w-3.5 h-3.5 text-accent shrink-0" />
                 <span className="truncate max-w-[130px]">{job.location || 'Remote'}</span>
               </div>
               <div className="flex items-center gap-1 bg-surface-2/80 px-2.5 py-1 rounded-lg border border-border/40 font-mono font-bold text-foreground text-xs">

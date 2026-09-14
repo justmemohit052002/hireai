@@ -1,16 +1,17 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, PauseCircle, PlayCircle, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, PauseCircle, PlayCircle, Calendar, AlertCircle, RotateCcw } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/common/EmptyState';
 import { formatSalary, formatShortDate, getJobTypeLabel } from '@/utils';
 import { ROUTES } from '@/constants';
-import { useJobs } from '@/context/JobsContext';
+import { useJobs } from '@/hooks';
 
 export const RecruiterJobsPage = () => {
   const navigate = useNavigate();
-  const { jobs, toggleJobStatus, deleteJob } = useJobs();
+  const { jobs, isLoading, isError, error, refetch, toggleJobStatus, deleteJob } = useJobs();
 
   return (
     <div className="space-y-6 pb-12">
@@ -28,12 +29,45 @@ export const RecruiterJobsPage = () => {
         </Button>
       </div>
 
-      {jobs.length > 0 ? (
+      {/* Error state banner */}
+      {isError && (
+        <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold">Failed to load postings</p>
+              <p className="text-xs opacity-80">{error?.message || 'Unable to sync job records from HireAI servers.'}</p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => refetch()}
+            className="shrink-0 font-semibold gap-1.5"
+          >
+            <RotateCcw className="w-3.5 h-3.5" /> Retry
+          </Button>
+        </div>
+      )}
+
+      {isLoading ? (
         <div className="space-y-4">
-          {jobs.map((job) => (
+          {[1, 2, 3].map((idx) => (
+            <Card key={idx} className="p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-6 w-56" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+              </div>
+              <Skeleton className="h-4 w-72" />
+            </Card>
+          ))}
+        </div>
+      ) : (jobs || []).length > 0 ? (
+        <div className="space-y-4">
+          {(jobs || []).map((job) => (
             <Card
               key={job.id}
-              className="p-5 glass border border-border/60 rounded-2xl shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+              className="p-5 surface-nested border border-border/60 rounded-2xl shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
             >
               <div className="space-y-2">
                 <div className="flex items-center gap-2.5 flex-wrap">
@@ -88,7 +122,7 @@ export const RecruiterJobsPage = () => {
                 <div className="flex items-center gap-1.5 shrink-0">
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="outline"
                     onClick={() => toggleJobStatus(job.id)}
                     title={job.listingStatus === 'open' ? 'Pause Requisition' : 'Resume Requisition'}
                   >
@@ -100,7 +134,7 @@ export const RecruiterJobsPage = () => {
                   </Button>
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="outline"
                     title="Edit Job"
                     onClick={() => navigate(`/recruiter/jobs/edit/${job.id}`)}
                   >
@@ -108,10 +142,9 @@ export const RecruiterJobsPage = () => {
                   </Button>
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="danger"
                     onClick={() => deleteJob(job.id)}
                     title="Delete Job"
-                    className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

@@ -20,7 +20,7 @@ export const Avatar = ({
     <div className="relative inline-block">
       <div
         className={cn(
-          'relative flex items-center justify-center rounded-full overflow-hidden font-semibold border border-border bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-emerald-500/20 text-foreground select-none shrink-0 shadow-sm',
+          'relative flex items-center justify-center rounded-full overflow-hidden font-semibold border border-border bg-surface-2 text-foreground select-none shrink-0 shadow-xs',
           sizeClasses[size],
           className
         )}

@@ -12,7 +12,7 @@ export const Tooltip = ({ content, children, side = 'top' }) => {
         <TooltipPrimitive.Content
           side={side}
           className={cn(
-            'z-50 overflow-hidden rounded-lg glass border border-white/20 dark:border-white/10 px-3 py-1.5 text-xs text-foreground shadow-md animate-in fade-in-0 zoom-in-95'
+            'z-50 overflow-hidden rounded-md surface-nested border border-border px-3 py-1.5 text-xs text-foreground shadow-md animate-in fade-in-0 zoom-in-95'
           )}
         >
           {content}

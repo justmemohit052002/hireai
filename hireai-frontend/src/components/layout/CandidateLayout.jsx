@@ -4,11 +4,11 @@ import { TopNav } from './TopNav';
 
 export const CandidateLayout = () => {
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col p-4 md:p-6">
+    <div className="min-h-screen flex flex-col text-foreground">
       {/* Main Content Area */}
       <div className="w-full max-w-7xl mx-auto flex-1 flex flex-col min-w-0">
         <TopNav role="candidate" />
-        <main className="pb-10 flex-1">
+        <main className="pb-10 px-4 md:px-6 flex-1">
           <Outlet />
         </main>
       </div>

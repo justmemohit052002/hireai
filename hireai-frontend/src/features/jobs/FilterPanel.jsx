@@ -21,7 +21,7 @@ export const FilterPanel = ({ filters, onChange, onReset }) => {
   };
 
   return (
-    <div className="glass rounded-[24px] border border-white/20 dark:border-white/10 p-5 space-y-6 shadow-xl">
+    <div className="surface-nested rounded-[24px] border border-white/20 dark:border-white/10 p-5 space-y-6 shadow-xl">
       {/* Title */}
       <div className="flex items-center justify-between pb-3 border-b border-border/50">
         <div className="flex items-center gap-2 font-bold text-sm font-heading text-foreground">

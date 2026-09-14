@@ -10,7 +10,7 @@ export const EmptyState = ({
   onAction,
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center text-center p-12 glass rounded-[24px] border border-white/10 my-6">
+    <div className="flex flex-col items-center justify-center text-center p-12 surface-nested rounded-[24px] border border-white/10 my-6">
       <div className="p-4 rounded-2xl bg-muted/50 mb-4 border border-border/50 text-foreground">
         {icon}
       </div>

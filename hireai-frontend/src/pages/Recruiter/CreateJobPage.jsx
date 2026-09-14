@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/Badge';
 import { JOB_TYPES, EXPERIENCE_LEVELS, ROUTES } from '@/constants';
 import { formatSalary } from '@/utils';
 import { generateRoleRequirements } from '@/utils/aiJdGenerator';
-import { useJobs } from '@/context/JobsContext';
+import { useJobs } from '@/hooks';
 import { jobsApi } from '@/services/api/jobs.api';
 
 const WORKPLACE_TYPES = [
@@ -193,7 +193,7 @@ export const CreateJobPage = () => {
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate(ROUTES.RECRUITER_JOBS)}>
+          <Button variant="secondary" size="sm" onClick={() => navigate(ROUTES.RECRUITER_JOBS)}>
             <ArrowLeft className="w-4 h-4 mr-1" /> Back
           </Button>
           <div>
@@ -222,7 +222,7 @@ export const CreateJobPage = () => {
       )}
 
       <form onSubmit={handlePublish} className="space-y-6">
-        <Card glass className="p-6 space-y-5">
+        <Card surface-nested className="p-6 space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-border/50">
             <h3 className="text-base font-bold text-foreground">Job Details</h3>
             <Button
@@ -331,7 +331,7 @@ export const CreateJobPage = () => {
         </Card>
 
         {/* Compensation & Timeline */}
-        <Card glass className="p-6 space-y-5">
+        <Card surface-nested className="p-6 space-y-5">
           <h3 className="text-base font-bold text-foreground pb-3 border-b border-border/50">
             Compensation & Timeline
           </h3>
@@ -385,7 +385,7 @@ export const CreateJobPage = () => {
         </Card>
 
         {/* Skills & Description */}
-        <Card glass className="p-6 space-y-5">
+        <Card surface-nested className="p-6 space-y-5">
           <h3 className="text-base font-bold text-foreground pb-3 border-b border-border/50">
             Requirements & Description
           </h3>
@@ -439,7 +439,7 @@ export const CreateJobPage = () => {
         </Card>
 
         <div className="flex items-center justify-end gap-4 pt-2">
-          <Button type="button" variant="ghost" onClick={() => navigate(ROUTES.RECRUITER_JOBS)}>
+          <Button type="button" variant="secondary" onClick={() => navigate(ROUTES.RECRUITER_JOBS)}>
             Cancel
           </Button>
           <Button type="submit" variant="gradient" size="lg" isLoading={isSubmitting} className="font-bold shadow-xl">

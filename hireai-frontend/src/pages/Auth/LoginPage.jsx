@@ -40,7 +40,7 @@ export const LoginPage = () => {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
-      <Card glass className="w-full max-w-md p-8 space-y-6 shadow-2xl rounded-[28px] border border-white/20 dark:border-white/10">
+      <Card surface-nested className="w-full max-w-md p-8 space-y-6 shadow-2xl rounded-[28px] border border-white/20 dark:border-white/10">
         <div className="text-center space-y-2">
           <Logo size="lg" className="justify-center mb-2" />
           <h2 className="text-2xl font-bold font-heading text-foreground">Welcome Back</h2>
@@ -48,7 +48,7 @@ export const LoginPage = () => {
         </div>
 
         {/* Role Selector Tabs */}
-        <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-muted/60 glass border border-white/10">
+        <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-muted/60 surface-nested border border-white/10">
           <button
             type="button"
             onClick={() => setRole('candidate')}

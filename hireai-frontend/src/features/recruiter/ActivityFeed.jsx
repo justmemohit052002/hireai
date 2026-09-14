@@ -40,7 +40,7 @@ const MOCK_ACTIVITIES = [
 
 export const ActivityFeed = () => {
   return (
-    <Card glass className="p-6 space-y-4">
+    <Card surface-nested className="p-6 space-y-4">
       <h3 className="text-lg font-bold font-heading text-foreground">Recent Activity</h3>
       <div className="space-y-4 divide-y divide-border/40">
         {MOCK_ACTIVITIES.map((act) => (

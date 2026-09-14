@@ -141,7 +141,7 @@ export const CurrencySelect = ({
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
         className={cn(
-          'flex h-11 w-full items-center justify-between rounded-xl border border-border bg-surface-2/80 dark:bg-surface-2 text-foreground px-3.5 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#F56681]/40 focus:border-[#F56681] disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 shadow-xs cursor-pointer',
+          'flex h-11 w-full items-center justify-between rounded-lg border border-border bg-surface text-foreground px-3.5 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-blue disabled:cursor-not-allowed disabled:opacity-50 transition-colors shadow-xs cursor-pointer',
           error && 'border-red-500 focus:ring-red-500',
           className
         )}
@@ -155,9 +155,9 @@ export const CurrencySelect = ({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1.5 w-full min-w-[220px] max-h-64 overflow-hidden rounded-2xl bg-surface-1/95 dark:bg-[#151420]/95 backdrop-blur-xl border border-border/80 shadow-2xl z-50 flex flex-col animate-in fade-in-50 zoom-in-95">
+        <div className="absolute top-full left-0 mt-1.5 w-full min-w-[220px] max-h-64 overflow-hidden rounded-lg bg-surface border border-border shadow-xl z-50 flex flex-col animate-in fade-in-50 zoom-in-95">
           {/* Search Bar */}
-          <div className="p-2 border-b border-border/50 sticky top-0 bg-surface-1/90 dark:bg-[#151420]/90 backdrop-blur-md">
+          <div className="p-2 border-b border-border sticky top-0 bg-surface">
             <div className="relative flex items-center">
               <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5" />
               <input
@@ -165,7 +165,7 @@ export const CurrencySelect = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search currency or country..."
-                className="w-full pl-8 pr-3 py-1.5 text-xs bg-surface-2 rounded-lg border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+                className="w-full pl-8 pr-3 py-1.5 text-xs bg-surface-2 rounded-md border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-brand-blue"
                 autoFocus
               />
             </div>
@@ -181,9 +181,9 @@ export const CurrencySelect = ({
                   type="button"
                   onClick={() => handleSelect(c.code)}
                   className={cn(
-                    'flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs text-left transition-colors cursor-pointer',
+                    'flex items-center justify-between w-full px-3 py-2 rounded-md text-xs text-left transition-colors cursor-pointer',
                     isSelected
-                      ? 'bg-primary/15 text-primary font-bold'
+                      ? 'bg-brand-blue/10 text-brand-blue font-bold'
                       : 'text-foreground hover:bg-surface-2'
                   )}
                 >
@@ -194,7 +194,7 @@ export const CurrencySelect = ({
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0 ml-2">
                     <span className="font-mono text-xs font-semibold text-foreground/80">{c.symbol}</span>
-                    {isSelected && <Check className="w-3.5 h-3.5 text-primary" />}
+                    {isSelected && <Check className="w-3.5 h-3.5 text-brand-blue" />}
                   </div>
                 </button>
               );

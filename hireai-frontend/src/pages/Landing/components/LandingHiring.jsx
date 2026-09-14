@@ -22,7 +22,7 @@ export const LandingHiring = () => {
         {/* Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
           {/* HR Card */}
-          <div className="bg-[#6D3DF5]/10 border border-[#6D3DF5]/25 rounded-3xl p-8 md:p-10 glass dark:bg-[#6D3DF5]/15 flex flex-col justify-between hover-lift transition">
+          <div className="bg-[#6D3DF5]/10 border border-[#6D3DF5]/25 rounded-3xl p-8 md:p-10 surface-nested dark:bg-[#6D3DF5]/15 flex flex-col justify-between interactive-card transition">
             <div>
               <h3 className="text-4xl font-bold font-heading text-foreground">
                 For HR
@@ -55,7 +55,7 @@ export const LandingHiring = () => {
 
             <div className="mt-10">
               <Link to={ROUTES.SIGNUP}>
-                <Button className="bg-[#6D3DF5] hover:bg-[#5b2fd4] text-white px-6 py-3 rounded-full text-lg font-semibold transition shadow-lg">
+                <Button variant="secondary" size="lg" className="px-6 py-3 rounded-full text-base font-semibold transition shadow-lg">
                   Explore HR Dashboard
                 </Button>
               </Link>
@@ -63,7 +63,7 @@ export const LandingHiring = () => {
           </div>
 
           {/* Candidate Card */}
-          <div className="bg-gradient-to-br from-[#22214B] via-[#1A193B] to-[#12112E] border border-white/15 rounded-3xl p-8 md:p-10 shadow-2xl text-white flex flex-col justify-between hover-lift transition">
+          <div className="bg-gradient-to-br from-[#22214B] via-[#1A193B] to-[#12112E] border border-white/15 rounded-3xl p-8 md:p-10 shadow-2xl text-white flex flex-col justify-between interactive-card transition">
             <div>
               <h3 className="text-4xl font-bold font-heading text-white">
                 For Candidates
@@ -96,7 +96,7 @@ export const LandingHiring = () => {
 
             <div className="mt-10">
               <Link to={ROUTES.SIGNUP}>
-                <Button variant="gradient" className="bg-gradient-to-r from-[#C63FC5] via-[#F56681] to-[#FC9559] hover:opacity-95 text-white px-6 py-3 rounded-full text-lg font-semibold transition shadow-lg shadow-[#C63FC5]/30">
+                <Button variant="primary" size="lg" className="px-6 py-3 rounded-full text-base font-semibold transition shadow-lg">
                   Explore Candidates Dashboard
                 </Button>
               </Link>

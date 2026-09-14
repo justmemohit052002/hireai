@@ -80,3 +80,25 @@ export function useLocalStorage(key, initial) {
 
   return [value, set];
 }
+
+// ─────────────────────────────────────────
+// TanStack React Query Hooks
+// ─────────────────────────────────────────
+export {
+  useJobs,
+  useJob,
+  useCreateJob,
+  useUpdateJob,
+  useCloseJob,
+  useToggleJobStatus,
+} from './useJobs';
+
+export {
+  useApplications,
+  useApplyJob,
+  useUpdateApplicationStatus,
+} from './useApplications';
+
+export {
+  useLeaderboard,
+} from './useLeaderboard';

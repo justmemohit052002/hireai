@@ -4,7 +4,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
 import { ResumeUpload } from '@/components/forms/ResumeUpload';
-import { useJobs } from '@/context/JobsContext';
+import { useApplyJob } from '@/hooks';
 
 export const ApplyModal = ({
   job,
@@ -12,23 +12,23 @@ export const ApplyModal = ({
   onClose,
   onSubmit,
 }) => {
-  const { submitApplication } = useJobs();
+  const applyMutation = useApplyJob();
   const [coverNote, setCoverNote] = useState('');
   const [resumeFile, setResumeFile] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [matchScore, setMatchScore] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
 
   if (!job) return null;
 
+  const isSubmitting = applyMutation.isPending;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
-    setIsSubmitting(true);
 
     try {
-      const result = await submitApplication({
+      const result = await applyMutation.mutateAsync({
         jobId: job.id,
         coverNote,
         file: resumeFile,
@@ -42,7 +42,7 @@ export const ApplyModal = ({
 
       setIsSuccess(true);
       if (onSubmit) {
-        onSubmit(job.id, coverNote);
+        onSubmit(job.id, coverNote, resumeFile);
       }
 
       setTimeout(() => {
@@ -54,8 +54,6 @@ export const ApplyModal = ({
       }, 2000);
     } catch (err) {
       setErrorMsg(err.message || 'Failed to submit application. Please try again.');
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -126,7 +124,7 @@ export const ApplyModal = ({
 
           {/* Action Buttons */}
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-border/50">
-            <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
+            <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button type="submit" variant="default" isLoading={isSubmitting}>

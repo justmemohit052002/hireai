@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Trophy,
   ChevronDown,
@@ -15,10 +15,13 @@ import {
   UserCheck,
   BrainCircuit,
   Loader2,
+  AlertCircle,
+  RotateCcw,
 } from 'lucide-react';
-import { useJobs } from '@/context/JobsContext';
+import { useJobs, useLeaderboard, useUpdateApplicationStatus } from '@/hooks';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { formatSalary, formatShortDate, getJobTypeLabel } from '@/utils';
 import { applicationsApi } from '@/services/api/applications.api';
 
@@ -31,37 +34,14 @@ const STAGES = [
   { value: 'REJECTED', label: 'Rejected' },
 ];
 
-const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
+const JobLeaderboard = ({ job, onUpdateStage }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [jobApplicants, setJobApplicants] = useState([]);
-  const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
+  const { applicants, isLoading: isLoadingApplicants } = useLeaderboard(job.id, { enabled: isExpanded });
   const [evaluatingAppId, setEvaluatingAppId] = useState(null);
   const [aiDecisions, setAiDecisions] = useState({});
 
-  useEffect(() => {
-    // Filter context applications for this job
-    const relevant = applications.filter((a) => a.jobId === job.id);
-    relevant.sort((a, b) => (b.aiScore || 0) - (a.aiScore || 0));
-    setJobApplicants(relevant);
-  }, [job.id, applications]);
-
-  const handleExpand = async () => {
-    const nextState = !isExpanded;
-    setIsExpanded(nextState);
-    if (nextState && jobApplicants.length === 0) {
-      setIsLoadingApplicants(true);
-      try {
-        const remoteApps = await applicationsApi.getJobApplications(job.id);
-        if (Array.isArray(remoteApps) && remoteApps.length > 0) {
-          const sorted = remoteApps.sort((a, b) => (b.atsMatchScore || 0) - (a.atsMatchScore || 0));
-          setJobApplicants(sorted);
-        }
-      } catch (e) {
-        console.warn('Could not fetch remote applicants:', e);
-      } finally {
-        setIsLoadingApplicants(false);
-      }
-    }
+  const handleExpand = () => {
+    setIsExpanded(!isExpanded);
   };
 
   const handleAiDecision = async (applicationId) => {
@@ -84,10 +64,12 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
     }
   };
 
+  const jobApplicants = applicants || [];
+
   return (
-    <Card className="p-0 overflow-hidden mb-4 border border-border/50 glass rounded-2xl shadow-sm transition-all">
+    <Card className="p-0 overflow-hidden mb-4 border border-border/50 surface-nested rounded-2xl shadow-sm transition-all">
       <div
-        className="p-5 flex flex-col md:flex-row items-start md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors"
+        className="p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors"
         onClick={handleExpand}
       >
         <div className="space-y-2">
@@ -167,8 +149,16 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
           </div>
 
           {isLoadingApplicants ? (
-            <div className="py-8 flex items-center justify-center text-xs text-muted-foreground">
-              <Loader2 className="w-5 h-5 animate-spin mr-2 text-[#F56681]" /> Loading applicants...
+            <div className="space-y-3 py-2">
+              {[1, 2].map((i) => (
+                <div key={i} className="p-4 rounded-xl bg-background border border-border/60 flex items-center justify-between">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-28" />
+                  </div>
+                  <Skeleton className="h-8 w-32 rounded-xl" />
+                </div>
+              ))}
             </div>
           ) : jobApplicants.length === 0 ? (
             <div className="py-6 text-center text-xs text-muted-foreground">
@@ -218,9 +208,9 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
 
                       {/* Stage Selector */}
                       <select
-                        value={app.rawStatus || app.status?.toUpperCase() || 'APPLIED'}
+                        value={(app.rawStatus || app.status || 'APPLIED').toUpperCase()}
                         onChange={(e) => onUpdateStage(app.id, e.target.value)}
-                        className="text-xs font-semibold px-2.5 py-1.5 rounded-xl bg-surface-2 border border-border text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#F56681]"
+                        className="text-xs font-semibold px-2.5 py-1.5 rounded-xl border border-border bg-surface-2 text-foreground focus:outline-none focus:ring-1 focus:ring-[#F56681]"
                       >
                         {STAGES.map((s) => (
                           <option key={s.value} value={s.value}>
@@ -231,22 +221,22 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
 
                       {/* AI Decision Engine Button */}
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         disabled={evaluatingAppId === app.id}
                         onClick={() => handleAiDecision(app.id)}
-                        className="text-xs text-[#F56681] hover:bg-[#F56681]/10"
+                        className="text-xs font-semibold gap-1 shrink-0"
                       >
                         {evaluatingAppId === app.id ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#F56681]" />
                         ) : (
-                          <BrainCircuit className="w-3.5 h-3.5 mr-1" />
+                          <BrainCircuit className="w-3.5 h-3.5 text-[#F56681]" />
                         )}
-                        AI Decision
+                        <span>AI Decision</span>
                       </Button>
                     </div>
 
-                    {/* AI Decision Result Drawer */}
+                    {/* AI Decision Result Drawer / Banner if present */}
                     {decision && (
                       <div className="w-full pt-2 border-t border-border/40 text-xs text-muted-foreground flex items-center gap-2">
                         <span className="font-bold text-foreground">AI Engine Classification:</span>
@@ -268,7 +258,8 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
 };
 
 export const LeaderboardPage = () => {
-  const { jobs, applications, updateApplicationStatus } = useJobs();
+  const { jobs, isLoading, isError, error, refetch } = useJobs();
+  const updateStatusMutation = useUpdateApplicationStatus();
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
@@ -286,19 +277,53 @@ export const LeaderboardPage = () => {
         </div>
       </div>
 
-      {jobs.length > 0 ? (
+      {/* Error state */}
+      {isError && (
+        <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold">Failed to fetch requisitions for leaderboard</p>
+              <p className="text-xs opacity-80">{error?.message || 'Server error occurred.'}</p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => refetch()}
+            className="shrink-0 font-semibold gap-1.5"
+          >
+            <RotateCcw className="w-3.5 h-3.5" /> Retry
+          </Button>
+        </div>
+      )}
+
+      {isLoading ? (
         <div className="space-y-4">
-          {jobs.map((job) => (
+          {[1, 2, 3].map((idx) => (
+            <Card key={idx} className="p-6 space-y-3">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-6 w-52" />
+                <Skeleton className="h-6 w-24 rounded-full" />
+              </div>
+              <Skeleton className="h-4 w-72" />
+            </Card>
+          ))}
+        </div>
+      ) : (jobs || []).length > 0 ? (
+        <div className="space-y-4">
+          {(jobs || []).map((job) => (
             <JobLeaderboard
               key={job.id}
               job={job}
-              applications={applications}
-              onUpdateStage={(appId, newStage) => updateApplicationStatus && updateApplicationStatus(appId, newStage)}
+              onUpdateStage={(appId, newStage) =>
+                updateStatusMutation.mutate({ applicationId: appId, status: newStage })
+              }
             />
           ))}
         </div>
       ) : (
-        <Card className="p-8 glass border border-border/60 rounded-2xl text-center space-y-3">
+        <Card className="p-8 surface-nested border border-border/60 rounded-2xl text-center space-y-3">
           <div className="w-12 h-12 rounded-2xl bg-[#F56681]/15 text-[#F56681] flex items-center justify-center mx-auto">
             <Trophy className="w-6 h-6" />
           </div>

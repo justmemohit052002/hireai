@@ -60,7 +60,7 @@ export const LandingFeatures = () => {
               return (
                 <div
                   key={idx}
-                  className="bg-[#2A2B48]/80 hover:bg-white/20 backdrop-blur-md border border-white/15 rounded-3xl p-6 flex items-center gap-4 transition-all hover-lift"
+                  className="bg-[#2A2B48]/80 hover:bg-white/20 backdrop-blur-md border border-white/15 rounded-3xl p-6 flex items-center gap-4 transition-all interactive-card"
                 >
                   <div className={`w-12 h-12 rounded-full ${item.bg} flex items-center justify-center shrink-0 shadow-lg text-white`}>
                     <IconComp className="w-5 h-5 stroke-[2.2]" />

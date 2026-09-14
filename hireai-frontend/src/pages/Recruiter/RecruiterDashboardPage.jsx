@@ -12,30 +12,32 @@ import {
   Archive,
   RotateCcw,
   XCircle,
-  TrendingUp
+  TrendingUp,
+  AlertCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StatsCard } from '@/features/recruiter/StatsCard';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ROUTES } from '@/constants';
 import { formatSalary } from '@/utils';
-import { useJobs } from '@/context/JobsContext';
+import { useJobs } from '@/hooks';
 import { useAuth } from '@/context/AuthContext';
 
 export const RecruiterDashboardPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { jobs, resumeJob, pauseJob, closeJob } = useJobs();
+  const { jobs, isLoading, isError, error, refetch, resumeJob, pauseJob, closeJob } = useJobs();
 
-  const activeJobs = jobs.filter((j) => j.listingStatus === 'open');
+  const activeJobs = (jobs || []).filter((j) => j.listingStatus === 'open');
   const activeJobsCount = activeJobs.length;
-  const pausedJobs = jobs.filter((j) => j.listingStatus === 'paused');
-  const closedJobs = jobs.filter((j) => j.listingStatus === 'closed');
+  const pausedJobs = (jobs || []).filter((j) => j.listingStatus === 'paused');
+  const closedJobs = (jobs || []).filter((j) => j.listingStatus === 'closed');
 
   // Total candidates for active requisitions
-  const totalCandidates = jobs
+  const totalCandidates = (jobs || [])
     .filter((j) => j.listingStatus !== 'closed')
     .reduce((acc, curr) => acc + (Number(curr.applicantsCount) || 0), 0);
 
@@ -73,7 +75,7 @@ export const RecruiterDashboardPage = () => {
   return (
     <div className="space-y-6 pb-12">
       {/* Top Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 sm:p-8 rounded-2xl glass border border-border/60 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 sm:p-8 rounded-2xl surface-nested border border-border/60 shadow-xs">
         <div className="space-y-1">
           <h2 className="text-2xl sm:text-3xl font-extrabold font-heading text-foreground tracking-tight">
             Recruiter Studio & Overview
@@ -93,33 +95,64 @@ export const RecruiterDashboardPage = () => {
         </div>
       </div>
 
+      {/* Error Banner */}
+      {isError && (
+        <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold">Failed to fetch requisitions</p>
+              <p className="text-xs opacity-80">{error?.message || 'Unable to connect to HireAI server.'}</p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => refetch()}
+            className="shrink-0 font-semibold gap-1.5"
+          >
+            <RotateCcw className="w-3.5 h-3.5" /> Retry
+          </Button>
+        </div>
+      )}
+
       {/* 3 Real-Time StatsCards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <StatsCard
-          title="Active Postings"
-          value={activeJobsCount}
-          change={activeJobsCount > 0 ? `${activeJobsCount} live requisition${activeJobsCount > 1 ? 's' : ''}` : 'No active jobs'}
-          isPositive={activeJobsCount > 0}
-          icon={<Briefcase className="w-5 h-5 text-muted-foreground" />}
-        />
-        <StatsCard
-          title="Total Candidates Evaluated"
-          value={totalCandidates}
-          change={totalCandidates > 0 ? `${totalCandidates} applicants in pipeline` : '0 applicants'}
-          isPositive={totalCandidates > 0}
-          icon={<Users className="w-5 h-5 text-muted-foreground" />}
-        />
-        <StatsCard
-          title="AI Candidates Shortlisted"
-          value={aiShortlistedCount}
-          change={totalCandidates > 0 ? '84% ATS match avg' : 'Awaiting applicants'}
-          isPositive={aiShortlistedCount > 0}
-          icon={<Sparkles className="w-5 h-5 text-[#F56681]" />}
-        />
+        {isLoading ? (
+          <>
+            <Card className="p-6 space-y-3"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-16" /><Skeleton className="h-4 w-32" /></Card>
+            <Card className="p-6 space-y-3"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-16" /><Skeleton className="h-4 w-32" /></Card>
+            <Card className="p-6 space-y-3"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-16" /><Skeleton className="h-4 w-32" /></Card>
+          </>
+        ) : (
+          <>
+            <StatsCard
+              title="Active Postings"
+              value={activeJobsCount}
+              change={activeJobsCount > 0 ? `${activeJobsCount} live requisition${activeJobsCount > 1 ? 's' : ''}` : 'No active jobs'}
+              isPositive={activeJobsCount > 0}
+              icon={<Briefcase className="w-5 h-5 text-muted-foreground" />}
+            />
+            <StatsCard
+              title="Total Candidates Evaluated"
+              value={totalCandidates}
+              change={totalCandidates > 0 ? `${totalCandidates} applicants in pipeline` : '0 applicants'}
+              isPositive={totalCandidates > 0}
+              icon={<Users className="w-5 h-5 text-muted-foreground" />}
+            />
+            <StatsCard
+              title="AI Candidates Shortlisted"
+              value={aiShortlistedCount}
+              change={totalCandidates > 0 ? '84% ATS match avg' : 'Awaiting applicants'}
+              isPositive={aiShortlistedCount > 0}
+              icon={<Sparkles className="w-5 h-5 text-[#F56681]" />}
+            />
+          </>
+        )}
       </div>
 
       {/* Hiring Pipeline Status Card */}
-      <Card className="p-6 glass border border-border/60 rounded-2xl shadow-xs space-y-4">
+      <Card className="p-6 surface-nested border border-border/60 rounded-2xl shadow-xs space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <UserCheck className="w-5 h-5 text-[#F56681]" />
@@ -139,34 +172,39 @@ export const RecruiterDashboardPage = () => {
               <span className="text-xs font-bold text-foreground block truncate" title={stage.label}>
                 {stage.label}
               </span>
-              <div className="flex items-baseline justify-between gap-1">
-                <span className="text-2xl font-bold font-heading text-foreground">{stage.count}</span>
-                <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-surface border border-border text-muted-foreground">
-                  {stage.info}
-                </span>
+              <div className="flex items-baseline justify-between">
+                <span className="text-2xl font-black font-mono text-foreground">{stage.count}</span>
+                <span className="text-[11px] font-medium text-muted-foreground">{stage.info}</span>
               </div>
             </div>
           ))}
         </div>
       </Card>
 
-      {/* When recruiter has no jobs yet, show onboarding state */}
-      {jobs.length === 0 ? (
-        <Card className="p-8 glass border border-border/60 rounded-2xl text-center space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#C63FC5]/20 via-[#F56681]/20 to-[#FC9559]/20 border border-[#F56681]/30 flex items-center justify-center mx-auto text-primary">
+      {/* Requisitions Overview / Empty State */}
+      {isLoading ? (
+        <Card className="p-6 space-y-4">
+          <Skeleton className="h-6 w-48" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Skeleton className="h-28 w-full rounded-xl" />
+            <Skeleton className="h-28 w-full rounded-xl" />
+          </div>
+        </Card>
+      ) : (jobs || []).length === 0 ? (
+        <Card className="p-12 text-center surface-nested border border-border/60 rounded-2xl shadow-xs space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#C63FC5]/15 to-[#F56681]/15 text-[#F56681] flex items-center justify-center mx-auto shadow-xs">
             <Briefcase className="w-7 h-7" />
           </div>
-          <div className="space-y-1 max-w-md mx-auto">
-            <h3 className="text-lg font-bold text-foreground">You Haven't Posted Any Jobs Yet</h3>
-            <p className="text-xs text-muted-foreground">
-              Create your first job requisition to publish openings, receive candidate applications, and auto-rank resumes with the AI Leaderboard.
+          <div className="space-y-1">
+            <h3 className="text-lg font-bold text-foreground">No Engineering Requisitions Yet</h3>
+            <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+              You haven't posted any job openings. Post a requisition to begin receiving AI-ranked candidate applications.
             </p>
           </div>
           <Button
             variant="gradient"
-            size="lg"
             onClick={() => navigate(ROUTES.RECRUITER_JOBS_CREATE)}
-            className="font-bold shadow-xl"
+            className="font-bold shadow-md shadow-[#C63FC5]/20"
           >
             <Plus className="w-4 h-4 mr-2" />
             Create Your First Job Posting
@@ -174,7 +212,7 @@ export const RecruiterDashboardPage = () => {
         </Card>
       ) : (
         /* Paused Listings Section */
-        <Card className="p-6 glass border border-border/60 rounded-2xl shadow-xs space-y-4">
+        <Card className="p-6 surface-nested border border-border/60 rounded-2xl shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-bold text-foreground">Paused Listings</h3>
@@ -186,7 +224,7 @@ export const RecruiterDashboardPage = () => {
               onClick={() => navigate(ROUTES.RECRUITER_JOBS)}
               className="inline-flex items-center gap-1.5 border border-border bg-surface-2 text-foreground hover:bg-muted text-xs font-semibold px-3.5 py-2 rounded-xl transition-colors cursor-pointer"
             >
-              All Requisitions ({jobs.length}) <ChevronRight className="w-4 h-4" />
+              All Requisitions ({(jobs || []).length}) <ChevronRight className="w-4 h-4" />
             </button>
           </div>
 

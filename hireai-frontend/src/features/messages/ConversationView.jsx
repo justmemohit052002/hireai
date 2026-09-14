@@ -21,7 +21,7 @@ export const ConversationView = ({
   };
 
   return (
-    <div className="flex flex-col h-full glass rounded-[24px] border border-white/20 dark:border-white/10 overflow-hidden shadow-2xl">
+    <div className="flex flex-col h-full surface-nested rounded-[24px] border border-white/20 dark:border-white/10 overflow-hidden shadow-2xl">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border/50 bg-background/40">
         <div className="flex items-center gap-3">

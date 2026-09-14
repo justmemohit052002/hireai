@@ -3,24 +3,26 @@ import { cva } from 'class-variance-authority';
 import { cn } from '@/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 rounded-xl text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F56681] disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] select-none cursor-pointer',
+  'inline-flex items-center justify-center gap-2 rounded-xl text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue dark:focus-visible:ring-brand-accent focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] select-none cursor-pointer',
   {
     variants: {
       variant: {
-        default: 'bg-[#22214B] text-white shadow-md shadow-[#22214B]/20 hover:bg-[#1A193B] dark:bg-[#F56681] dark:text-white dark:hover:bg-[#E4536E]',
-        gradient: 'bg-gradient-to-r from-[#C63FC5] via-[#F56681] to-[#FC9559] text-white shadow-md shadow-[#C63FC5]/20 hover:brightness-105 hover:shadow-lg hover:shadow-[#C63FC5]/30',
-        secondary: 'bg-[#F56681] text-white shadow-md shadow-[#F56681]/20 hover:bg-[#E4536E]',
-        accent: 'bg-[#FC9559] text-white shadow-md shadow-[#FC9559]/20 hover:bg-[#EA8347]',
-        outline: 'border border-border bg-background/50 hover:bg-muted hover:border-[#F56681]/40 hover:text-foreground backdrop-blur-md',
-        ghost: 'hover:bg-muted hover:text-foreground',
-        glass: 'glass hover:bg-white/20 dark:hover:bg-slate-800/60 text-foreground border border-white/20 dark:border-white/10',
-        danger: 'bg-red-600 text-white hover:bg-red-500 shadow-md shadow-red-500/20',
+        default: 'bg-[#F1FF62] text-[#112358] hover:bg-[#e6f545] dark:bg-[#F1FF62] dark:text-[#112358] dark:hover:bg-[#e6f545] font-semibold shadow-sm',
+        primary: 'bg-[#F1FF62] text-[#112358] hover:bg-[#e6f545] dark:bg-[#F1FF62] dark:text-[#112358] dark:hover:bg-[#e6f545] font-semibold shadow-sm',
+        gradient: 'bg-[#004499] hover:bg-[#112358] text-[#F4F5FA] dark:bg-[#004499] dark:hover:bg-[#003380] dark:text-[#F4F5FA] shadow-sm font-semibold',
+        secondary: 'bg-[#D4EAFF] text-[#004499] hover:bg-[#bce0ff] dark:bg-[#004499] dark:text-[#F4F5FA] dark:hover:bg-[#003880] font-medium shadow-sm',
+        accent: 'bg-[#F1FF62] text-[#112358] hover:brightness-95 shadow-sm font-semibold',
+        outline: 'bg-[#F4F5FA] border border-[#0192C6]/40 text-[#112358] hover:bg-[#D4EAFF]/50 dark:bg-[#112358] dark:border-[#004499] dark:text-[#F4F5FA] dark:hover:bg-[#004499]/40 font-medium',
+        ghost: 'bg-transparent text-[#112358] dark:text-[#F4F5FA] hover:bg-[#D4EAFF]/50 dark:hover:bg-[#004499]/30 font-medium',
+        'surface-nested': 'bg-[#D4EAFF] text-[#004499] hover:bg-[#bce0ff] dark:bg-[#004499] dark:text-[#F4F5FA] dark:hover:bg-[#003880] border border-[#0192C6]/20 dark:border-[#004499]/40 font-medium',
+        danger: 'bg-red-600 text-white hover:bg-red-700 dark:bg-red-700 dark:text-white dark:hover:bg-red-800 font-medium shadow-sm',
       },
       size: {
         default: 'h-10 px-4 py-2',
         sm: 'h-8 px-3 text-xs rounded-lg',
-        lg: 'h-12 px-6 text-base rounded-2xl',
-        icon: 'h-10 w-10 p-0 rounded-xl',
+        md: 'h-10 px-4 py-2',
+        lg: 'h-11 px-5 text-base',
+        icon: 'h-10 w-10 p-0',
       },
     },
     defaultVariants: {

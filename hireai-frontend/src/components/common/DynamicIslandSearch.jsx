@@ -14,7 +14,7 @@ export const DynamicIslandSearch = ({
       <motion.div
         layout
         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-        className={`relative flex items-center gap-3 rounded-full glass border border-white/20 dark:border-white/10 px-4 py-2.5 shadow-2xl transition-all ${
+        className={`relative flex items-center gap-3 rounded-full surface-nested border border-white/20 dark:border-white/10 px-4 py-2.5 shadow-2xl transition-all ${
           isFocused ? 'w-full max-w-2xl ring-2 ring-[#F56681]/50 shadow-[#F56681]/10' : 'w-full max-w-lg'
         }`}
       >

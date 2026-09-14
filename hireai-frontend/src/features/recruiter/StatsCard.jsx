@@ -10,7 +10,7 @@ export const StatsCard = ({
   icon,
 }) => {
   return (
-    <Card className="p-6 border border-border/70 rounded-2xl shadow-xs glass bg-surface/70">
+    <Card className="p-6 border border-border/70 rounded-2xl shadow-xs surface-nested bg-surface/70">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {title}

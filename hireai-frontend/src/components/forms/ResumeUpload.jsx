@@ -190,7 +190,7 @@ export const ResumeUpload = ({
   if (isFetchingInitial) {
     return (
       <div className="flex items-center justify-center p-6 rounded-2xl bg-surface-2/60 border border-border/60">
-        <Loader2 className="w-5 h-5 text-primary animate-spin mr-2" />
+        <Loader2 className="w-5 h-5 text-accent animate-spin mr-2" />
         <span className="text-xs text-muted-foreground">Checking existing resume...</span>
       </div>
     );
@@ -234,31 +234,33 @@ export const ResumeUpload = ({
                 disabled={isViewing || isUploading}
                 className="h-8 px-3 text-xs font-semibold gap-1.5"
               >
-                {isViewing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5 text-primary" />}
+                {isViewing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5 text-accent" />}
                 <span>View Resume</span>
               </Button>
 
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={triggerUploadClick}
                 disabled={isUploading}
                 title="Replace with a new file"
-                className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                className="h-8 px-2.5 text-xs"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
               </Button>
 
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={handleRemove}
                 disabled={isDeleting || isUploading}
                 title="Remove resume"
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                className="h-8 px-2.5 text-xs text-red-500 hover:text-red-600 hover:border-red-500/50"
               >
-                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-              </button>
+                {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+              </Button>
             </div>
           </div>
 
@@ -277,15 +279,15 @@ export const ResumeUpload = ({
               </div>
               {file.parsedRole && (
                 <p className="text-[11px] text-foreground font-medium">
-                  Primary Domain / Role: <span className="text-primary font-bold">{file.parsedRole}</span>
+                  Primary Domain / Role: <span className="text-accent font-bold">{file.parsedRole}</span>
                 </p>
               )}
             </div>
           )}
         </div>
       ) : (
-        <label className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-border/80 hover:border-primary/50 bg-background/50 hover:bg-surface-2/40 transition-colors cursor-pointer text-center">
-          <Upload className="w-8 h-8 text-primary mb-2" />
+        <label className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-border/80 hover:border-accent/50 bg-background/50 hover:bg-surface-2/40 transition-colors cursor-pointer text-center">
+          <Upload className="w-8 h-8 text-accent mb-2" />
           <span className="text-xs font-bold text-foreground">Click to upload or drag & drop</span>
           <span className="text-[10px] text-muted-foreground mt-0.5">PDF or DOCX up to 10MB</span>
         </label>

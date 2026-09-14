@@ -7,7 +7,7 @@ export const ChartPlaceholder = () => {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   return (
-    <Card glass className="p-6 space-y-4">
+    <Card surface-nested className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-bold font-heading text-foreground">Candidate Pipeline Dynamics</h3>

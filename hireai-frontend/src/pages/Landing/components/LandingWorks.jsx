@@ -59,7 +59,7 @@ export const LandingWorks = () => {
           {steps.map((step) => (
             <div
               key={step.num}
-              className="bg-[#6D3DF5]/5 dark:bg-[#6D3DF5]/10 border border-dashed border-[#6D3DF5]/40 dark:border-[#6D3DF5]/60 rounded-3xl p-8 text-center glass hover-lift transition"
+              className="bg-[#6D3DF5]/5 dark:bg-[#6D3DF5]/10 border border-dashed border-[#6D3DF5]/40 dark:border-[#6D3DF5]/60 rounded-3xl p-8 text-center surface-nested interactive-card transition"
             >
               <div className={`w-11 h-11 rounded-full ${step.numBg} text-white font-bold text-xl flex items-center justify-center mx-auto shadow-md`}>
                 {step.num}

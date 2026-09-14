@@ -19,10 +19,10 @@ export const FloatingNavbar = () => {
   };
 
   return (
-    <header className="fixed top-4 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
-      <nav className="pointer-events-auto flex items-center justify-between w-full max-w-6xl h-16 px-6 rounded-full glass border border-white/20 dark:border-white/10 shadow-2xl backdrop-blur-xl">
+    <header className="fixed top-0 inset-x-0 z-50 flex justify-center px-4 mt-3 pointer-events-none">
+      <nav className="pointer-events-auto flex items-center justify-between w-full max-w-6xl h-16 px-6 glass-island text-foreground">
         {/* Brand Logo */}
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2 shrink-0">
           <Logo size="md" />
         </Link>
 
@@ -40,7 +40,7 @@ export const FloatingNavbar = () => {
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <ThemeToggle />
 
           {isAuthenticated ? (
@@ -48,18 +48,18 @@ export const FloatingNavbar = () => {
               Go to Dashboard
             </Button>
           ) : (
-            <>
+            <div className="flex items-center gap-2">
               <Link to={ROUTES.LOGIN}>
-                <Button variant="ghost" size="sm" className="rounded-full">
+                <Button variant="outline" size="sm" className="rounded-full">
                   Sign In
                 </Button>
               </Link>
               <Link to={ROUTES.SIGNUP}>
-                <Button variant="gradient" size="sm" className="rounded-full shadow-md shadow-[#C63FC5]/20">
+                <Button variant="accent" size="sm" className="rounded-full font-semibold">
                   Get Started
                 </Button>
               </Link>
-            </>
+            </div>
           )}
         </div>
       </nav>

@@ -404,7 +404,7 @@ export const CandidateProfilePage = () => {
       )}
 
       {/* Hero Profile Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl glass border border-border/70 p-6 md:p-8 shadow-md">
+      <div className="relative overflow-hidden rounded-3xl surface-nested border border-border/70 p-6 md:p-8 shadow-md">
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#C63FC5] via-[#F56681] to-[#FC9559]" />
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -419,7 +419,7 @@ export const CandidateProfilePage = () => {
             <div className="space-y-1">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h1 className="text-2xl sm:text-3xl font-bold font-heading text-foreground">{displayName}</h1>
-                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
+                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-accent">
                   {designation || 'Candidate'}
                 </span>
               </div>
@@ -430,7 +430,7 @@ export const CandidateProfilePage = () => {
                   <>
                     <span>•</span>
                     <span className="flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-primary" /> {location}
+                      <MapPin className="w-3.5 h-3.5 text-accent" /> {location}
                     </span>
                   </>
                 )}
@@ -481,7 +481,7 @@ export const CandidateProfilePage = () => {
           <div className="mt-6 pt-6 border-t border-border/60 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-primary" />
+                <TrendingUp className="w-4 h-4 text-accent" />
                 <span className="text-xs font-bold uppercase tracking-wider text-foreground">AI Optimization Breakdown</span>
                 <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md ${scoreTheme.badgeBg}`}>
                   {scoreTheme.ratingLabel}
@@ -508,7 +508,7 @@ export const CandidateProfilePage = () => {
                       <p className="font-semibold text-foreground">{item.label}</p>
                       <p className="text-[11px] text-muted-foreground">{item.tip}</p>
                     </div>
-                    <span className="shrink-0 font-mono font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20 text-[11px]">
+                    <span className="shrink-0 font-mono font-bold px-2 py-0.5 rounded-md bg-accent/10 text-accent border border-accent/20 text-[11px]">
                       +{item.points} pts
                     </span>
                   </div>
@@ -537,13 +537,13 @@ export const CandidateProfilePage = () => {
             </Button>
           </div>
 
-          <Card glass className="p-8 space-y-6">
+          <Card surface-nested className="p-8 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border/50">
               <div className="flex items-center gap-4">
                 <Avatar name={displayName} size="xl" />
                 <div>
                   <h2 className="text-xl sm:text-2xl font-bold font-heading text-foreground">{displayName}</h2>
-                  <p className="text-sm font-semibold text-primary">{designation || 'Software Engineer'}</p>
+                  <p className="text-sm font-semibold text-accent">{designation || 'Software Engineer'}</p>
                   <p className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
                     <MapPin className="w-3.5 h-3.5" /> {location || 'Remote'} • {experienceYears} Years Experience
                   </p>
@@ -620,13 +620,13 @@ export const CandidateProfilePage = () => {
         </div>
       ) : (
         /* =================== EDIT PROFILE FORM =================== */
-        <Card glass className="p-6 sm:p-8 space-y-6">
+        <Card surface-nested className="p-6 sm:p-8 space-y-6">
           <form onSubmit={handleSave} className="space-y-6">
             {/* Row 1: Title & Location */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                  Current Title / Designation <span className="text-primary font-mono text-[10px]">(+10 pts)</span>
+                  Current Title / Designation <span className="text-accent font-mono text-[10px]">(+10 pts)</span>
                 </label>
                 <Input
                   value={designation}
@@ -638,7 +638,7 @@ export const CandidateProfilePage = () => {
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                  Location / City <span className="text-primary font-mono text-[10px]">(+10 pts)</span>
+                  Location / City <span className="text-accent font-mono text-[10px]">(+10 pts)</span>
                 </label>
                 <Input
                   value={location}
@@ -653,7 +653,7 @@ export const CandidateProfilePage = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                  Years of Experience <span className="text-primary font-mono text-[10px]">(+10 pts)</span>
+                  Years of Experience <span className="text-accent font-mono text-[10px]">(+10 pts)</span>
                 </label>
                 <Input
                   type="number"
@@ -667,10 +667,10 @@ export const CandidateProfilePage = () => {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Expected CTC (INR) <span className="text-primary font-mono text-[10px]">(+5 pts)</span>
+                    Expected CTC (INR) <span className="text-accent font-mono text-[10px]">(+5 pts)</span>
                   </label>
                   {expectedCtc > 0 && (
-                    <span className="text-[11px] font-mono font-bold text-primary">
+                    <span className="text-[11px] font-mono font-bold text-accent">
                       {formatLpa(expectedCtc)}
                     </span>
                   )}
@@ -685,7 +685,7 @@ export const CandidateProfilePage = () => {
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                  Notice Period (Days) <span className="text-primary font-mono text-[10px]">(+5 pts)</span>
+                  Notice Period (Days) <span className="text-accent font-mono text-[10px]">(+5 pts)</span>
                 </label>
                 <Input
                   type="number"
@@ -707,7 +707,7 @@ export const CandidateProfilePage = () => {
                   onClick={() => setNoticePeriodDays(preset.days)}
                   className={`text-xs px-2.5 py-1 rounded-lg border transition-all ${
                     noticePeriodDays === preset.days
-                      ? 'bg-primary/15 border-primary text-primary font-bold'
+                      ? 'bg-accent/15 border-accent text-accent font-bold'
                       : 'bg-surface-2 border-border/70 text-muted-foreground hover:text-foreground'
                   }`}
                 >
@@ -720,7 +720,7 @@ export const CandidateProfilePage = () => {
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Technical Stack & Skills <span className="text-primary font-mono text-[10px]">(Up to +20 pts)</span>
+                  Technical Stack & Skills <span className="text-accent font-mono text-[10px]">(Up to +20 pts)</span>
                 </label>
                 <span className="text-[11px] font-mono text-muted-foreground">
                   {skillsList.length} skills added (5+ recommended)
@@ -728,7 +728,7 @@ export const CandidateProfilePage = () => {
               </div>
 
               {/* Tag Input Box */}
-              <div className="p-3 rounded-2xl bg-surface-2/80 border border-border/80 focus-within:border-primary/50 transition-colors space-y-2.5">
+              <div className="p-3 rounded-2xl bg-surface-2/80 border border-border/80 focus-within:border-accent/50 transition-colors space-y-2.5">
                 <div className="flex flex-wrap items-center gap-2">
                   {skillsList.map((skill) => (
                     <span
@@ -758,7 +758,7 @@ export const CandidateProfilePage = () => {
                     <Button
                       type="button"
                       size="sm"
-                      variant="ghost"
+                      variant="secondary"
                       onClick={() => handleAddSkill()}
                       disabled={!skillInput.trim()}
                       className="h-7 px-2 text-xs"
@@ -779,7 +779,7 @@ export const CandidateProfilePage = () => {
                       key={suggested}
                       type="button"
                       onClick={() => handleAddSkill(suggested)}
-                      className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-surface-3 hover:bg-primary/15 hover:text-primary border border-border/60 text-muted-foreground transition-all cursor-pointer"
+                      className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-surface-3 hover:bg-accent/15 hover:text-accent border border-border/60 text-muted-foreground transition-all cursor-pointer"
                     >
                       <Plus className="w-3 h-3" /> {suggested}
                     </button>
@@ -791,7 +791,7 @@ export const CandidateProfilePage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                  GitHub Profile URL <span className="text-primary font-mono text-[10px]">(+10 pts)</span>
+                  GitHub Profile URL <span className="text-accent font-mono text-[10px]">(+10 pts)</span>
                 </label>
                 <Input
                   value={githubUrl}
@@ -803,7 +803,7 @@ export const CandidateProfilePage = () => {
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                  LinkedIn Profile URL <span className="text-primary font-mono text-[10px]">(+10 pts)</span>
+                  LinkedIn Profile URL <span className="text-accent font-mono text-[10px]">(+10 pts)</span>
                 </label>
                 <Input
                   value={linkedinUrl}
@@ -818,7 +818,7 @@ export const CandidateProfilePage = () => {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Professional Biography <span className="text-primary font-mono text-[10px]">(+10 pts)</span>
+                  Professional Biography <span className="text-accent font-mono text-[10px]">(+10 pts)</span>
                 </label>
                 <span className="text-[11px] font-mono text-muted-foreground">
                   {bio?.length || 0} characters (40+ recommended)
@@ -835,7 +835,7 @@ export const CandidateProfilePage = () => {
             {/* Resume & AI Skills Parsing */}
             <div className="space-y-2">
               <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Resume & AI Skills Parsing <span className="text-primary font-mono text-[10px]">(+10 pts)</span>
+                Resume & AI Skills Parsing <span className="text-accent font-mono text-[10px]">(+10 pts)</span>
               </label>
               <ResumeUpload
                 autoUpload

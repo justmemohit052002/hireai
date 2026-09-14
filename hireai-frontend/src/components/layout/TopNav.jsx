@@ -16,25 +16,25 @@ export const TopNav = ({ title, role }) => {
   const homeRoute = isCandidate ? ROUTES.CANDIDATE_JOBS : ROUTES.RECRUITER_DASHBOARD;
 
   return (
-    <header className="sticky top-4 z-40 flex justify-center w-full mb-6 px-2 sm:px-4 pointer-events-none">
-      <nav className="pointer-events-auto flex items-center justify-between w-full max-w-6xl h-16 px-6 rounded-full glass border border-white/20 dark:border-white/10 shadow-2xl backdrop-blur-xl">
+    <header className="sticky top-3 z-40 flex justify-center w-full mt-3 mb-6 px-4 pointer-events-none">
+      <nav className="pointer-events-auto flex items-center justify-between w-full max-w-6xl h-16 px-6 glass-island text-foreground">
         {/* Brand Logo - Matches Landing Navbar */}
         <Link to={homeRoute} className="flex items-center gap-2 shrink-0">
           <Logo size="md" />
         </Link>
 
         {/* Center Navigation Links - Candidate shows Browse Jobs & Applications */}
-        <div className="hidden md:flex items-center gap-4 text-sm font-semibold">
+        <div className="hidden md:flex items-center gap-2 text-sm font-semibold">
           {navItems.map((item) => (
             <NavLink
               key={item.href}
               to={item.href}
               className={({ isActive }) =>
                 cn(
-                  'px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap',
+                  'px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-150 whitespace-nowrap',
                   isActive
-                    ? 'bg-gradient-to-r from-[#C63FC5] via-[#F56681] to-[#FC9559] text-white shadow-md shadow-[#C63FC5]/20 font-bold scale-[1.02]'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-white/10 dark:hover:bg-white/5'
+                    ? 'bg-brand-blue text-white shadow-xs font-bold'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-surface-2'
                 )
               }
             >
@@ -47,7 +47,7 @@ export const TopNav = ({ title, role }) => {
         <div className="flex items-center gap-3 shrink-0">
           <ThemeToggle />
           <NotificationBell />
-          <div className="h-5 w-px bg-border/60 mx-0.5" />
+          <div className="h-5 w-px bg-[var(--glass-border)] mx-0.5" />
           <ProfileMenu />
         </div>
       </nav>
