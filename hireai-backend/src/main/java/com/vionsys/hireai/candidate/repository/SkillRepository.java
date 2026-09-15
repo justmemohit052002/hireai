@@ -4,15 +4,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import com.vionsys.hireai.candidate.entity.Skill;
 
-@Repository
 public interface SkillRepository extends JpaRepository<Skill, UUID> {
-
-    boolean existsByNameIgnoreCase(String name);
 
     Optional<Skill> findByNameIgnoreCase(String name);
 
+    boolean existsByNameIgnoreCase(String name);
 }

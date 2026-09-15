@@ -1,168 +1,664 @@
 package com.vionsys.hireai.candidate.service.impl;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.vionsys.hireai.candidate.dto.CandidateProfileRequest;
+import com.vionsys.hireai.candidate.dto.CandidateRequest;
 import com.vionsys.hireai.candidate.dto.CandidateResponse;
-import com.vionsys.hireai.candidate.dto.CreateCandidateRequest;
-import com.vionsys.hireai.candidate.dto.UpdateCandidateRequest;
 import com.vionsys.hireai.candidate.entity.Candidate;
+import com.vionsys.hireai.candidate.entity.Skill;
 import com.vionsys.hireai.candidate.enums.CandidateStatus;
-import com.vionsys.hireai.candidate.exception.CandidateNotFoundException;
 import com.vionsys.hireai.candidate.exception.DuplicateResourceException;
 import com.vionsys.hireai.candidate.filter.CandidateFilter;
 import com.vionsys.hireai.candidate.mapper.CandidateMapper;
 import com.vionsys.hireai.candidate.repository.CandidateRepository;
+import com.vionsys.hireai.candidate.repository.SkillRepository;
 import com.vionsys.hireai.candidate.service.CandidateService;
 import com.vionsys.hireai.candidate.specification.CandidateSpecification;
 import com.vionsys.hireai.candidate.util.CandidateIdGenerator;
+import com.vionsys.hireai.exception.CandidateNotFoundException;
+import com.vionsys.hireai.exception.SkillNotFoundException;
+import com.vionsys.hireai.exception.UserNotFoundException;
+import com.vionsys.hireai.user.entity.User;
+import com.vionsys.hireai.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class CandidateServiceImpl implements CandidateService{
+public class CandidateServiceImpl implements CandidateService {
 
-	private final CandidateRepository candidateRepository;
-    private final CandidateMapper candidateMapper;
+    private final CandidateRepository candidateRepository;
+    private final SkillRepository skillRepository;
     private final CandidateIdGenerator candidateIdGenerator;
-    
-    
-    private void validateCandidate(CreateCandidateRequest request) {
-    	if (candidateRepository.existsByEmail(request.getEmail())) {
-            throw new DuplicateResourceException(
-                    "Candidate with email '" + request.getEmail() + "' already exists."
-            );
-        }
+    private final UserRepository userRepository;
+    private final com.vionsys.hireai.application.repository.JobApplicationRepository jobApplicationRepository;
+    private final com.vionsys.hireai.application.service.AtsMatchScoringService atsMatchScoringService;
+    private final com.vionsys.hireai.application.config.AtsProperties atsProperties;
+    private final com.vionsys.hireai.candidate.storage.ProfilePhotoStorageService photoStorageService;
 
-        if (candidateRepository.existsByPhone(request.getPhone())) {
-            throw new DuplicateResourceException(
-                    "Candidate with phone '" + request.getPhone() + "' already exists."
-            );
-        }
-    }
-    
+
+    // =========================================================
+    // GENERAL CANDIDATE MANAGEMENT
+    // =========================================================
+
     @Override
-    public CandidateResponse createCandidate(CreateCandidateRequest request) {
-    	
-    	 validateCandidate(request);
-    	 
-        Candidate candidate = candidateMapper.toEntity(request);
+    public CandidateResponse createCandidate(
+            CandidateRequest request) {
 
-        candidate.setCandidateId(candidateIdGenerator.generateCandidateId());
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        candidate.setCandidateStatus(CandidateStatus.APPLIED);
+        validateDuplicateCandidate(request);
 
-        Candidate savedCandidate = candidateRepository.save(candidate);
+        Candidate candidate =
+                CandidateMapper.toEntity(request);
 
-        return candidateMapper.toResponse(savedCandidate);
+        candidate.setUser(user);
+
+        candidate.setCandidateId(
+                candidateIdGenerator.generateCandidateId()
+        );
+
+        candidate.setCandidateStatus(
+                CandidateStatus.ACTIVE
+        );
+
+        candidate.setSkills(
+                resolveSkills(request.getSkillIds())
+        );
+
+        Candidate savedCandidate =
+                candidateRepository.save(candidate);
+
+        return CandidateMapper.toResponse(
+                savedCandidate
+        );
     }
+
 
     @Override
     @Transactional(readOnly = true)
-    public CandidateResponse getCandidateById(UUID id) {
-        Candidate candidate = candidateRepository.findById(id)
-                .orElseThrow(() ->
-                        new CandidateNotFoundException(
-                                "Candidate not found with id : " + id));
+    public CandidateResponse getCandidateById(
+            UUID candidateId) {
 
-        return candidateMapper.toResponse(candidate);
+        Candidate candidate =
+                candidateRepository.findById(candidateId)
+                        .orElseThrow(() ->
+                                new CandidateNotFoundException(
+                                        "Candidate not found"
+                                )
+                        );
+
+        return CandidateMapper.toResponse(
+                candidate
+        );
     }
+
 
     @Override
     @Transactional(readOnly = true)
     public Page<CandidateResponse> getAllCandidates(
-    		CandidateFilter filter,
-            int page,
-            int size,
-            String sortBy,
-            String sortDir) {
+            CandidateFilter filter,
+            Pageable pageable) {
 
-        Sort sort = sortDir.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
+        Specification<Candidate> specification =
+                CandidateSpecification.withFilter(filter);
 
-        Pageable pageable = PageRequest.of(page, size, sort);
-
-        Page<Candidate> candidates = candidateRepository.findAll(CandidateSpecification.withFilter(filter),
-                pageable);
-
-        return candidates.map(candidateMapper::toResponse);
+        return candidateRepository
+                .findAll(specification, pageable)
+                .map(CandidateMapper::toResponse);
     }
-    
-    private void validateEmail(UUID candidateId, String email) {
 
-        candidateRepository.findByEmail(email)
-                .filter(candidate -> !candidate.getId().equals(candidateId))
-                .ifPresent(candidate -> {
-                    throw new DuplicateResourceException(
-                            "Candidate with email '" + email + "' already exists."
-                    );
-                });
-    }
-    
-    private void validatePhone(UUID candidateId, String phone) {
-
-        candidateRepository.findByPhone(phone)
-                .filter(candidate -> !candidate.getId().equals(candidateId))
-                .ifPresent(candidate -> {
-                    throw new DuplicateResourceException(
-                            "Candidate with phone '" + phone + "' already exists."
-                    );
-                });
-    }
 
     @Override
-    public CandidateResponse updateCandidate(UUID id,
-                                             UpdateCandidateRequest request) {
-        // Find existing candidate
-        Candidate candidate = candidateRepository.findById(id)
-                .orElseThrow(() ->
-                        new CandidateNotFoundException(
-                                "Candidate not found with id : " + id));
+    public CandidateResponse updateCandidate(
+            UUID candidateId,
+            CandidateRequest request) {
 
-        // Validate email if changed
-        if (request.getEmail() != null
-                && !request.getEmail().equals(candidate.getEmail())) {
+        Candidate candidate =
+                candidateRepository.findById(candidateId)
+                        .orElseThrow(() ->
+                                new CandidateNotFoundException(
+                                        "Candidate not found"
+                                )
+                        );
 
-            validateEmail(id, request.getEmail());
-        }
+        validateDuplicateCandidateForUpdate(
+                candidate,
+                request
+        );
 
-        // Validate phone if changed
-        if (request.getPhone() != null
-                && !request.getPhone().equals(candidate.getPhone())) {
+        updateCandidateFields(
+                candidate,
+                request
+        );
 
-            validatePhone(id, request.getPhone());
-        }
+        candidate.setSkills(
+                resolveSkills(
+                        request.getSkillIds()
+                )
+        );
 
-        // Update entity using MapStruct
-        candidateMapper.updateCandidate(request, candidate);
-
-        // Save updated entity
-        Candidate updatedCandidate = candidateRepository.save(candidate);
-
-        // Convert to response DTO
-        return candidateMapper.toResponse(updatedCandidate);
-
+        return CandidateMapper.toResponse(
+                candidate
+        );
     }
 
+
     @Override
-    public String deleteCandidate(UUID id) {
-    	Candidate candidate = candidateRepository.findById(id)
-                .orElseThrow(() ->
-                        new CandidateNotFoundException(
-                                "Candidate not found with id : " + id));
+    public void deleteCandidate(
+            UUID candidateId) {
+
+        Candidate candidate =
+                candidateRepository.findById(candidateId)
+                        .orElseThrow(() ->
+                                new CandidateNotFoundException(
+                                        "Candidate not found"
+                                )
+                        );
 
         candidateRepository.delete(candidate);
-
-        return "Candidate deleted successfully.";
     }
 
+
+    // =========================================================
+    // AUTHENTICATED CANDIDATE PROFILE
+    // =========================================================
+
+    @Override
+    public CandidateResponse createMyProfile(
+            UUID userId,
+            CandidateProfileRequest request) {
+
+        /*
+         * Find the authenticated User.
+         */
+        User user =
+                userRepository.findById(userId)
+                        .orElseThrow(() ->
+                                new UserNotFoundException(
+                                        "User not found"
+                                )
+                        );
+
+        /*
+         * A User can have only one Candidate profile.
+         */
+        if (candidateRepository.existsByUserId(userId)) {
+
+            throw new DuplicateResourceException(
+                    "Candidate profile already exists"
+            );
+        }
+
+        /*
+         * Create Candidate using only
+         * candidate-specific profile fields.
+         */
+        Candidate candidate =
+                CandidateMapper.toEntity(request);
+
+        /*
+         * Associate Candidate with User.
+         */
+        candidate.setUser(user);
+
+        /*
+         * Account information comes from User.
+         */
+        candidate.setFirstName(
+                user.getFirstName()
+        );
+
+        candidate.setLastName(
+                user.getLastName()
+        );
+
+        candidate.setEmail(
+                user.getEmail()
+        );
+
+        candidate.setPhone(
+                user.getPhoneNumber()
+        );
+
+        /*
+         * Generate Candidate business ID.
+         */
+        candidate.setCandidateId(
+                candidateIdGenerator.generateCandidateId()
+        );
+
+        /*
+         * New Candidate profile starts as ACTIVE.
+         */
+        candidate.setCandidateStatus(
+                CandidateStatus.ACTIVE
+        );
+
+        /*
+         * Resolve requested skills.
+         */
+        candidate.setSkills(
+                resolveSkills(
+                        request.getSkillIds(),
+                        request.getSkills()
+                )
+        );
+
+        /*
+         * Save Candidate profile.
+         */
+        Candidate savedCandidate =
+                candidateRepository.save(candidate);
+
+        return CandidateMapper.toResponse(
+                savedCandidate
+        );
+    }
+
+
+    @Override
+    public CandidateResponse getMyProfile(
+            UUID userId) {
+
+        Candidate candidate =
+                candidateRepository.findByUserId(userId)
+                        .orElseGet(() -> createDefaultCandidateForUser(userId));
+
+        return CandidateMapper.toResponse(
+                candidate
+        );
+    }
+
+
+    @Override
+    public CandidateResponse updateMyProfile(
+            UUID userId,
+            CandidateProfileRequest request) {
+
+        Candidate candidate =
+                candidateRepository.findByUserId(userId)
+                        .orElseGet(() -> createDefaultCandidateForUser(userId));
+
+        /*
+         * Update only candidate-specific profile fields.
+         *
+         * firstName, lastName, email and phone
+         * remain owned by User.
+         */
+        updateProfileFields(
+                candidate,
+                request
+        );
+
+        /*
+         * Update skills.
+         */
+        candidate.setSkills(
+                resolveSkills(
+                        request.getSkillIds(),
+                        request.getSkills()
+                )
+        );
+
+        Candidate saved = candidateRepository.save(candidate);
+
+        // Auto-recalculate ATS score for candidate's job applications
+        try {
+            java.util.List<com.vionsys.hireai.application.entity.JobApplication> applications =
+                    jobApplicationRepository.findByCandidateId(saved.getId());
+            for (com.vionsys.hireai.application.entity.JobApplication app : applications) {
+                com.vionsys.hireai.application.dto.AtsMatchResult atsResult =
+                        atsMatchScoringService.computeAtsScore(saved, app.getJob());
+                int newScore = atsResult.getMatchScore();
+                app.setAtsMatchScore(newScore);
+                app.setMatchingSkills(String.join(", ", atsResult.getMatchingSkills()));
+                app.setMissingSkills(String.join(", ", atsResult.getMissingSkills()));
+
+                if (newScore >= atsProperties.getShortlistThreshold()) {
+                    app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.SHORTLISTED);
+                    app.setRecruiterNotes(String.format("Shortlisted for interview by AI ATS (Match Score: %d%% >= %d%% threshold)",
+                            newScore, atsProperties.getShortlistThreshold()));
+                } else {
+                    app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.REJECTED);
+                    app.setRecruiterNotes(String.format("Application Rejected: ATS Skill Match Score (%d%%) is below the required %d%% threshold",
+                            newScore, atsProperties.getShortlistThreshold()));
+                }
+                jobApplicationRepository.save(app);
+            }
+        } catch (Exception ex) {
+            // log silently
+        }
+
+        return CandidateMapper.toResponse(
+                saved
+        );
+    }
+
+
+    // =========================================================
+    // PROFILE FIELD UPDATE
+    // =========================================================
+
+    private void updateProfileFields(
+            Candidate candidate,
+            CandidateProfileRequest request) {
+
+        candidate.setLinkedinUrl(
+                request.getLinkedinUrl()
+        );
+
+        candidate.setGithubUrl(
+                request.getGithubUrl()
+        );
+
+        candidate.setPortfolioUrl(
+                request.getPortfolioUrl()
+        );
+
+        candidate.setCurrentCompany(
+                request.getCurrentCompany()
+        );
+
+        candidate.setCurrentDesignation(
+                request.getCurrentDesignation()
+        );
+
+        candidate.setExperience(
+                request.getExperience()
+        );
+
+        candidate.setCurrentCtc(
+                request.getCurrentCtc()
+        );
+
+        candidate.setExpectedCtc(
+                request.getExpectedCtc()
+        );
+
+        candidate.setNoticePeriod(
+                request.getNoticePeriod()
+        );
+
+        candidate.setLocation(
+                request.getLocation()
+        );
+    }
+
+
+    // =========================================================
+    // GENERAL CANDIDATE VALIDATION
+    // =========================================================
+
+    private void validateDuplicateCandidate(
+            CandidateRequest request) {
+
+        if (candidateRepository.existsByEmail(
+                request.getEmail())) {
+
+            throw new DuplicateResourceException(
+                    "Candidate with this email already exists"
+            );
+        }
+
+        if (candidateRepository.existsByPhone(
+                request.getPhone())) {
+
+            throw new DuplicateResourceException(
+                    "Candidate with this phone number already exists"
+            );
+        }
+    }
+
+
+    private void validateDuplicateCandidateForUpdate(
+            Candidate candidate,
+            CandidateRequest request) {
+
+        if (!candidate.getEmail()
+                .equalsIgnoreCase(
+                        request.getEmail()
+                )
+                && candidateRepository.existsByEmail(
+                request.getEmail()
+        )) {
+
+            throw new DuplicateResourceException(
+                    "Candidate with this email already exists"
+            );
+        }
+
+        if (!candidate.getPhone()
+                .equals(
+                        request.getPhone()
+                )
+                && candidateRepository.existsByPhone(
+                request.getPhone()
+        )) {
+
+            throw new DuplicateResourceException(
+                    "Candidate with this phone number already exists"
+            );
+        }
+    }
+
+
+    // =========================================================
+    // SKILLS
+    // =========================================================
+
+    private Set<Skill> resolveSkills(
+            Set<UUID> skillIds) {
+        return resolveSkills(skillIds, null);
+    }
+
+    private Set<Skill> resolveSkills(
+            Set<UUID> skillIds,
+            java.util.List<String> skillNames) {
+
+        Set<Skill> skills = new HashSet<>();
+
+        if (skillIds != null && !skillIds.isEmpty()) {
+            java.util.List<Skill> found =
+                    new java.util.ArrayList<>(skillRepository.findAllById(skillIds));
+
+            if (found.size() != skillIds.size()) {
+                throw new SkillNotFoundException(
+                        "One or more skills were not found"
+                );
+            }
+            skills.addAll(found);
+        }
+
+        if (skillNames != null && !skillNames.isEmpty()) {
+            for (String name : skillNames) {
+                if (name != null && !name.isBlank()) {
+                    String trimmed = name.trim();
+                    Skill skill = skillRepository.findByNameIgnoreCase(trimmed)
+                            .orElseGet(() -> skillRepository.save(Skill.builder().name(trimmed).build()));
+                    skills.add(skill);
+                }
+            }
+        }
+
+        return skills;
+    }
+
+
+    // =========================================================
+    // GENERAL CANDIDATE FIELD UPDATE
+    // =========================================================
+
+    private void updateCandidateFields(
+            Candidate candidate,
+            CandidateRequest request) {
+
+        candidate.setFirstName(
+                request.getFirstName()
+        );
+
+        candidate.setLastName(
+                request.getLastName()
+        );
+
+        candidate.setEmail(
+                request.getEmail()
+        );
+
+        candidate.setPhone(
+                request.getPhone()
+        );
+
+        candidate.setLinkedinUrl(
+                request.getLinkedinUrl()
+        );
+
+        candidate.setGithubUrl(
+                request.getGithubUrl()
+        );
+
+        candidate.setPortfolioUrl(
+                request.getPortfolioUrl()
+        );
+
+        candidate.setCurrentCompany(
+                request.getCurrentCompany()
+        );
+
+        candidate.setCurrentDesignation(
+                request.getCurrentDesignation()
+        );
+
+        candidate.setExperience(
+                request.getExperience()
+        );
+
+        candidate.setCurrentCtc(
+                request.getCurrentCtc()
+        );
+
+        candidate.setExpectedCtc(
+                request.getExpectedCtc()
+        );
+
+        candidate.setNoticePeriod(
+                request.getNoticePeriod()
+        );
+
+        candidate.setLocation(
+                request.getLocation()
+        );
+    }
+
+    // =========================================================
+    // CANDIDATE PROFILE PHOTO MANAGEMENT
+    // =========================================================
+
+    @Override
+    public CandidateResponse uploadMyProfilePhoto(UUID userId, org.springframework.web.multipart.MultipartFile file) {
+        Candidate candidate = candidateRepository.findByUserId(userId)
+                .orElseThrow(() -> new CandidateNotFoundException("Candidate profile not found for user: " + userId));
+
+        // Delete previous photo if it exists
+        if (candidate.getProfilePhotoPath() != null) {
+            photoStorageService.deletePhoto(candidate.getProfilePhotoPath());
+        }
+
+        String savedPath = photoStorageService.storePhoto(file);
+        candidate.setProfilePhotoPath(savedPath);
+        candidate.setProfilePhotoUrl("/candidate/profile/photo");
+
+        Candidate saved = candidateRepository.save(candidate);
+        log.info("Updated profile photo for Candidate: {}", candidate.getCandidateId());
+        return CandidateMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public org.springframework.core.io.Resource getMyProfilePhoto(UUID userId) {
+        Candidate candidate = candidateRepository.findByUserId(userId)
+                .orElseThrow(() -> new CandidateNotFoundException("Candidate profile not found for user: " + userId));
+
+        if (candidate.getProfilePhotoPath() == null) {
+            throw new CandidateNotFoundException("No profile photo uploaded for this candidate.");
+        }
+
+        return photoStorageService.loadPhotoAsResource(candidate.getProfilePhotoPath());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public org.springframework.core.io.Resource getCandidateProfilePhoto(UUID candidateId) {
+        Candidate candidate = candidateRepository.findById(candidateId)
+                .orElseThrow(() -> new CandidateNotFoundException("Candidate not found with id: " + candidateId));
+
+        if (candidate.getProfilePhotoPath() == null) {
+            throw new CandidateNotFoundException("No profile photo uploaded for candidate: " + candidateId);
+        }
+
+        return photoStorageService.loadPhotoAsResource(candidate.getProfilePhotoPath());
+    }
+
+    @Override
+    public CandidateResponse deleteMyProfilePhoto(UUID userId) {
+        Candidate candidate = candidateRepository.findByUserId(userId)
+                .orElseThrow(() -> new CandidateNotFoundException("Candidate profile not found for user: " + userId));
+
+        if (candidate.getProfilePhotoPath() != null) {
+            photoStorageService.deletePhoto(candidate.getProfilePhotoPath());
+            candidate.setProfilePhotoPath(null);
+            candidate.setProfilePhotoUrl(null);
+        }
+
+        Candidate saved = candidateRepository.save(candidate);
+        log.info("Deleted profile photo for Candidate: {}", candidate.getCandidateId());
+        return CandidateMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String getMyPhotoPath(UUID userId) {
+        Candidate candidate = candidateRepository.findByUserId(userId)
+                .orElseThrow(() -> new CandidateNotFoundException("Candidate profile not found for user: " + userId));
+        return candidate.getProfilePhotoPath();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String getCandidatePhotoPath(UUID candidateId) {
+        Candidate candidate = candidateRepository.findById(candidateId)
+                .orElseThrow(() -> new CandidateNotFoundException("Candidate not found with id: " + candidateId));
+        return candidate.getProfilePhotoPath();
+    }
+
+    private Candidate createDefaultCandidateForUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CandidateNotFoundException("Candidate user not found with id: " + userId));
+
+        Candidate candidate = Candidate.builder()
+                .user(user)
+                .candidateId(candidateIdGenerator.generateCandidateId())
+                .firstName(user.getFirstName() != null ? user.getFirstName() : "Candidate")
+                .lastName(user.getLastName() != null ? user.getLastName() : "")
+                .email(user.getEmail())
+                .phone(user.getPhoneNumber())
+                .candidateStatus(CandidateStatus.ACTIVE)
+                .deleted(false)
+                .build();
+
+        return candidateRepository.save(candidate);
+    }
 }

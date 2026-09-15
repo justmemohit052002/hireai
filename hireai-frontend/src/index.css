@@ -1,0 +1,324 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Space Grotesk', -apple-system, sans-serif;
+
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-text);
+  --color-surface: var(--color-surface);
+  --color-surface-2: var(--color-surface-2);
+  --color-border: var(--color-border);
+  --color-muted: var(--color-muted);
+  --color-muted-foreground: var(--color-text-muted);
+
+  --color-brand-purple: #6D3DF5;
+  --color-brand-pink: #E94F9F;
+  --color-brand-coral: #F4776A;
+  --color-brand-orange: #F59A5B;
+  --color-brand-teal: #22AFA6;
+  --color-brand-blue: #4D78E8;
+  --color-brand-navy: #1F2049;
+
+  --color-brand-start: #C63FC5;
+  --color-brand-mid: #F56681;
+  --color-brand-end: #FC9559;
+
+  --color-purple-tint: var(--color-purple-tint);
+  --color-pink-tint: var(--color-pink-tint);
+  --color-orange-tint: var(--color-orange-tint);
+  --color-teal-tint: var(--color-teal-tint);
+  --color-blue-tint: var(--color-blue-tint);
+}
+
+/* ─────────────────────────────────────────
+   CSS Custom Properties — Design Tokens
+───────────────────────────────────────── */
+@layer base {
+  :root {
+    /* Brand Foundation Tokens */
+    --color-primary: #6D3DF5;
+    --color-pink: #E94F9F;
+    --color-coral: #F4776A;
+    --color-orange: #F59A5B;
+    --color-teal: #22AFA6;
+    --color-blue: #4D78E8;
+    --color-navy: #1F2049;
+
+    --gradient-brand: linear-gradient(135deg, #C63FC5 0%, #F56681 50%, #FC9559 100%);
+    --gradient-brand-subtle: linear-gradient(135deg, rgba(198, 63, 197, 0.08) 0%, rgba(245, 102, 129, 0.08) 50%, rgba(252, 149, 89, 0.08) 100%);
+
+    /* Supporting Background Tints — Light */
+    --color-purple-tint: #F3EEFF;
+    --color-pink-tint: #FCEEF5;
+    --color-orange-tint: #FFF4EA;
+    --color-teal-tint: #EAF8F6;
+    --color-blue-tint: #EEF3FF;
+
+    /* Neutrals — Light Mode */
+    --color-bg: #F8FAFC;
+    --color-surface: #FFFFFF;
+    --color-surface-2: #F1F5F9;
+    --color-muted: #F1F5F9;
+    --color-border: #E2E8F0;
+    --color-text: #0F172A;
+    --color-text-muted: #64748B;
+    --color-text-subtle: #94A3B8;
+
+    --color-warning: #F4776A;
+    --color-danger: #EF4444;
+    --color-info: #4D78E8;
+
+    /* Glows */
+    --glow-primary: 0 0 20px rgba(109, 61, 245, 0.22);
+    --glow-accent: 0 0 20px rgba(34, 175, 166, 0.22);
+
+    /* Glassmorphism — Light */
+    --glass-bg: rgba(255, 255, 255, 0.88);
+    --glass-border: rgba(226, 232, 240, 0.8);
+    --glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
+
+    /* Layout & Radius */
+    --sidebar-width: 260px;
+    --topnav-height: 64px;
+
+    --radius: 12px;
+    --radius-lg: 18px;
+    --radius-xl: 24px;
+  }
+
+  .dark {
+    /* Neutrals — Dark Mode */
+    --color-bg: #090A15;
+    --color-surface: #121324;
+    --color-surface-2: #1A1C35;
+    --color-muted: #1A1C35;
+    --color-border: rgba(255, 255, 255, 0.1);
+    --color-text: #F8FAFC;
+    --color-text-muted: #94A3B8;
+    --color-text-subtle: #64748B;
+
+    /* Supporting Background Tints — Dark */
+    --color-purple-tint: #231B3D;
+    --color-pink-tint: #3B1B2C;
+    --color-orange-tint: #3B221B;
+    --color-teal-tint: #162E2D;
+    --color-blue-tint: #1A2542;
+
+    --color-warning: #F59A5B;
+    --color-danger: #F87171;
+    --color-info: #4D78E8;
+
+    /* Glows */
+    --glow-primary: 0 0 24px rgba(109, 61, 245, 0.35);
+    --glow-accent: 0 0 24px rgba(34, 175, 166, 0.35);
+
+    /* Glassmorphism — Dark */
+    --glass-bg: rgba(18, 19, 36, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    transition: background-color 0.25s ease, color 0.25s ease;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--color-text);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 99px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-subtle);
+  }
+}
+
+/* ─────────────────────────────────────────
+   Utility Classes
+───────────────────────────────────────── */
+@layer utilities {
+
+  /* Glass card */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+
+  /* Supporting Background Tints */
+  .bg-purple-tint {
+    background-color: var(--color-purple-tint);
+    color: var(--color-primary);
+  }
+
+  .bg-pink-tint {
+    background-color: var(--color-pink-tint);
+    color: var(--color-pink);
+  }
+
+  .bg-orange-tint {
+    background-color: var(--color-orange-tint);
+    color: var(--color-orange);
+  }
+
+  .bg-teal-tint {
+    background-color: var(--color-teal-tint);
+    color: var(--color-teal);
+  }
+
+  .bg-blue-tint {
+    background-color: var(--color-blue-tint);
+    color: var(--color-blue);
+  }
+
+  /* Brand Gradient Utilities */
+  .bg-gradient-brand {
+    background: var(--gradient-brand);
+  }
+
+  .gradient-text-brand {
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Aurora background */
+  .aurora-bg {
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(198, 63, 197, 0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 80% 90%, rgba(245, 102, 129, 0.1) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 60% at 50% 50%, rgba(252, 149, 89, 0.08) 0%, transparent 60%),
+      var(--color-bg);
+  }
+
+  /* Glow effects */
+  .glow-primary {
+    box-shadow: var(--glow-primary);
+  }
+
+  .glow-accent {
+    box-shadow: var(--glow-accent);
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Hover lift */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 36px rgba(15, 23, 42, 0.12);
+  }
+
+  /* Surface */
+  .surface {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+  }
+
+  /* Focus ring */
+  .focus-ring {
+    outline: 2px solid #F56681;
+    outline-offset: 2px;
+  }
+
+  /* Shimmer animation for skeletons */
+  .shimmer {
+    background: linear-gradient(90deg,
+        var(--color-surface-2) 25%,
+        var(--color-border) 50%,
+        var(--color-surface-2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  /* Pulse glow */
+  @keyframes pulse-glow {
+    0%,
+    100% {
+      box-shadow: 0 0 20px rgba(245, 102, 129, 0.2);
+    }
+
+    50% {
+      box-shadow: 0 0 35px rgba(245, 102, 129, 0.45);
+    }
+  }
+
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  /* Float animation */
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  .float {
+    animation: float 4s ease-in-out infinite;
+  }
+}

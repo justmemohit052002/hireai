@@ -48,6 +48,7 @@ public final class RecruiterProfileMapper {
                 .companyEmail(recruiterProfile.getCompanyEmail())
                 .companyPhone(recruiterProfile.getCompanyPhone())
                 .companyLogoUrl(recruiterProfile.getCompanyLogoUrl())
+                .profilePhotoUrl(recruiterProfile.getProfilePhotoUrl())
                 .companyDescription(recruiterProfile.getCompanyDescription())
                 .industry(recruiterProfile.getIndustry())
                 .companySize(recruiterProfile.getCompanySize())

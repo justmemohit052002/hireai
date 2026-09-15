@@ -1,0 +1,58 @@
+// TODO: Replace mock data with API response from FastAPI /companies endpoint
+
+export const MOCK_COMPANIES = [
+  {
+    id: 'comp-1',
+    name: 'Anthropic',
+    industry: 'Artificial Intelligence',
+    size: '201-500',
+    location: 'San Francisco, CA',
+    website: 'https://anthropic.com',
+    description: 'AI safety company building reliable, interpretable, and steerable AI systems.',
+  },
+  {
+    id: 'comp-2',
+    name: 'Vercel',
+    industry: 'Developer Tools',
+    size: '201-500',
+    location: 'San Francisco, CA',
+    website: 'https://vercel.com',
+    description: 'Platform for frontend developers to build, scale, and secure the web.',
+  },
+  {
+    id: 'comp-3',
+    name: 'Linear',
+    industry: 'Productivity Software',
+    size: '51-200',
+    location: 'Remote',
+    website: 'https://linear.app',
+    description: 'Project management tool built for high-performance software teams.',
+  },
+  {
+    id: 'comp-4',
+    name: 'Figma',
+    industry: 'Design Tools',
+    size: '501-1000',
+    location: 'San Francisco, CA',
+    website: 'https://figma.com',
+    description: 'The collaborative design platform for teams.',
+  },
+  {
+    id: 'comp-5',
+    name: 'Notion',
+    industry: 'Productivity Software',
+    size: '501-1000',
+    location: 'San Francisco, CA',
+    website: 'https://notion.so',
+    description: 'All-in-one workspace for notes, tasks, wikis, and databases.',
+  },
+  {
+    id: 'comp-6',
+    name: 'Stripe',
+    industry: 'FinTech',
+    size: '1000+',
+    location: 'San Francisco, CA',
+    website: 'https://stripe.com',
+    description: 'Financial infrastructure for the internet.',
+  },
+];

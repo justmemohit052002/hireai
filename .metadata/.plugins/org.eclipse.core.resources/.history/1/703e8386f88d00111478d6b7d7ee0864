@@ -1,5 +1,0 @@
-package com.vionsys.hireai.user.dto;
-
-public class UserResponse {
-
-}

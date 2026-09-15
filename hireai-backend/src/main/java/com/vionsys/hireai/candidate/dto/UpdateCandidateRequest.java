@@ -26,7 +26,10 @@ public class UpdateCandidateRequest {
 	    @Email
 	    private String email;
 
-	    @Pattern(regexp = "^[6-9]\\d{9}$")
+	    @Pattern(
+	            regexp = "^$|^\\+?[0-9\\s\\-\\(\\)]{7,25}$",
+	            message = "Invalid phone number format"
+	    )
 	    private String phone;
 
 	    private String linkedinUrl;

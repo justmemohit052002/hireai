@@ -45,7 +45,7 @@ public class User extends BaseEntity {
     @Column(name = "password", nullable = false)
     private String password;
 
-    @Column(name = "phone_number", length = 15)
+    @Column(name = "phone_number", length = 30)
     private String phoneNumber;
 
     @Column(name = "enabled", nullable = false)
@@ -55,6 +55,17 @@ public class User extends BaseEntity {
     @Column(name = "account_non_locked", nullable = false)
     @Builder.Default
     private Boolean accountNonLocked = true;
+
+    @Column(name = "failed_login_attempts", columnDefinition = "integer default 0")
+    @Builder.Default
+    private Integer failedLoginAttempts = 0;
+
+    @Column(name = "lockout_until")
+    private java.time.LocalDateTime lockoutUntil;
+
+    public Integer getFailedLoginAttempts() {
+        return failedLoginAttempts != null ? failedLoginAttempts : 0;
+    }
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id", nullable = false)

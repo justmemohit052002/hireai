@@ -5,7 +5,6 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
-import com.vionsys.hireai.candidate.entity.Candidate;
 import com.vionsys.hireai.candidate.repository.CandidateRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -14,28 +13,50 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CandidateIdGenerator {
 
-	private final CandidateRepository candidateRepository;
+    private final CandidateRepository candidateRepository;
 
-    public String generateCandidateId() {
+    public synchronized String generateCandidateId() {
 
-        Optional<Candidate> latestCandidate =
-                candidateRepository.findTopByOrderByCreatedAtDesc();
+        int currentYear = Year.now().getValue();
+        Optional<String> latestCandidateIdOpt =
+                candidateRepository.findTopCandidateIdForYear(currentYear);
 
         int nextSequence = 1;
 
-        if (latestCandidate.isPresent()) {
+        if (latestCandidateIdOpt.isPresent() && latestCandidateIdOpt.get() != null) {
 
-            String lastCandidateId = latestCandidate.get().getCandidateId();
+            String lastCandidateId =
+                    latestCandidateIdOpt.get();
 
             String[] parts = lastCandidateId.split("-");
 
-            nextSequence = Integer.parseInt(parts[2]) + 1;
+            if (parts.length == 3) {
+                try {
+                    int lastYear = Integer.parseInt(parts[1]);
+                    if (lastYear == currentYear) {
+                        nextSequence = Integer.parseInt(parts[2]) + 1;
+                    }
+                } catch (NumberFormatException ignored) {
+                    // Fall back to sequence 1 if last ID sequence cannot be parsed
+                }
+            }
         }
 
-        return String.format(
+        String candidateId = String.format(
                 "CAN-%d-%06d",
-                Year.now().getValue(),
+                currentYear,
                 nextSequence
         );
+
+        while (candidateRepository.existsByCandidateIdNative(candidateId)) {
+            nextSequence++;
+            candidateId = String.format(
+                    "CAN-%d-%06d",
+                    currentYear,
+                    nextSequence
+            );
+        }
+
+        return candidateId;
     }
 }

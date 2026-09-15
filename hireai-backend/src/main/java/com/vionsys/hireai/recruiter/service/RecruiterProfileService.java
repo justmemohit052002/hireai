@@ -29,4 +29,19 @@ public interface RecruiterProfileService {
     RecruiterProfileResponse updateRecruiterProfile(
             RecruiterProfileRequest request);
 
+    // =========================================================
+    // RECRUITER PROFILE PHOTO MANAGEMENT
+    // =========================================================
+
+    RecruiterProfileResponse uploadProfilePhoto(org.springframework.web.multipart.MultipartFile file);
+
+    org.springframework.core.io.Resource getCurrentProfilePhoto();
+
+    org.springframework.core.io.Resource getProfilePhotoByUserId(UUID userId);
+
+    RecruiterProfileResponse deleteProfilePhoto();
+
+    String getCurrentPhotoPath();
+
+    String getPhotoPathByUserId(UUID userId);
 }

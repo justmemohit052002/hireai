@@ -5,24 +5,59 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.stereotype.Repository;
 
 import com.vionsys.hireai.candidate.entity.Candidate;
 
-@Repository
-public interface CandidateRepository extends JpaRepository<Candidate, UUID>,JpaSpecificationExecutor<Candidate>{
-	
-	    boolean existsByEmail(String email);
+public interface CandidateRepository
+		extends JpaRepository<Candidate, UUID>,
+		JpaSpecificationExecutor<Candidate> {
 
-	    boolean existsByPhone(String phone);
+	Optional<Candidate> findByCandidateId(
+			String candidateId
+	);
 
-	    boolean existsByCandidateId(String candidateId);
+	Optional<Candidate> findByEmail(
+			String email
+	);
 
-	    Optional<Candidate> findByCandidateId(String candidateId);
+	Optional<Candidate> findByPhone(
+			String phone
+	);
 
-	    Optional<Candidate> findByEmail(String email);
-	    
-	    Optional<Candidate> findByPhone(String phone);
-	    
-	    Optional<Candidate> findTopByOrderByCreatedAtDesc();
+	boolean existsByEmail(
+			String email
+	);
+
+	boolean existsByPhone(
+			String phone
+	);
+
+	boolean existsByCandidateId(
+			String candidateId
+	);
+
+	Optional<Candidate> findTopByOrderByCreatedAtDesc();
+
+	@org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"skills"})
+	Optional<Candidate> findById(
+			UUID id
+	);
+
+	@org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"skills"})
+	Optional<Candidate> findByUserId(
+			UUID userId
+	);
+
+	boolean existsByUserId(
+			UUID userId
+	);
+
+	@org.springframework.data.jpa.repository.Query(value = "SELECT candidate_id FROM candidates WHERE candidate_id LIKE CONCAT('CAN-', :year, '-%') ORDER BY candidate_id DESC LIMIT 1", nativeQuery = true)
+	Optional<String> findTopCandidateIdForYear(@org.springframework.data.repository.query.Param("year") int year);
+
+	@org.springframework.data.jpa.repository.Query(value = "SELECT COUNT(*) > 0 FROM candidates WHERE candidate_id = :candidateId", nativeQuery = true)
+	boolean existsByCandidateIdNative(@org.springframework.data.repository.query.Param("candidateId") String candidateId);
+
+	@org.springframework.data.jpa.repository.Query("SELECT COUNT(c) > 0 FROM Candidate c WHERE c.id = :candidateId AND c.user.id = :userId")
+	boolean existsByIdAndUserId(@org.springframework.data.repository.query.Param("candidateId") UUID candidateId, @org.springframework.data.repository.query.Param("userId") UUID userId);
 }

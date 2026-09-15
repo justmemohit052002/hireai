@@ -1,181 +1,339 @@
 package com.vionsys.hireai.candidate.controller;
 
-import java.net.URI;
+import java.math.BigDecimal;
 import java.util.UUID;
 
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.multipart.MultipartFile;
 
-import com.vionsys.hireai.candidate.dto.ApiResponse;
+import com.vionsys.hireai.candidate.dto.CandidateProfileRequest;
+import com.vionsys.hireai.candidate.dto.CandidateRequest;
 import com.vionsys.hireai.candidate.dto.CandidateResponse;
-import com.vionsys.hireai.candidate.dto.CreateCandidateRequest;
-import com.vionsys.hireai.candidate.dto.UpdateCandidateRequest;
+import com.vionsys.hireai.candidate.enums.CandidateStatus;
 import com.vionsys.hireai.candidate.filter.CandidateFilter;
 import com.vionsys.hireai.candidate.service.CandidateService;
+import com.vionsys.hireai.candidate.storage.ProfilePhotoStorageService;
+import com.vionsys.hireai.security.CustomUserDetails;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1/candidates")
 @RequiredArgsConstructor
-@Validated
+@Tag(name = "Candidate Profile & Directory", description = "Endpoints for candidate self-service profile management, photo upload, and recruiter candidate directory")
 public class CandidateController {
 
-	 private final CandidateService candidateService;
+	private final CandidateService candidateService;
+	private final ProfilePhotoStorageService photoStorageService;
 
-	    /**
-	     * Create a new candidate.
-	     */
-	    @PostMapping
-	    public ResponseEntity<ApiResponse<CandidateResponse>> createCandidate(
-	            @Valid @RequestBody CreateCandidateRequest request) {
 
-	        CandidateResponse response = candidateService.createCandidate(request);
+	// =========================================================
+	// AUTHENTICATED CANDIDATE PROFILE
+	// =========================================================
 
-	        URI location = ServletUriComponentsBuilder
-	                .fromCurrentRequest()
-	                .path("/{id}")
-	                .buildAndExpand(response.getId())
-	                .toUri();
+	@Operation(summary = "Create Candidate Profile (Self-Service)", description = "Create initial candidate profile with work experience, CTC, skills, and links")
+	@PostMapping("/candidate/profile")
+	@PreAuthorize("hasRole('CANDIDATE')")
+	public ResponseEntity<CandidateResponse> createMyProfile(
+			Authentication authentication,
+			@Valid @RequestBody CandidateProfileRequest request) {
 
-	        ApiResponse<CandidateResponse> apiResponse = ApiResponse.<CandidateResponse>builder()
-	                .success(true)
-	                .message("Candidate created successfully")
-	                .data(response)
-	                .build();
+		CustomUserDetails userDetails =
+				getAuthenticatedUser(authentication);
 
-	        return ResponseEntity
-	                .created(location)
-	                .body(apiResponse);
-	    }
+		CandidateResponse response =
+				candidateService.createMyProfile(
+						userDetails.getId(),
+						request
+				);
 
-	    /**
-	     * Get candidate by UUID.
-	     */
-	    @GetMapping("/{id}")
-	    public ResponseEntity<ApiResponse<CandidateResponse>> getCandidateById(
-	            @PathVariable UUID id) {
+		return ResponseEntity
+				.status(HttpStatus.CREATED)
+				.body(response);
+	}
 
-	        CandidateResponse response = candidateService.getCandidateById(id);
 
-	        ApiResponse<CandidateResponse> apiResponse = ApiResponse.<CandidateResponse>builder()
-	                .success(true)
-	                .message("Candidate retrieved successfully")
-	                .data(response)
-	                .build();
+	@Operation(summary = "Get Candidate Profile (Self-Service)", description = "Fetch profile data, skills, and parsed resume info for authenticated candidate")
+	@GetMapping("/candidate/profile")
+	@PreAuthorize("hasRole('CANDIDATE')")
+	public ResponseEntity<CandidateResponse> getMyProfile(
+			Authentication authentication) {
 
-	        return ResponseEntity.ok(apiResponse);
-	    }
+		CustomUserDetails userDetails =
+				getAuthenticatedUser(authentication);
 
-	    /**
-	     * Get candidates with pagination, sorting and dynamic filtering.
-	     */
-	    @GetMapping
-	    public ResponseEntity<ApiResponse<Page<CandidateResponse>>> getAllCandidates(
+		CandidateResponse response =
+				candidateService.getMyProfile(
+						userDetails.getId()
+				);
 
-	            @RequestParam(required = false) String candidateId,
+		return ResponseEntity.ok(response);
+	}
 
-	            @RequestParam(required = false) String firstName,
 
-	            @RequestParam(required = false) String lastName,
+	@Operation(summary = "Update Candidate Profile (Self-Service)", description = "Update skills, experience, designation, CTC, or location")
+	@PutMapping("/candidate/profile")
+	@PreAuthorize("hasRole('CANDIDATE')")
+	public ResponseEntity<CandidateResponse> updateMyProfile(
+			Authentication authentication,
+			@Valid @RequestBody CandidateProfileRequest request) {
 
-	            @RequestParam(required = false) String email,
+		CustomUserDetails userDetails =
+				getAuthenticatedUser(authentication);
 
-	            @RequestParam(required = false) String phone,
+		CandidateResponse response =
+				candidateService.updateMyProfile(
+						userDetails.getId(),
+						request
+				);
 
-	            @RequestParam(required = false) String location,
+		return ResponseEntity.ok(response);
+	}
 
-	            @RequestParam(required = false) String candidateStatus,
+	@Operation(summary = "Upload Candidate Profile Photo", description = "Upload candidate profile picture (.jpg, .jpeg, .png)")
+	@PostMapping(value = "/candidate/profile/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@PreAuthorize("hasRole('CANDIDATE')")
+	public ResponseEntity<CandidateResponse> uploadMyProfilePhoto(
+			Authentication authentication,
+			@Parameter(description = "Image file (.jpg, .jpeg, .png)", required = true)
+			@RequestParam("file") MultipartFile file) {
 
-	            @RequestParam(required = false) java.math.BigDecimal experience,
+		CustomUserDetails userDetails = getAuthenticatedUser(authentication);
+		CandidateResponse response = candidateService.uploadMyProfilePhoto(userDetails.getId(), file);
+		return ResponseEntity.ok(response);
+	}
 
-	            @RequestParam(required = false) String skill,
+	@Operation(summary = "Get Candidate's Own Profile Photo Binary", description = "View/download the authenticated candidate's profile picture")
+	@GetMapping("/candidate/profile/photo")
+	@PreAuthorize("hasRole('CANDIDATE')")
+	public ResponseEntity<Resource> getMyProfilePhoto(
+			Authentication authentication) {
 
-	            @RequestParam(defaultValue = "0") int page,
+		CustomUserDetails userDetails = getAuthenticatedUser(authentication);
+		Resource resource = candidateService.getMyProfilePhoto(userDetails.getId());
+		String photoPath = candidateService.getMyPhotoPath(userDetails.getId());
+		MediaType mediaType = photoStorageService.determineMediaType(photoPath);
 
-	            @RequestParam(defaultValue = "10") int size,
+		return ResponseEntity.ok()
+				.contentType(mediaType)
+				.header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+				.body(resource);
+	}
 
-	            @RequestParam(defaultValue = "createdAt") String sortBy,
+	@Operation(summary = "Get Candidate Profile Photo by Candidate ID", description = "Recruiters and candidates can view a candidate's profile photo")
+	@GetMapping("/candidates/{id}/profile/photo")
+	@PreAuthorize("hasAnyRole('CANDIDATE', 'RECRUITER', 'ADMIN')")
+	public ResponseEntity<Resource> getCandidateProfilePhoto(
+			@PathVariable UUID id) {
 
-	            @RequestParam(defaultValue = "desc") String sortDir) {
+		Resource resource = candidateService.getCandidateProfilePhoto(id);
+		String photoPath = candidateService.getCandidatePhotoPath(id);
+		MediaType mediaType = photoStorageService.determineMediaType(photoPath);
 
-	        CandidateFilter filter = new CandidateFilter();
+		return ResponseEntity.ok()
+				.contentType(mediaType)
+				.header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+				.body(resource);
+	}
 
-	        filter.setCandidateId(candidateId);
-	        filter.setFirstName(firstName);
-	        filter.setLastName(lastName);
-	        filter.setEmail(email);
-	        filter.setPhone(phone);
-	        filter.setLocation(location);
-	        filter.setExperience(experience);
-	        filter.setSkill(skill);
+	@Operation(summary = "Delete Candidate Profile Photo", description = "Remove candidate's profile picture")
+	@DeleteMapping("/candidate/profile/photo")
+	@PreAuthorize("hasRole('CANDIDATE')")
+	public ResponseEntity<CandidateResponse> deleteMyProfilePhoto(
+			Authentication authentication) {
 
-	        if (candidateStatus != null && !candidateStatus.isBlank()) {
-	            filter.setCandidateStatus(
-	                    com.vionsys.hireai.candidate.enums.CandidateStatus
-	                            .valueOf(candidateStatus.toUpperCase()));
-	        }
+		CustomUserDetails userDetails = getAuthenticatedUser(authentication);
+		CandidateResponse response = candidateService.deleteMyProfilePhoto(userDetails.getId());
+		return ResponseEntity.ok(response);
+	}
 
-	        Page<CandidateResponse> candidates =
-	                candidateService.getAllCandidates(
-	                        filter,
-	                        page,
-	                        size,
-	                        sortBy,
-	                        sortDir);
 
-	        ApiResponse<Page<CandidateResponse>> apiResponse =
-	                ApiResponse.<Page<CandidateResponse>>builder()
-	                        .success(true)
-	                        .message("Candidates retrieved successfully")
-	                        .data(candidates)
-	                        .build();
+	// =========================================================
+	// GENERAL CANDIDATE MANAGEMENT (RECRUITER / ADMIN)
+	// =========================================================
 
-	        return ResponseEntity.ok(apiResponse);
-	    }
+	@Operation(summary = "Create Candidate in Directory (Recruiter/Admin)", description = "Manually add a new candidate to the employer talent directory")
+	@PostMapping("/candidates")
+	@PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
+	public ResponseEntity<CandidateResponse> createCandidate(
+			@Valid @RequestBody CandidateRequest request) {
 
-	    /**
-	     * Update an existing candidate.
-	     */
-	    @PutMapping("/{id}")
-	    public ResponseEntity<ApiResponse<CandidateResponse>> updateCandidate(
-	            @PathVariable UUID id,
-	            @Valid @RequestBody UpdateCandidateRequest request) {
+		CandidateResponse response =
+				candidateService.createCandidate(request);
 
-	        CandidateResponse response =
-	                candidateService.updateCandidate(id, request);
+		return ResponseEntity
+				.status(HttpStatus.CREATED)
+				.body(response);
+	}
 
-	        ApiResponse<CandidateResponse> apiResponse =
-	                ApiResponse.<CandidateResponse>builder()
-	                        .success(true)
-	                        .message("Candidate updated successfully")
-	                        .data(response)
-	                        .build();
 
-	        return ResponseEntity.ok(apiResponse);
-	    }
+	@Operation(summary = "Get Candidate by ID (Recruiter/Admin)", description = "Fetch full candidate details from the talent pool")
+	@GetMapping("/candidates/{candidateId}")
+	@PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
+	public ResponseEntity<CandidateResponse> getCandidateById(
+			@PathVariable UUID candidateId) {
 
-	    /**
-	     * Soft delete a candidate.
-	     */
-	    @DeleteMapping("/{id}")
-	    public ResponseEntity<Void> deleteCandidate(
-	            @PathVariable UUID id) {
+		CandidateResponse response =
+				candidateService.getCandidateById(
+						candidateId
+				);
 
-	        candidateService.deleteCandidate(id);
+		return ResponseEntity.ok(response);
+	}
 
-	        return ResponseEntity.noContent().build();
-	    }
+
+	@Operation(summary = "Search & Filter Candidates (Recruiter/Admin)", description = "Paginated talent search by skill, experience, location, status, or name")
+	@GetMapping("/candidates")
+	@PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
+	public ResponseEntity<Page<CandidateResponse>> getAllCandidates(
+
+			@RequestParam(required = false)
+			String candidateId,
+
+			@RequestParam(required = false)
+			String firstName,
+
+			@RequestParam(required = false)
+			String lastName,
+
+			@RequestParam(required = false)
+			String email,
+
+			@RequestParam(required = false)
+			String phone,
+
+			@RequestParam(required = false)
+			String location,
+
+			@RequestParam(required = false)
+			CandidateStatus candidateStatus,
+
+			@RequestParam(required = false)
+			BigDecimal experience,
+
+			@RequestParam(required = false)
+			String skill,
+
+			@RequestParam(defaultValue = "0")
+			int page,
+
+			@RequestParam(defaultValue = "10")
+			int size,
+
+			@RequestParam(defaultValue = "createdAt")
+			String sortBy,
+
+			@RequestParam(defaultValue = "desc")
+			String direction) {
+
+		Sort.Direction sortDirection =
+				direction.equalsIgnoreCase("asc")
+						? Sort.Direction.ASC
+						: Sort.Direction.DESC;
+
+		PageRequest pageable =
+				PageRequest.of(
+						page,
+						size,
+						Sort.by(
+								sortDirection,
+								sortBy
+						)
+				);
+
+		CandidateFilter filter =
+				CandidateFilter.builder()
+						.candidateId(candidateId)
+						.firstName(firstName)
+						.lastName(lastName)
+						.email(email)
+						.phone(phone)
+						.location(location)
+						.candidateStatus(candidateStatus)
+						.experience(experience)
+						.skill(skill)
+						.build();
+
+		Page<CandidateResponse> response =
+				candidateService.getAllCandidates(
+						filter,
+						pageable
+				);
+
+		return ResponseEntity.ok(response);
+	}
+
+
+	@Operation(summary = "Update Candidate Details (Recruiter/Admin)", description = "Update candidate information in talent directory")
+	@PutMapping("/candidates/{candidateId}")
+	@PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
+	public ResponseEntity<CandidateResponse> updateCandidate(
+			@PathVariable UUID candidateId,
+			@Valid @RequestBody CandidateRequest request) {
+
+		CandidateResponse response =
+				candidateService.updateCandidate(
+						candidateId,
+						request
+				);
+
+		return ResponseEntity.ok(response);
+	}
+
+
+	@Operation(summary = "Delete Candidate (Recruiter/Admin)", description = "Soft-delete a candidate record from the talent directory")
+	@DeleteMapping("/candidates/{candidateId}")
+	@PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
+	public ResponseEntity<Void> deleteCandidate(
+			@PathVariable UUID candidateId) {
+
+		candidateService.deleteCandidate(
+				candidateId
+		);
+
+		return ResponseEntity
+				.noContent()
+				.build();
+	}
+
+
+	// =========================================================
+	// AUTHENTICATION HELPER
+	// =========================================================
+
+	private CustomUserDetails getAuthenticatedUser(
+			Authentication authentication) {
+
+		if (authentication == null ||
+				!(authentication.getPrincipal()
+						instanceof CustomUserDetails)) {
+
+			throw new IllegalStateException(
+					"Authenticated user not found"
+			);
+		}
+
+		return (CustomUserDetails)
+				authentication.getPrincipal();
+	}
 }

@@ -31,6 +31,8 @@ public class RecruiterProfileResponse {
 
     private String companyLogoUrl;
 
+    private String profilePhotoUrl;
+
     private String companyDescription;
 
     private String industry;

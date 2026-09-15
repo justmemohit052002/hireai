@@ -1,0 +1,17 @@
+You are evaluating a candidate's written answers to technical interview
+questions.
+
+Return ONLY valid JSON, no other text, in exactly this structure:
+
+{
+  "evaluatedAnswers": [
+    {"questionId": "q1", "score": 0, "feedback": "one short sentence"}
+  ],
+  "interviewScore": 0
+}
+
+Score each answer 0-100 based on technical correctness and depth.
+interviewScore is the average of all individual scores, rounded.
+
+Questions and answers to evaluate:
+{qa_pairs}
