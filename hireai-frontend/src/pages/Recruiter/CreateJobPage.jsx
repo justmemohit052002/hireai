@@ -137,14 +137,57 @@ export const CreateJobPage = () => {
       return;
     }
 
-    if (!description.trim()) {
-      setErrorMsg('Job description is required.');
-      return;
+    let skillArray = skills.split(',').map((s) => s.trim()).filter(Boolean);
+    if (skillArray.length === 0) {
+      // Auto-generate skills as per job role data entered prior if user left it blank
+      const generated = generateRoleRequirements({
+        title,
+        department,
+        jobType,
+        workplaceType,
+        level,
+        location,
+        currency,
+        salaryMin,
+        salaryMax,
+        deadline,
+        existingSkills: '',
+      });
+
+      if (generated?.skills) {
+        skillArray = generated.skills.split(',').map((s) => s.trim()).filter(Boolean);
+        setSkills(generated.skills);
+      }
+
+      if (skillArray.length === 0) {
+        skillArray = [title.trim(), 'Problem Solving', 'Team Collaboration'];
+      }
     }
 
-    const skillArray = skills.split(',').map((s) => s.trim()).filter(Boolean);
-    if (skillArray.length === 0) {
-      setErrorMsg('Please enter at least one required skill (e.g. Java, Python, React).');
+    let finalDescription = description.trim();
+    if (!finalDescription) {
+      // Auto-generate description if recruiter left it blank
+      const generated = generateRoleRequirements({
+        title,
+        department,
+        jobType,
+        workplaceType,
+        level,
+        location,
+        currency,
+        salaryMin,
+        salaryMax,
+        deadline,
+        existingSkills: skills,
+      });
+      if (generated?.description) {
+        finalDescription = generated.description;
+        setDescription(generated.description);
+      }
+    }
+
+    if (!finalDescription) {
+      setErrorMsg('Job description is required.');
       return;
     }
 
@@ -174,7 +217,7 @@ export const CreateJobPage = () => {
       benefits: benefitArray,
       openings: Number(openings) > 0 ? Number(openings) : 1,
       applicationDeadline: deadline || null,
-      description: description.trim(),
+      description: finalDescription,
     };
 
     try {
@@ -391,14 +434,16 @@ export const CreateJobPage = () => {
           </h3>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-              Required Skills * (Comma-separated for ATS Matching)
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Required Skills <span className="text-muted-foreground/60 font-normal lowercase">(Optional — AI auto-generates if blank)</span>
+              </label>
+              <span className="text-[11px] text-muted-foreground/70 hidden sm:inline">Comma-separated for ATS Matching</span>
+            </div>
             <Input
-              required
               value={skills}
               onChange={(e) => setSkills(e.target.value)}
-              placeholder="e.g. React, Node.js, Spring Boot, Java, PostgreSQL, Docker"
+              placeholder="e.g. React, Node.js, Spring Boot, Java, PostgreSQL (Optional — leave blank to auto-generate based on job role)"
             />
           </div>
 
