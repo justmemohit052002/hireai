@@ -15,7 +15,11 @@ def generate_jd(job_title: str, required_skills: list[str], experience_level: st
     else:
         template = "Job title: {job_title}\nRequired skills: {required_skills}\nExperience level: {experience_level}"
 
-    skills_str = ", ".join(to_str_list(required_skills)) if required_skills else ""
+    skills_str = (
+        ", ".join(to_str_list(required_skills))
+        if required_skills and len(to_str_list(required_skills)) > 0
+        else "(None specified — automatically deduce and generate the top 4-6 core essential skills for this job title)"
+    )
     prompt = (
         template.replace("{job_title}", str(job_title or ""))
         .replace("{required_skills}", skills_str)

@@ -76,8 +76,7 @@ public class JobRequest {
     @Builder.Default
     private Currency currency = Currency.INR;
 
-    @Schema(description = "List of required technical and functional skills", example = "[\"Java\", \"Spring Boot\", \"PostgreSQL\", \"Docker\", \"Microservices\"]")
-    @NotEmpty(message = "At least one skill is required")
+    @Schema(description = "List of required technical and functional skills (optional, auto-generated if omitted)", example = "[\"Java\", \"Spring Boot\", \"PostgreSQL\", \"Docker\", \"Microservices\"]")
     private List<String> skills;
 
     @Schema(description = "Minimum educational qualification", example = "B.Tech / B.E in Computer Science or equivalent")
