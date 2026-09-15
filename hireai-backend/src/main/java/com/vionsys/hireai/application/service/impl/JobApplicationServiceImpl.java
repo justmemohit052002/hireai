@@ -30,7 +30,11 @@ import com.vionsys.hireai.job.repository.JobRepository;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.vionsys.hireai.application.config.AtsProperties;
+import com.vionsys.hireai.candidate.enums.CandidateStatus;
 import com.vionsys.hireai.candidate.service.ResumeService;
+import com.vionsys.hireai.candidate.util.CandidateIdGenerator;
+import com.vionsys.hireai.user.entity.User;
+import com.vionsys.hireai.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +48,8 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     private final JobApplicationRepository jobApplicationRepository;
     private final JobRepository jobRepository;
     private final CandidateRepository candidateRepository;
+    private final UserRepository userRepository;
+    private final CandidateIdGenerator candidateIdGenerator;
     private final AtsMatchScoringService atsMatchScoringService;
     private final AtsProperties atsProperties;
     private final ResumeService resumeService;
@@ -64,7 +70,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         }
 
         Candidate candidate = candidateRepository.findByUserId(candidateUserId)
-                .orElseThrow(() -> new CandidateNotFoundException("Candidate profile not found. Please create your profile before applying."));
+                .orElseGet(() -> createDefaultCandidateForUser(candidateUserId));
 
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new JobNotFoundException("Job not found"));
@@ -230,10 +236,24 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             throw new AccessDeniedException("You do not have permission to download this application's resume.");
         }
 
-        if (application.getCandidate().getResume() == null) {
-            throw new com.vionsys.hireai.candidate.exception.ResumeNotFoundException("No resume attached to this application.");
-        }
-
         return resumeService.downloadResume(application.getCandidate().getId());
+    }
+
+    private Candidate createDefaultCandidateForUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CandidateNotFoundException("Candidate user account not found: " + userId));
+
+        Candidate candidate = Candidate.builder()
+                .user(user)
+                .candidateId(candidateIdGenerator.generateCandidateId())
+                .firstName(user.getFirstName() != null ? user.getFirstName() : "Candidate")
+                .lastName(user.getLastName() != null ? user.getLastName() : "")
+                .email(user.getEmail())
+                .phone(user.getPhoneNumber())
+                .candidateStatus(CandidateStatus.ACTIVE)
+                .deleted(false)
+                .build();
+
+        return candidateRepository.save(candidate);
     }
 }

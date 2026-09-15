@@ -17,8 +17,8 @@ class CamelModel(BaseModel):
 # ---- 1. JD Generator ----
 class GenerateJDRequest(CamelModel):
     job_title: str
-    required_skills: list[str]
-    experience_level: str
+    required_skills: list[str] = []
+    experience_level: str = "mid"
 
 
 class GenerateJDResponse(CamelModel):

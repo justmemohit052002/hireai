@@ -23,8 +23,12 @@ import com.vionsys.hireai.ai.repository.ChatConversationRepository;
 import com.vionsys.hireai.ai.repository.ChatMessageRepository;
 import com.vionsys.hireai.ai.service.AiChatbotService;
 import com.vionsys.hireai.candidate.entity.Candidate;
+import com.vionsys.hireai.candidate.enums.CandidateStatus;
 import com.vionsys.hireai.candidate.repository.CandidateRepository;
+import com.vionsys.hireai.candidate.util.CandidateIdGenerator;
 import com.vionsys.hireai.exception.CandidateNotFoundException;
+import com.vionsys.hireai.user.entity.User;
+import com.vionsys.hireai.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,11 +43,13 @@ public class AiChatbotServiceImpl implements AiChatbotService {
     private final ChatConversationRepository conversationRepository;
     private final ChatMessageRepository messageRepository;
     private final AiEngineClient aiEngineClient;
+    private final UserRepository userRepository;
+    private final CandidateIdGenerator candidateIdGenerator;
 
     @Override
     public AiChatMessageResponse sendMessage(UUID candidateUserId, String newMessage) {
         Candidate candidate = candidateRepository.findByUserId(candidateUserId)
-                .orElseThrow(() -> new CandidateNotFoundException("Candidate profile not found for authenticated user."));
+                .orElseGet(() -> createDefaultCandidateForUser(candidateUserId));
 
         ChatConversation conversation = conversationRepository.findLatestByCandidateUserId(candidateUserId)
                 .orElseGet(() -> conversationRepository.save(
@@ -193,5 +199,23 @@ public class AiChatbotServiceImpl implements AiChatbotService {
                     conversation.setComplete(true);
                     conversationRepository.save(conversation);
                 });
+    }
+
+    private Candidate createDefaultCandidateForUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CandidateNotFoundException("Candidate user not found with id: " + userId));
+
+        Candidate candidate = Candidate.builder()
+                .user(user)
+                .candidateId(candidateIdGenerator.generateCandidateId())
+                .firstName(user.getFirstName() != null ? user.getFirstName() : "Candidate")
+                .lastName(user.getLastName() != null ? user.getLastName() : "")
+                .email(user.getEmail())
+                .phone(user.getPhoneNumber())
+                .candidateStatus(CandidateStatus.ACTIVE)
+                .deleted(false)
+                .build();
+
+        return candidateRepository.save(candidate);
     }
 }

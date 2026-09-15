@@ -29,8 +29,8 @@ import lombok.RequiredArgsConstructor;
 public class JobServiceImpl implements JobService {
 
     private final JobRepository jobRepository;
-
     private final RecruiterProfileRepository recruiterProfileRepository;
+    private final com.vionsys.hireai.application.repository.JobApplicationRepository jobApplicationRepository;
 
 
     // =========================================================
@@ -59,7 +59,8 @@ public class JobServiceImpl implements JobService {
                 jobRepository.save(job);
 
         return JobMapper.toResponse(
-                savedJob
+                savedJob,
+                0L
         );
     }
 
@@ -80,7 +81,10 @@ public class JobServiceImpl implements JobService {
                         recruiterProfile.getId()
                 )
                 .stream()
-                .map(JobMapper::toResponse)
+                .map(job -> {
+                    long count = jobApplicationRepository.countByJobId(job.getId());
+                    return JobMapper.toResponse(job, count);
+                })
                 .toList();
     }
 
@@ -96,7 +100,10 @@ public class JobServiceImpl implements JobService {
         return jobRepository
                 .findByStatus(JobStatus.OPEN)
                 .stream()
-                .map(JobMapper::toResponse)
+                .map(job -> {
+                    long count = jobApplicationRepository.countByJobId(job.getId());
+                    return JobMapper.toResponse(job, count);
+                })
                 .toList();
     }
 
@@ -125,8 +132,10 @@ public class JobServiceImpl implements JobService {
                                 )
                         );
 
+        long count = jobApplicationRepository.countByJobId(job.getId());
         return JobMapper.toResponse(
-                job
+                job,
+                count
         );
     }
 

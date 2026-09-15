@@ -28,17 +28,21 @@ import com.vionsys.hireai.candidate.dto.ResumeResponse;
 import com.vionsys.hireai.candidate.entity.Candidate;
 import com.vionsys.hireai.candidate.entity.Resume;
 import com.vionsys.hireai.candidate.entity.Skill;
+import com.vionsys.hireai.candidate.enums.CandidateStatus;
 import com.vionsys.hireai.candidate.enums.ResumeStatus;
 import com.vionsys.hireai.candidate.exception.FileStorageException;
 import com.vionsys.hireai.candidate.exception.ResumeNotFoundException;
 import com.vionsys.hireai.candidate.mapper.ResumeMapper;
 import com.vionsys.hireai.candidate.repository.CandidateRepository;
+import com.vionsys.hireai.candidate.util.CandidateIdGenerator;
 import com.vionsys.hireai.exception.CandidateNotFoundException;
 import com.vionsys.hireai.candidate.repository.ResumeRepository;
 import com.vionsys.hireai.candidate.repository.SkillRepository;
 import com.vionsys.hireai.candidate.service.ResumeService;
 import com.vionsys.hireai.candidate.service.ResumeTextExtractorService;
 import com.vionsys.hireai.candidate.storage.FileStorageService;
+import com.vionsys.hireai.user.entity.User;
+import com.vionsys.hireai.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +65,8 @@ public class ResumeServiceImpl implements ResumeService {
     private final AiEngineClient aiEngineClient;
     private final AiEngineProperties aiEngineProperties;
     private final ObjectMapper objectMapper;
+    private final UserRepository userRepository;
+    private final CandidateIdGenerator candidateIdGenerator;
     private final org.springframework.transaction.support.TransactionTemplate transactionTemplate;
     private final com.vionsys.hireai.application.repository.JobApplicationRepository jobApplicationRepository;
     private final com.vionsys.hireai.application.service.AtsMatchScoringService atsMatchScoringService;
@@ -77,8 +83,7 @@ public class ResumeServiceImpl implements ResumeService {
     @Override
     public ResumeResponse uploadMyResume(UUID userId, MultipartFile file) {
         Candidate candidate = candidateRepository.findByUserId(userId)
-                .orElseThrow(
-                        () -> new CandidateNotFoundException("Candidate profile not found for authenticated user."));
+                .orElseGet(() -> createDefaultCandidateForUser(userId));
 
         return handleResumeUpload(candidate, file);
     }
@@ -316,9 +321,9 @@ public class ResumeServiceImpl implements ResumeService {
     @Override
     @Transactional(readOnly = true)
     public ResumeResponse getMyResume(UUID userId) {
-        Resume resume = resumeRepository.findByCandidateUserIdAndDeletedFalse(userId)
-                .orElseThrow(() -> new ResumeNotFoundException("Resume not found for candidate."));
-        return resumeMapper.toResponse(resume);
+        return resumeRepository.findByCandidateUserIdAndDeletedFalse(userId)
+                .map(resumeMapper::toResponse)
+                .orElse(null);
     }
 
     @Override
@@ -385,5 +390,23 @@ public class ResumeServiceImpl implements ResumeService {
         resume.setDeleted(true);
         resume.setResumeStatus(ResumeStatus.DELETED);
         resumeRepository.save(resume);
+    }
+
+    private Candidate createDefaultCandidateForUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CandidateNotFoundException("Candidate user account not found: " + userId));
+
+        Candidate candidate = Candidate.builder()
+                .user(user)
+                .candidateId(candidateIdGenerator.generateCandidateId())
+                .firstName(user.getFirstName() != null ? user.getFirstName() : "Candidate")
+                .lastName(user.getLastName() != null ? user.getLastName() : "")
+                .email(user.getEmail())
+                .phone(user.getPhoneNumber())
+                .candidateStatus(CandidateStatus.ACTIVE)
+                .deleted(false)
+                .build();
+
+        return candidateRepository.save(candidate);
     }
 }

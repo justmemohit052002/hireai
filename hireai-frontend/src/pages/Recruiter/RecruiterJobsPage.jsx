@@ -1,24 +1,36 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+<<<<<<< HEAD
 import { Plus, Edit, Trash2, PauseCircle, PlayCircle, Calendar, AlertCircle, RotateCcw } from 'lucide-react';
+=======
+import { Plus, Edit, Trash2, PauseCircle, PlayCircle, Calendar, Users, ChevronRight, Sparkles } from 'lucide-react';
+>>>>>>> origin/main
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/common/EmptyState';
+import { JobApplicantsDrawer } from '@/features/recruiter/JobApplicantsDrawer';
 import { formatSalary, formatShortDate, getJobTypeLabel } from '@/utils';
 import { ROUTES } from '@/constants';
 import { useJobs } from '@/hooks';
 
 export const RecruiterJobsPage = () => {
   const navigate = useNavigate();
+<<<<<<< HEAD
   const { jobs, isLoading, isError, error, refetch, toggleJobStatus, deleteJob } = useJobs();
+=======
+  const { jobs, toggleJobStatus, deleteJob, refreshJobs } = useJobs();
+  const [selectedJobForApplicants, setSelectedJobForApplicants] = useState(null);
+>>>>>>> origin/main
 
   return (
     <div className="space-y-6 pb-12">
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold font-heading text-foreground tracking-tight">Manage Postings</h2>
-          <p className="text-xs text-muted-foreground">View, edit, pause, or create new engineering requisitions.</p>
+          <p className="text-xs text-muted-foreground">
+            Click any position to review applicant pipeline, ATS rankings, and resumes.
+          </p>
         </div>
         <Button
           variant="gradient"
@@ -67,11 +79,21 @@ export const RecruiterJobsPage = () => {
           {(jobs || []).map((job) => (
             <Card
               key={job.id}
+<<<<<<< HEAD
               className="p-5 surface-nested border border-border/60 rounded-2xl shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+=======
+              onClick={() => setSelectedJobForApplicants(job)}
+              className="p-5 glass border border-border/60 hover:border-primary/50 hover:shadow-lg rounded-2xl transition-all cursor-pointer group flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden"
+>>>>>>> origin/main
             >
-              <div className="space-y-2">
+              {/* Left Active Indicator Bar */}
+              <div className="absolute left-0 inset-y-0 w-1 bg-gradient-to-b from-[#C63FC5] to-[#F56681] opacity-0 group-hover:opacity-100 transition-opacity" />
+
+              <div className="space-y-2 flex-1 min-w-0">
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  <h3 className="text-base font-bold text-foreground">{job.title}</h3>
+                  <h3 className="text-base font-bold text-foreground group-hover:text-primary transition-colors">
+                    {job.title}
+                  </h3>
                   {/* Listing status badge */}
                   <span
                     className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
@@ -107,24 +129,46 @@ export const RecruiterJobsPage = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-border/60">
+              {/* Right area: Applicants Counter & Actions */}
+              <div className="flex items-center gap-5 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-border/60">
                 <div className="flex items-center gap-6 text-right shrink-0">
-                  <div>
+                  <div className="text-center md:text-right">
                     <div className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground">Applicants</div>
-                    <div className="text-base font-bold text-foreground mt-0.5">{job.applicantsCount}</div>
+                    <div className="text-base font-bold text-foreground mt-0.5 font-mono">
+                      {job.applicantsCount}
+                    </div>
                   </div>
-                  <div>
+                  <div className="text-center md:text-right">
                     <div className="text-[11px] font-bold tracking-wider uppercase text-[#F56681]">AI Parsed</div>
-                    <div className="text-base font-bold text-[#F56681] mt-0.5">{Math.floor(job.applicantsCount * 0.94)}</div>
+                    <div className="text-base font-bold text-[#F56681] mt-0.5 font-mono">
+                      {job.aiParsedCount || job.applicantsCount || 0}
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
+                {/* View Pipeline Button */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold h-8 px-3 border-border/70 group-hover:border-primary/50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedJobForApplicants(job);
+                  }}
+                >
+                  <Users className="w-3.5 h-3.5 text-primary" />
+                  <span>Applicants</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                </Button>
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => toggleJobStatus(job.id)}
                     title={job.listingStatus === 'open' ? 'Pause Requisition' : 'Resume Requisition'}
+                    className="h-8 w-8 p-0"
                   >
                     {job.listingStatus === 'open' ? (
                       <PauseCircle className="w-4 h-4 text-amber-500" />
@@ -137,14 +181,19 @@ export const RecruiterJobsPage = () => {
                     variant="outline"
                     title="Edit Job"
                     onClick={() => navigate(`/recruiter/jobs/edit/${job.id}`)}
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                   >
-                    <Edit className="w-4 h-4 text-muted-foreground" />
+                    <Edit className="w-4 h-4" />
                   </Button>
                   <Button
                     size="sm"
                     variant="danger"
                     onClick={() => deleteJob(job.id)}
                     title="Delete Job"
+<<<<<<< HEAD
+=======
+                    className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+>>>>>>> origin/main
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -161,6 +210,17 @@ export const RecruiterJobsPage = () => {
           onAction={() => navigate(ROUTES.RECRUITER_JOBS_CREATE)}
         />
       )}
+
+      {/* Slide-in Applicants Review Drawer */}
+      <JobApplicantsDrawer
+        job={selectedJobForApplicants}
+        isOpen={Boolean(selectedJobForApplicants)}
+        onClose={() => setSelectedJobForApplicants(null)}
+        onApplicationUpdated={() => {
+          if (refreshJobs) refreshJobs();
+        }}
+      />
     </div>
   );
 };
+

@@ -58,6 +58,21 @@ public class AiJdServiceImpl implements AiJdService {
         } else if (lowerTitle.contains("qa") || lowerTitle.contains("test") || lowerTitle.contains("sdet") || lowerTitle.contains("quality")) {
             mustHave = List.of("Selenium / Cypress", "Test Automation Frameworks", "API Testing (Postman/RestAssured)", "Java / Python");
             niceToHave = List.of("CI/CD Integration", "JIRA", "SQL", "Performance Testing (JMeter)");
+        } else if (lowerTitle.contains("mobile") || lowerTitle.contains("android") || lowerTitle.contains("ios") || lowerTitle.contains("flutter") || lowerTitle.contains("react native")) {
+            mustHave = List.of("Flutter / React Native", "Dart / Kotlin / Swift", "Mobile Architecture", "RESTful APIs", "State Management");
+            niceToHave = List.of("Firebase", "CI/CD Mobile Pipelines", "App Store Deployment", "Git");
+        } else if (lowerTitle.contains("data eng") || lowerTitle.contains("big data") || lowerTitle.contains("etl") || lowerTitle.contains("spark") || lowerTitle.contains("snowflake")) {
+            mustHave = List.of("Apache Spark", "Python", "SQL (Advanced)", "Data Warehousing (Snowflake / BigQuery)", "ETL Pipelines");
+            niceToHave = List.of("Airflow", "Kafka", "AWS / GCP", "Docker", "Git");
+        } else if (lowerTitle.contains("security") || lowerTitle.contains("cyber") || lowerTitle.contains("infosec") || lowerTitle.contains("soc")) {
+            mustHave = List.of("Network Security", "Vulnerability Assessment", "SIEM Tools", "Threat Modeling", "OWASP Top 10");
+            niceToHave = List.of("Incident Response", "Python / Bash", "Zero Trust", "IAM");
+        } else if (lowerTitle.contains("product manager") || lowerTitle.contains("product owner") || lowerTitle.contains("tpm")) {
+            mustHave = List.of("Product Roadmap & Strategy", "Agile / Scrum", "User Story Mapping", "JIRA", "Data Analytics");
+            niceToHave = List.of("A/B Testing", "Customer Discovery", "PRD Writing", "Stakeholder Management");
+        } else if (lowerTitle.contains("design") || lowerTitle.contains("ui") || lowerTitle.contains("ux")) {
+            mustHave = List.of("Figma", "UI/UX Design", "Design Systems", "Wireframing & Prototyping", "User Research");
+            niceToHave = List.of("Interaction Design", "Accessibility (WCAG)", "Design Thinking", "Responsive Design");
         } else if (lowerTitle.contains("java") || lowerTitle.contains("spring") || lowerTitle.contains("backend")) {
             mustHave = List.of("Java", "Spring Boot", "Microservices", "PostgreSQL / MySQL", "RESTful APIs");
             niceToHave = List.of("Docker", "Redis", "Kafka", "Git", "System Design");
