@@ -68,6 +68,9 @@ public class CandidateProfileRequest {
     @Schema(description = "Current residential location / city", example = "Pune, Maharashtra, India")
     private String location;
 
+    @Schema(description = "Professional biography / summary", example = "Senior Full-Stack Engineer with 5+ years of experience in Java, Spring Boot, and React.")
+    private String bio;
+
     @Schema(description = "Skill UUID set (if selecting from predefined skills)", example = "[]")
     private Set<UUID> skillIds;
 

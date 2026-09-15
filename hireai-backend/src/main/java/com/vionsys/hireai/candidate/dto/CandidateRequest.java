@@ -114,6 +114,9 @@ public class CandidateRequest {
     @Schema(description = "City / location", example = "Pune, Maharashtra, India")
     private String location;
 
+    @Schema(description = "Professional biography / summary", example = "Senior Full-Stack Engineer with 5+ years of experience...")
+    private String bio;
+
     @Schema(description = "Set of skill UUIDs", example = "[]")
     private Set<UUID> skillIds;
 }

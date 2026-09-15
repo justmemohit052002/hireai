@@ -54,11 +54,15 @@ public class CandidateResponse {
 
     private String location;
 
+    private String bio;
+
     private CandidateStatus candidateStatus;
 
     private UUID resumeId;
 
     private Set<UUID> skillIds;
+
+    private java.util.List<String> skills;
 
     private LocalDateTime createdAt;
 
