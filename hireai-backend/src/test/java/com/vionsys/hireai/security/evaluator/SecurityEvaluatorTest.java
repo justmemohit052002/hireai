@@ -47,15 +47,13 @@ class SecurityEvaluatorTest {
     void testJobSecurityEvaluator_OwnerMatches() {
         UUID jobId = UUID.randomUUID();
         UUID recruiterUserId = UUID.randomUUID();
+        UUID strangerUserId = UUID.randomUUID();
 
-        User recruiterUser = User.builder().id(recruiterUserId).build();
-        RecruiterProfile recruiterProfile = RecruiterProfile.builder().user(recruiterUser).build();
-        Job job = Job.builder().id(jobId).recruiterProfile(recruiterProfile).build();
-
-        when(jobRepository.findById(jobId)).thenReturn(Optional.of(job));
+        when(jobRepository.existsByIdAndRecruiterUserId(jobId, recruiterUserId)).thenReturn(true);
+        when(jobRepository.existsByIdAndRecruiterUserId(jobId, strangerUserId)).thenReturn(false);
 
         assertTrue(jobSecurityEvaluator.isJobOwner(jobId, recruiterUserId));
-        assertFalse(jobSecurityEvaluator.isJobOwner(jobId, UUID.randomUUID()));
+        assertFalse(jobSecurityEvaluator.isJobOwner(jobId, strangerUserId));
     }
 
     @Test
@@ -65,20 +63,13 @@ class SecurityEvaluatorTest {
         UUID recruiterUserId = UUID.randomUUID();
         UUID strangerUserId = UUID.randomUUID();
 
-        User candidateUser = User.builder().id(candidateUserId).build();
-        Candidate candidate = Candidate.builder().user(candidateUser).build();
+        when(jobApplicationRepository.canAccessApplication(appId, candidateUserId)).thenReturn(true);
+        when(jobApplicationRepository.canAccessApplication(appId, recruiterUserId)).thenReturn(true);
+        when(jobApplicationRepository.canAccessApplication(appId, strangerUserId)).thenReturn(false);
 
-        User recruiterUser = User.builder().id(recruiterUserId).build();
-        RecruiterProfile recruiterProfile = RecruiterProfile.builder().user(recruiterUser).build();
-        Job job = Job.builder().recruiterProfile(recruiterProfile).build();
-
-        JobApplication application = JobApplication.builder()
-                .id(appId)
-                .candidate(candidate)
-                .job(job)
-                .build();
-
-        when(jobApplicationRepository.findById(appId)).thenReturn(Optional.of(application));
+        when(jobApplicationRepository.canManageApplication(appId, recruiterUserId)).thenReturn(true);
+        when(jobApplicationRepository.canManageApplication(appId, candidateUserId)).thenReturn(false);
+        when(jobApplicationRepository.canManageApplication(appId, strangerUserId)).thenReturn(false);
 
         // Candidate who applied can access
         assertTrue(applicationSecurityEvaluator.canAccessApplication(appId, candidateUserId));
@@ -97,14 +88,13 @@ class SecurityEvaluatorTest {
     void testCandidateSecurityEvaluator() {
         UUID candidateId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
+        UUID strangerUserId = UUID.randomUUID();
 
-        User user = User.builder().id(userId).build();
-        Candidate candidate = Candidate.builder().id(candidateId).user(user).build();
-
-        when(candidateRepository.findById(candidateId)).thenReturn(Optional.of(candidate));
+        when(candidateRepository.existsByIdAndUserId(candidateId, userId)).thenReturn(true);
+        when(candidateRepository.existsByIdAndUserId(candidateId, strangerUserId)).thenReturn(false);
 
         assertTrue(candidateSecurityEvaluator.isCandidateOwner(candidateId, userId));
-        assertFalse(candidateSecurityEvaluator.isCandidateOwner(candidateId, UUID.randomUUID()));
+        assertFalse(candidateSecurityEvaluator.isCandidateOwner(candidateId, strangerUserId));
 
         assertTrue(candidateSecurityEvaluator.isSelf(userId, userId));
         assertFalse(candidateSecurityEvaluator.isSelf(userId, UUID.randomUUID()));

@@ -25,6 +25,8 @@ export const ResumeUpload = ({
   initialFile = null,
   autoUpload = false,
   fetchRemoteOnMount = true,
+  allowRemoteDelete = false,
+  onUploadSuccess = null,
 }) => {
   const inputId = useId();
   const fileInputRef = useRef(null);
@@ -40,7 +42,7 @@ export const ResumeUpload = ({
 
   // Sync initialFile if passed as prop
   useEffect(() => {
-    if (initialFile) {
+    if (initialFile !== undefined) {
       setFile(initialFile);
     }
   }, [initialFile]);
@@ -135,6 +137,9 @@ export const ResumeUpload = ({
         setFile(updated);
         if (onFileSelect) {
           onFileSelect(updated);
+        }
+        if (onUploadSuccess) {
+          onUploadSuccess(result);
         }
       } catch (err) {
         setError(err.message || 'Failed to upload and parse resume.');
@@ -240,7 +245,8 @@ export const ResumeUpload = ({
   const handleRemove = async (e) => {
     if (e) e.stopPropagation();
 
-    if (file?.isRemote) {
+    // If remote delete is explicitly allowed (e.g. from candidate profile management)
+    if (allowRemoteDelete && file?.isRemote) {
       setIsDeleting(true);
       try {
         await candidateApi.deleteResume();

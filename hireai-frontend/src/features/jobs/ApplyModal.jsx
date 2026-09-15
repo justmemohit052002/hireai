@@ -1,10 +1,30 @@
-import React, { useState } from 'react';
-import { Send, CheckCircle2, Sparkles, FileText, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  Send,
+  CheckCircle2,
+  Sparkles,
+  FileText,
+  AlertCircle,
+  Upload,
+  UserCheck,
+  Eye,
+  Trash2,
+  Loader2,
+  RefreshCw,
+} from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
 import { ResumeUpload } from '@/components/forms/ResumeUpload';
+import { candidateApi } from '@/services/api/candidate.api';
 import { useJobs } from '@/context/JobsContext';
+
+const formatFileSize = (bytes) => {
+  if (!bytes || isNaN(bytes)) return 'Unknown size';
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+  return `${(kb / 1024).toFixed(2)} MB`;
+};
 
 export const ApplyModal = ({
   job,
@@ -14,13 +34,84 @@ export const ApplyModal = ({
 }) => {
   const { submitApplication } = useJobs();
   const [coverNote, setCoverNote] = useState('');
-  const [resumeFile, setResumeFile] = useState(null);
+  const [resumeMode, setResumeMode] = useState('upload'); // 'upload' | 'profile'
+  const [customResume, setCustomResume] = useState(null);
+  const [profileResume, setProfileResume] = useState(null);
+  const [isLoadingProfileResume, setIsLoadingProfileResume] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [matchScore, setMatchScore] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isViewingResume, setIsViewingResume] = useState(false);
+
+  // Fetch candidate's profile resume on open to determine options
+  useEffect(() => {
+    let isMounted = true;
+    if (isOpen) {
+      setErrorMsg('');
+      setIsLoadingProfileResume(true);
+      candidateApi
+        .getMyResume()
+        .then((remoteResume) => {
+          if (isMounted && remoteResume && (remoteResume.id || remoteResume.originalFileName)) {
+            const formatted = {
+              name: remoteResume.originalFileName || 'Profile_Resume.pdf',
+              size: formatFileSize(remoteResume.fileSize),
+              isRemote: true,
+              id: remoteResume.id,
+              parsedRole: remoteResume.parsedRole,
+              parsedExperience: remoteResume.parsedExperience,
+            };
+            setProfileResume(formatted);
+          } else if (isMounted) {
+            setProfileResume(null);
+            setResumeMode('upload');
+          }
+        })
+        .catch(() => {
+          if (isMounted) {
+            setProfileResume(null);
+            setResumeMode('upload');
+          }
+        })
+        .finally(() => {
+          if (isMounted) setIsLoadingProfileResume(false);
+        });
+    } else {
+      // Reset state on close
+      setCustomResume(null);
+      setCoverNote('');
+      setErrorMsg('');
+      setIsSuccess(false);
+      setMatchScore(null);
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen]);
 
   if (!job) return null;
+
+  const handleViewProfileResume = async () => {
+    setIsViewingResume(true);
+    try {
+      const blob = await candidateApi.downloadResume();
+      if (blob instanceof Blob && blob.size > 0) {
+        const isPdf = profileResume?.name?.toLowerCase().endsWith('.pdf') !== false;
+        const fileBlob = new Blob([blob], {
+          type: isPdf ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        });
+        const blobUrl = URL.createObjectURL(fileBlob);
+        window.open(blobUrl, '_blank');
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      }
+    } catch (err) {
+      setErrorMsg(err.message || 'Could not preview profile resume.');
+    } finally {
+      setIsViewingResume(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,10 +119,14 @@ export const ApplyModal = ({
     setIsSubmitting(true);
 
     try {
+      // If user chose upload mode with a custom file, pass the custom file.
+      // If user chose profile mode, file is null (backend uses existing profile resume).
+      const fileToSubmit = resumeMode === 'upload' && customResume ? customResume : null;
+
       const result = await submitApplication({
         jobId: job.id,
         coverNote,
-        file: resumeFile,
+        file: fileToSubmit,
       });
 
       if (result?.aiScore || result?.atsMatchScore) {
@@ -48,10 +143,10 @@ export const ApplyModal = ({
       setTimeout(() => {
         setIsSuccess(false);
         setCoverNote('');
-        setResumeFile(null);
+        setCustomResume(null);
         setMatchScore(null);
         onClose();
-      }, 2000);
+      }, 2200);
     } catch (err) {
       setErrorMsg(err.message || 'Failed to submit application. Please try again.');
     } finally {
@@ -103,12 +198,105 @@ export const ApplyModal = ({
             </div>
           </div>
 
-          {/* Resume Upload Component */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-foreground mb-2">
-              Attach Resume (Optional if already on profile)
-            </label>
-            <ResumeUpload onFileSelect={(file) => setResumeFile(file)} />
+          {/* Resume Selection / Upload Section */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold uppercase tracking-wider text-foreground">
+                Resume Attachment
+              </label>
+              {profileResume && (
+                <div className="flex items-center p-0.5 rounded-xl bg-surface-2 border border-border/70 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setResumeMode('upload')}
+                    className={`px-3 py-1 rounded-lg font-medium transition-all ${
+                      resumeMode === 'upload'
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Upload New
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setResumeMode('profile')}
+                    className={`px-3 py-1 rounded-lg font-medium transition-all ${
+                      resumeMode === 'profile'
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    Use Profile Resume
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Mode 1: Upload Custom Resume */}
+            {resumeMode === 'upload' && (
+              <div>
+                <ResumeUpload
+                  autoUpload={false}
+                  fetchRemoteOnMount={false}
+                  allowRemoteDelete={false}
+                  initialFile={customResume}
+                  onFileSelect={(file) => setCustomResume(file)}
+                />
+              </div>
+            )}
+
+            {/* Mode 2: Use Profile Resume */}
+            {resumeMode === 'profile' && profileResume && (
+              <div className="flex flex-col gap-3 p-4 rounded-2xl bg-surface-2 border border-primary/30 shadow-sm transition-all">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+                      <UserCheck className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0 space-y-0.5">
+                      <p className="text-xs sm:text-sm font-bold text-foreground truncate">
+                        {profileResume.name}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                        <span>{profileResume.size}</span>
+                        <span>•</span>
+                        <span className="inline-flex items-center gap-1 font-semibold text-emerald-400">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Saved on Candidate Profile
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleViewProfileResume}
+                      disabled={isViewingResume}
+                      className="h-8 px-3 text-xs font-semibold gap-1.5"
+                    >
+                      {isViewingResume ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Eye className="w-3.5 h-3.5 text-primary" />
+                      )}
+                      <span>View</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setResumeMode('upload')}
+                      className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      <span>Upload different</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Cover Note */}

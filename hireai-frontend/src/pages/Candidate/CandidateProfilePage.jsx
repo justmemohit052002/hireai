@@ -839,9 +839,23 @@ export const CandidateProfilePage = () => {
               </label>
               <ResumeUpload
                 autoUpload
+                allowRemoteDelete
                 onFileSelect={(file) => {
                   setResumeFile(file);
                   if (!file) setHasExistingResume(false);
+                  else setHasExistingResume(true);
+                }}
+                onUploadSuccess={(parsed) => {
+                  if (parsed) {
+                    if (parsed.parsedRole && !designation) setDesignation(parsed.parsedRole);
+                    if (parsed.parsedExperience && !experienceYears) setExperienceYears(parsed.parsedExperience);
+                    if (parsed.skills && Array.isArray(parsed.skills)) {
+                      setSkillsList((prev) => {
+                        const combined = new Set([...prev, ...parsed.skills]);
+                        return Array.from(combined);
+                      });
+                    }
+                  }
                 }}
               />
             </div>
