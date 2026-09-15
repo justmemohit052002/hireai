@@ -15,12 +15,14 @@ import {
   UserCheck,
   BrainCircuit,
   Loader2,
+  MessageSquare,
 } from 'lucide-react';
 import { useJobs } from '@/context/JobsContext';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { formatSalary, formatShortDate, getJobTypeLabel } from '@/utils';
 import { applicationsApi } from '@/services/api/applications.api';
+import { ChatDrawer } from '@/features/messages/ChatDrawer';
 
 const STAGES = [
   { value: 'APPLIED', label: 'Applied' },
@@ -37,6 +39,7 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
   const [isLoadingApplicants, setIsLoadingApplicants] = useState(false);
   const [evaluatingAppId, setEvaluatingAppId] = useState(null);
   const [aiDecisions, setAiDecisions] = useState({});
+  const [chatApplicant, setChatApplicant] = useState(null);
 
   useEffect(() => {
     // Filter context applications for this job
@@ -244,6 +247,17 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
                         )}
                         AI Decision
                       </Button>
+
+                      {/* Message / Chat Candidate Button */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setChatApplicant(app)}
+                        className="text-xs border-blue-500/30 text-blue-500 hover:bg-blue-500/10 flex items-center gap-1"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>Chat</span>
+                      </Button>
                     </div>
 
                     {/* AI Decision Result Drawer */}
@@ -263,6 +277,23 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
           )}
         </div>
       )}
+
+      {/* Candidate Chat Drawer */}
+      <ChatDrawer
+        isOpen={Boolean(chatApplicant)}
+        onClose={() => setChatApplicant(null)}
+        candidate={
+          chatApplicant
+            ? {
+                id: chatApplicant.candidateId || chatApplicant.userId || chatApplicant.id,
+                name: chatApplicant.candidateName || 'Candidate',
+                email: chatApplicant.candidateEmail,
+              }
+            : null
+        }
+        job={job}
+        jobApplication={chatApplicant}
+      />
     </Card>
   );
 };

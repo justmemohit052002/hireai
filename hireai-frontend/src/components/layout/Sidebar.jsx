@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Logo } from '@/components/common/Logo';
 import { useAuth } from '@/context/AuthContext';
+import { useChat } from '@/context/ChatContext';
 import { CANDIDATE_NAV_ITEMS, RECRUITER_NAV_ITEMS, ROUTES } from '@/constants';
 import { cn } from '@/utils';
 import { Button } from '@/components/ui/Button';
@@ -34,6 +35,7 @@ const iconMap = {
 export const Sidebar = ({ role }) => {
   const [collapsed, setCollapsed] = useState(false);
   const { logout } = useAuth();
+  const { unreadTotal } = useChat();
   const location = useLocation();
 
   const navItems = role === 'candidate' ? CANDIDATE_NAV_ITEMS : RECRUITER_NAV_ITEMS;
@@ -60,21 +62,36 @@ export const Sidebar = ({ role }) => {
       {/* Navigation Items */}
       <nav className="flex-1 space-y-1.5 py-2 overflow-y-auto">
         {navItems.map((item) => {
+          const isInbox = item.icon === 'MessageSquare';
           return (
             <NavLink
               key={item.href}
               to={item.href}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group',
+                  'flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group relative',
                   isActive
                     ? 'bg-gradient-to-r from-[#C63FC5] via-[#F56681] to-[#FC9559] text-white shadow-lg shadow-[#C63FC5]/25 font-bold scale-[1.02]'
                     : 'text-white/75 hover:bg-white/10 hover:text-white'
                 )
               }
             >
-              <div className="shrink-0">{iconMap[item.icon]}</div>
-              {!collapsed && <span>{item.label}</span>}
+              <div className="shrink-0 relative">
+                {iconMap[item.icon]}
+                {isInbox && unreadTotal > 0 && collapsed && (
+                  <span className="w-2.5 h-2.5 rounded-full bg-pink-500 absolute -top-1 -right-1 ring-2 ring-[#22214B]" />
+                )}
+              </div>
+              {!collapsed && (
+                <div className="flex items-center justify-between flex-1">
+                  <span>{item.label}</span>
+                  {isInbox && unreadTotal > 0 && (
+                    <span className="px-2 py-0.5 rounded-full bg-pink-500 text-white text-[10px] font-bold shadow-xs">
+                      {unreadTotal}
+                    </span>
+                  )}
+                </div>
+              )}
             </NavLink>
           );
         })}

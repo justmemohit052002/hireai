@@ -17,6 +17,7 @@ import {
   Loader2,
   ChevronRight,
   Filter,
+  MessageSquare,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
@@ -25,6 +26,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { applicationsApi } from '@/services/api/applications.api';
 import { useJobs } from '@/context/JobsContext';
 import { formatSalary, formatShortDate, getJobTypeLabel } from '@/utils';
+import { ChatDrawer } from '@/features/messages/ChatDrawer';
 
 const STAGES = [
   { value: 'APPLIED', label: 'Applied', color: 'bg-blue-500/15 text-blue-500 border-blue-500/30' },
@@ -49,6 +51,7 @@ export const JobApplicantsDrawer = ({
   const [downloadingAppId, setDownloadingAppId] = useState(null);
   const [resumeNotice, setResumeNotice] = useState(null);
   const [previewModal, setPreviewModal] = useState(null); // { url, name, filename, isPdf }
+  const [chatApplicant, setChatApplicant] = useState(null);
 
   const fetchApplicants = async () => {
     if (!job?.id) return;
@@ -476,7 +479,7 @@ export const JobApplicantsDrawer = ({
 
                     {/* Bottom Actions: Resume Download & Stage Changer */}
                     <div className="pt-3 border-t border-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Button
                           size="sm"
                           variant="outline"
@@ -491,6 +494,16 @@ export const JobApplicantsDrawer = ({
                           )}
                           <span>View Resume</span>
                         </Button>
+
+                        <Button
+                          size="sm"
+                          onClick={() => setChatApplicant(applicant)}
+                          className="h-8 text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          <span>Contact Candidate</span>
+                        </Button>
+
                         <span className="text-[11px] text-muted-foreground">
                           Applied {formatShortDate(applicant.appliedAt)}
                         </span>
@@ -621,6 +634,23 @@ export const JobApplicantsDrawer = ({
           )}
         </motion.div>
       </div>
+
+      {/* Slide-out Chat Drawer */}
+      <ChatDrawer
+        isOpen={Boolean(chatApplicant)}
+        onClose={() => setChatApplicant(null)}
+        candidate={
+          chatApplicant
+            ? {
+                id: chatApplicant.candidateId || chatApplicant.userId || chatApplicant.id,
+                name: chatApplicant.candidateName || 'Candidate',
+                email: chatApplicant.candidateEmail,
+              }
+            : null
+        }
+        job={job}
+        jobApplication={chatApplicant}
+      />
     </AnimatePresence>
   );
 };

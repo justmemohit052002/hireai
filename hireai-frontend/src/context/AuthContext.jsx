@@ -6,10 +6,16 @@ const AuthContext = createContext(null);
 
 export function normalizeRole(backendRole) {
   if (!backendRole) return null;
-  const upper = String(backendRole).toUpperCase();
-  if (upper.includes('RECRUITER') || upper.includes('ADMIN')) return 'recruiter';
-  if (upper.includes('CANDIDATE')) return 'candidate';
-  return backendRole.toLowerCase();
+  let roleStr = '';
+  if (typeof backendRole === 'object') {
+    roleStr = backendRole.name || backendRole.role || backendRole.authority || JSON.stringify(backendRole);
+  } else {
+    roleStr = String(backendRole);
+  }
+  const upper = roleStr.toUpperCase();
+  if (upper.includes('RECRUITER') || upper.includes('ADMIN') || upper.includes('HR')) return 'recruiter';
+  if (upper.includes('CANDIDATE') || upper.includes('USER') || upper.includes('JOB_SEEKER')) return 'candidate';
+  return roleStr.toLowerCase();
 }
 
 export function AuthProvider({ children }) {

@@ -93,7 +93,7 @@ public class SecurityConfig {
                         // PUBLIC APIs
                         // =====================================================
 
-                        .requestMatchers("/auth/**", "/error")
+                        .requestMatchers("/auth/**", "/error", "/ws/chat/**")
                         .permitAll()
 
                         // Swagger / OpenAPI

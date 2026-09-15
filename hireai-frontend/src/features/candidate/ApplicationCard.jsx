@@ -6,10 +6,14 @@ import {
   Sparkles, 
   Award, 
   XCircle, 
-  Clock 
+  Clock,
+  MessageSquare
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { formatShortDate, formatRelativeTime } from '@/utils';
+import { ROUTES } from '@/constants';
 
 const STAGE_CONFIG = {
   applied: {
@@ -60,6 +64,7 @@ const STAGE_CONFIG = {
 };
 
 export const ApplicationCard = ({ application }) => {
+  const navigate = useNavigate();
   const { job, status, appliedAt, updatedAt, aiScore, atsMatchScore } = application;
   const companyName = job?.company?.name || job?.companyName || 'HireAI Employer';
   const jobTitle = job?.title || 'Applied Position';
@@ -90,9 +95,9 @@ export const ApplicationCard = ({ application }) => {
         </div>
       </div>
 
-      {/* Dynamic Current Stage Badge & ATS Score */}
-      <div className="flex flex-col sm:items-end gap-2 shrink-0">
-        <div className="flex items-center gap-2">
+      {/* Dynamic Current Stage Badge, ATS Score & Chat Action */}
+      <div className="flex flex-col sm:items-end gap-2.5 shrink-0">
+        <div className="flex items-center gap-2 flex-wrap">
           {matchPercent && (
             <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold px-2.5 py-1 rounded-full bg-gradient-to-r from-[#C63FC5]/10 via-[#F56681]/10 to-[#FC9559]/10 border border-[#F56681]/30 text-foreground">
               <Sparkles className="w-3 h-3 text-[#F56681]" /> {matchPercent}% ATS Match
@@ -102,6 +107,15 @@ export const ApplicationCard = ({ application }) => {
             <StageIcon className="w-3.5 h-3.5" />
             <span>{currentStage.label}</span>
           </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => navigate(ROUTES.CANDIDATE_INBOX)}
+            className="h-7 text-xs border-blue-500/30 text-blue-500 hover:bg-blue-500/10 flex items-center gap-1 px-2.5"
+          >
+            <MessageSquare className="w-3 h-3" />
+            <span>Chat</span>
+          </Button>
         </div>
         
         <p className="text-[11px] text-muted-foreground flex items-center gap-1 font-medium">
