@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useAuth } from './AuthContext';
 import { chatApi } from '@/services/api/chat.api';
 import { useChatSocket } from '@/hooks/useChatSocket';
+import { getStoredToken } from '@/services/api/apiClient';
 
 const ChatContext = createContext(null);
 
@@ -117,6 +118,8 @@ export function ChatProvider({ children }) {
 
   // Initialize WebSocket connection
   const { isConnected, sendMessage: socketSendMessage, sendTyping: socketSendTyping, sendMarkRead } = useChatSocket({
+    isAuthenticated,
+    token: getStoredToken(),
     onMessageReceived: handleMessageReceived,
     onTypingReceived: handleTypingReceived,
     onReadReceiptReceived: handleReadReceiptReceived,

@@ -5,7 +5,13 @@ import { getStoredToken } from '@/services/api/apiClient';
 /**
  * Custom React Hook for STOMP WebSocket communication using native WebSockets
  */
-export function useChatSocket({ onMessageReceived, onTypingReceived, onReadReceiptReceived } = {}) {
+export function useChatSocket({
+  isAuthenticated = false,
+  token: passedToken,
+  onMessageReceived,
+  onTypingReceived,
+  onReadReceiptReceived,
+} = {}) {
   const [isConnected, setIsConnected] = useState(false);
   const clientRef = useRef(null);
 
@@ -20,8 +26,11 @@ export function useChatSocket({ onMessageReceived, onTypingReceived, onReadRecei
   onReadReceiptRef.current = onReadReceiptReceived;
 
   useEffect(() => {
-    const token = getStoredToken();
-    if (!token) {
+    const token = passedToken || getStoredToken();
+    if (!isAuthenticated || !token) {
+      if (clientRef.current && clientRef.current.active) {
+        clientRef.current.deactivate();
+      }
       setIsConnected(false);
       return;
     }
@@ -98,7 +107,7 @@ export function useChatSocket({ onMessageReceived, onTypingReceived, onReadRecei
       }
       setIsConnected(false);
     };
-  }, []);
+  }, [isAuthenticated, passedToken]);
 
   const sendMessage = useCallback((payload) => {
     if (clientRef.current && clientRef.current.connected) {
