@@ -8,7 +8,7 @@ export const MessageBubble = ({ message, isSelf }) => {
         className={cn(
           'p-3.5 rounded-2xl text-sm leading-relaxed shadow-sm',
           isSelf
-            ? 'bg-blue-600 text-white rounded-br-none font-medium'
+            ? 'bg-brand-blue text-foreground rounded-br-none font-medium'
             : 'glass border border-white/20 dark:border-white/10 text-foreground rounded-bl-none'
         )}
       >

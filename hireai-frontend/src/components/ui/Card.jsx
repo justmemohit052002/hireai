@@ -16,9 +16,9 @@ export const Card = React.forwardRef(
         className={cn(
           'rounded-[18px] p-6 transition-all duration-200 border',
           glass
-            ? 'glass border-white/20 dark:border-white/10'
+            ? 'glass border-border shadow-sm'
             : 'bg-surface border-border shadow-sm',
-          hoverable && 'hover-lift cursor-pointer hover:border-blue-500/40',
+          hoverable && 'hover-lift cursor-pointer hover:border-brand-blue/40',
           glowClasses[glow],
           className
         )}
@@ -30,6 +30,7 @@ export const Card = React.forwardRef(
   }
 );
 Card.displayName = 'Card';
+
 
 export const CardHeader = ({ className, ...props }) => (
   <div className={cn('flex flex-col space-y-1.5 pb-4', className)} {...props} />

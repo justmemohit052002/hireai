@@ -21,7 +21,7 @@ export const ConversationList = ({
             className={cn(
               'flex items-center gap-3 w-full p-3 rounded-2xl transition-all text-left border',
               isActive
-                ? 'bg-blue-600/10 border-blue-500/30 text-foreground shadow-sm'
+                ? 'bg-brand-blue/10 border-blue-500/30 text-foreground shadow-sm'
                 : 'border-transparent hover:bg-muted/60 text-muted-foreground'
             )}
           >

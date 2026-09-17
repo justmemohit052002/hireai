@@ -148,7 +148,7 @@ export function getApplicationStatusColor(status) {
     technical: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20',
     offer: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
     rejected: 'bg-red-500/10 text-red-500 border-red-500/20',
-    withdrawn: 'bg-slate-500/10 text-slate-500 border-slate-500/20',
+    withdrawn: 'bg-slate-500/10 text-muted-foreground border-slate-500/20',
   };
   return map[status];
 }

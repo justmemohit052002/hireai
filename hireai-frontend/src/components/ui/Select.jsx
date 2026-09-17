@@ -43,7 +43,7 @@ export const Select = ({
                 <SelectPrimitive.Item
                   key={opt.value}
                   value={opt.value}
-                  className="relative flex w-full cursor-pointer select-none items-center rounded-lg py-2 pl-8 pr-4 text-sm text-foreground outline-none focus:bg-[#F56681]/15 focus:text-[#F56681] hover:bg-muted data-[disabled]:pointer-events-none data-[disabled]:opacity-50 transition-colors"
+                  className="relative flex w-full cursor-pointer select-none items-center rounded-lg py-2 pl-8 pr-4 text-sm text-foreground outline-none focus:bg-brand-blue-light/15 focus:text-[#F56681] hover:bg-muted data-[disabled]:pointer-events-none data-[disabled]:opacity-50 transition-colors"
                 >
                   <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
                     <SelectPrimitive.ItemIndicator>

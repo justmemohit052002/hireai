@@ -18,7 +18,7 @@ export const CandidateCard = ({
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             {rank && (
-              <div className="w-7 h-7 rounded-full bg-gradient-to-r from-[#C63FC5] via-[#F56681] to-[#FC9559] text-white font-extrabold text-xs flex items-center justify-center shadow-md">
+              <div className="w-7 h-7 rounded-full bg-brand-blue text-white font-extrabold text-xs flex items-center justify-center shadow-md">
                 #{rank}
               </div>
             )}

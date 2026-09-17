@@ -87,7 +87,7 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
   return (
     <Card className="p-0 overflow-hidden mb-4 border border-border/50 glass rounded-2xl shadow-sm transition-all">
       <div
-        className="p-5 flex flex-col md:flex-row items-start md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors"
+        className="p-5 flex flex-col md:flex-row items-start md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-surface-2/50 dark:hover:bg-surface/5 transition-colors"
         onClick={handleExpand}
       >
         <div className="space-y-2">
@@ -97,7 +97,7 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
               className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
                 job.listingStatus === 'open'
                   ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
-                  : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                  : 'bg-surface-2 text-muted-foreground dark:bg-surface dark:text-muted-foreground'
               }`}
             >
               {job.listingStatus}
@@ -235,7 +235,7 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
                         size="sm"
                         disabled={evaluatingAppId === app.id}
                         onClick={() => handleAiDecision(app.id)}
-                        className="text-xs text-[#F56681] hover:bg-[#F56681]/10"
+                        className="text-xs text-[#F56681] hover:bg-brand-blue-light/10"
                       >
                         {evaluatingAppId === app.id ? (
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -299,7 +299,7 @@ export const LeaderboardPage = () => {
         </div>
       ) : (
         <Card className="p-8 glass border border-border/60 rounded-2xl text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-[#F56681]/15 text-[#F56681] flex items-center justify-center mx-auto">
+          <div className="w-12 h-12 rounded-2xl bg-brand-blue-light/15 text-[#F56681] flex items-center justify-center mx-auto">
             <Trophy className="w-6 h-6" />
           </div>
           <h3 className="text-base font-bold text-foreground">No Requisitions To Rank Yet</h3>

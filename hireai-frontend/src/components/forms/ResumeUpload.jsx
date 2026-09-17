@@ -388,7 +388,7 @@ export const ResumeUpload = ({
           }}
           className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer text-center select-none group ${
             isDragging
-              ? 'border-[#F56681] bg-[#F56681]/10 scale-[1.01]'
+              ? 'border-[#F56681] bg-brand-blue-light/10 scale-[1.01]'
               : 'border-border/80 hover:border-[#F56681]/60 bg-background/50 hover:bg-surface-2/60'
           }`}
         >
