@@ -6,10 +6,14 @@ import {
   Sparkles, 
   Award, 
   XCircle, 
-  Clock 
+  Clock,
+  MessageSquare
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { formatShortDate, formatRelativeTime } from '@/utils';
+import { ROUTES } from '@/constants';
 
 const STAGE_CONFIG = {
   applied: {
@@ -24,7 +28,7 @@ const STAGE_CONFIG = {
   },
   technical: {
     label: 'Technical Evaluation',
-    badgeStyle: 'bg-[#6D3DF5]/15 text-[#6D3DF5] dark:text-[#A78BFA] border-[#6D3DF5]/30',
+    badgeStyle: 'bg-brand-blue-light/20 text-brand-navy border-brand-blue/30',
     icon: Search,
   },
   shortlisted: {
@@ -49,17 +53,18 @@ const STAGE_CONFIG = {
   },
   withdrawn: {
     label: 'Withdrawn',
-    badgeStyle: 'bg-slate-500/10 text-slate-400 border-slate-500/20 dark:bg-slate-500/20 dark:border-slate-500/30',
+    badgeStyle: 'bg-slate-500/10 text-muted-foreground border-slate-500/20 dark:bg-slate-500/20 dark:border-slate-500/30',
     icon: XCircle,
   },
   closed: {
     label: 'Position Closed',
-    badgeStyle: 'bg-slate-500/10 text-slate-400 border-slate-500/20 dark:bg-slate-500/20 dark:border-slate-500/30',
+    badgeStyle: 'bg-slate-500/10 text-muted-foreground border-slate-500/20 dark:bg-slate-500/20 dark:border-slate-500/30',
     icon: XCircle,
   },
 };
 
 export const ApplicationCard = ({ application }) => {
+  const navigate = useNavigate();
   const { job, status, appliedAt, updatedAt, aiScore, atsMatchScore } = application;
   const companyName = job?.company?.name || job?.companyName || 'HireAI Employer';
   const jobTitle = job?.title || 'Applied Position';
@@ -78,30 +83,39 @@ export const ApplicationCard = ({ application }) => {
     <Card hoverable className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
       {/* Job Info */}
       <div className="flex items-center gap-4 shrink-0">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#C63FC5]/20 to-[#F56681]/20 border border-[#C63FC5]/30 flex items-center justify-center font-bold text-lg text-[#C63FC5] dark:text-[#F56681] shrink-0 shadow-sm">
+        <div className="w-12 h-12 rounded-2xl bg-brand-blue-light/30 border border-brand-blue/20 flex items-center justify-center font-bold text-lg text-brand-navy dark:text-brand-blue-light shrink-0 shadow-sm">
           {companyName[0] || 'H'}
         </div>
         <div>
           <h3 className="font-bold text-base font-heading text-foreground">{jobTitle}</h3>
           <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5 mt-0.5">
-            <Building2 className="w-3.5 h-3.5 text-[#F56681]" />
+            <Building2 className="w-3.5 h-3.5 text-brand-blue" />
             {companyName} • Applied on {formatShortDate(appliedAt)}
           </p>
         </div>
       </div>
 
-      {/* Dynamic Current Stage Badge & ATS Score */}
-      <div className="flex flex-col sm:items-end gap-2 shrink-0">
-        <div className="flex items-center gap-2">
+      {/* Dynamic Current Stage Badge, ATS Score & Chat Action */}
+      <div className="flex flex-col sm:items-end gap-2.5 shrink-0">
+        <div className="flex items-center gap-2 flex-wrap">
           {matchPercent && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold px-2.5 py-1 rounded-full bg-gradient-to-r from-[#C63FC5]/10 via-[#F56681]/10 to-[#FC9559]/10 border border-[#F56681]/30 text-foreground">
-              <Sparkles className="w-3 h-3 text-[#F56681]" /> {matchPercent}% ATS Match
+            <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold px-2.5 py-1 rounded-full bg-brand-blue-light/20 border border-brand-blue/20 text-foreground">
+              <Sparkles className="w-3 h-3 text-brand-blue" /> {matchPercent}% ATS Match
             </span>
           )}
           <div className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border text-xs font-bold shadow-sm ${currentStage.badgeStyle}`}>
             <StageIcon className="w-3.5 h-3.5" />
             <span>{currentStage.label}</span>
           </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => navigate(ROUTES.CANDIDATE_INBOX)}
+            className="h-7 text-xs border-brand-blue/30 text-brand-blue hover:bg-brand-blue-light/20 flex items-center gap-1 px-2.5"
+          >
+            <MessageSquare className="w-3 h-3" />
+            <span>Chat</span>
+          </Button>
         </div>
         
         <p className="text-[11px] text-muted-foreground flex items-center gap-1 font-medium">

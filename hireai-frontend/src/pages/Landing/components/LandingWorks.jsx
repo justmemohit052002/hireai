@@ -12,13 +12,13 @@ export const LandingWorks = () => {
       num: '02',
       title: 'Find / Post Jobs',
       desc: 'HR Create an Job and post Jobs. Candidates Signup and post their profiles.',
-      numBg: 'bg-[#6D3DF5]',
+      numBg: 'bg-brand-blue text-white',
     },
     {
       num: '03',
       title: 'Apply & Review',
       desc: 'HR Create an Job and post Jobs. Candidates Signup and post their profiles.',
-      numBg: 'bg-[#F56681]',
+      numBg: 'bg-brand-blue-light',
     },
     {
       num: '04',
@@ -36,7 +36,7 @@ export const LandingWorks = () => {
       num: '06',
       title: 'Hire & Dashboard',
       desc: 'HR Create an Job and post Jobs. Candidates Signup and post their profiles.',
-      numBg: 'bg-[#6D3DF5]',
+      numBg: 'bg-brand-blue text-white',
     },
   ];
 
@@ -59,9 +59,9 @@ export const LandingWorks = () => {
           {steps.map((step) => (
             <div
               key={step.num}
-              className="bg-[#6D3DF5]/5 dark:bg-[#6D3DF5]/10 border border-dashed border-[#6D3DF5]/40 dark:border-[#6D3DF5]/60 rounded-3xl p-8 text-center glass hover-lift transition"
+              className="bg-brand-blue-light/5 text-brand-blue dark:bg-brand-blue-light/10 text-brand-blue border border-dashed border-[#6D3DF5]/40 dark:border-[#6D3DF5]/60 rounded-3xl p-8 text-center glass hover-lift transition"
             >
-              <div className={`w-11 h-11 rounded-full ${step.numBg} text-white font-bold text-xl flex items-center justify-center mx-auto shadow-md`}>
+              <div className={`w-11 h-11 rounded-full ${step.numBg} text-foreground font-bold text-xl flex items-center justify-center mx-auto shadow-md`}>
                 {step.num}
               </div>
 

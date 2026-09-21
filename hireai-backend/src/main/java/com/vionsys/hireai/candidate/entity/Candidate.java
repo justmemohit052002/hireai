@@ -164,6 +164,9 @@ public class Candidate extends BaseEntity {
     @Column(name = "location")
     private String location;
 
+    @Column(name = "bio", columnDefinition = "TEXT")
+    private String bio;
+
     @Enumerated(EnumType.STRING)
     @Column(
             name = "candidate_status",

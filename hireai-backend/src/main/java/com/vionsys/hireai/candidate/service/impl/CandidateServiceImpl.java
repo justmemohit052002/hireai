@@ -396,6 +396,10 @@ public class CandidateServiceImpl implements CandidateService {
         candidate.setLocation(
                 request.getLocation()
         );
+
+        candidate.setBio(
+                request.getBio()
+        );
     }
 
 
@@ -560,6 +564,10 @@ public class CandidateServiceImpl implements CandidateService {
 
         candidate.setLocation(
                 request.getLocation()
+        );
+
+        candidate.setBio(
+                request.getBio()
         );
     }
 

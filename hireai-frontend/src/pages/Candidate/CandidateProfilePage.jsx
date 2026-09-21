@@ -405,13 +405,13 @@ export const CandidateProfilePage = () => {
 
       {/* Hero Profile Header Banner */}
       <div className="relative overflow-hidden rounded-3xl glass border border-border/70 p-6 md:p-8 shadow-md">
-        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#C63FC5] via-[#F56681] to-[#FC9559]" />
+        <div className="absolute top-0 inset-x-0 h-1.5 bg-brand-blue" />
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
             <div className="relative">
               <Avatar name={displayName} size="xl" />
-              <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center text-[10px] text-white font-bold" title="Verified Candidate">
+              <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center text-[10px] text-foreground font-bold" title="Verified Candidate">
                 ✓
               </span>
             </div>
@@ -839,9 +839,23 @@ export const CandidateProfilePage = () => {
               </label>
               <ResumeUpload
                 autoUpload
+                allowRemoteDelete
                 onFileSelect={(file) => {
                   setResumeFile(file);
                   if (!file) setHasExistingResume(false);
+                  else setHasExistingResume(true);
+                }}
+                onUploadSuccess={(parsed) => {
+                  if (parsed) {
+                    if (parsed.parsedRole && !designation) setDesignation(parsed.parsedRole);
+                    if (parsed.parsedExperience && !experienceYears) setExperienceYears(parsed.parsedExperience);
+                    if (parsed.skills && Array.isArray(parsed.skills)) {
+                      setSkillsList((prev) => {
+                        const combined = new Set([...prev, ...parsed.skills]);
+                        return Array.from(combined);
+                      });
+                    }
+                  }
                 }}
               />
             </div>

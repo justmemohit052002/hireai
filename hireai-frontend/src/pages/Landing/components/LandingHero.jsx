@@ -11,8 +11,8 @@ export const LandingHero = () => {
           {/* Left Content */}
           <div className="text-left">
             {/* Badge */}
-            <div className="inline-flex items-center gap-3 bg-[#6D3DF5]/15 dark:bg-[#6D3DF5]/25 border border-[#6D3DF5]/30 rounded-full px-5 py-2 backdrop-blur-md">
-              <span className="w-3 h-3 rounded-full bg-[#6D3DF5] animate-pulse" />
+            <div className="inline-flex items-center gap-3 bg-brand-blue-light/15 text-brand-blue dark:bg-brand-blue-light/25 text-brand-blue border border-[#6D3DF5]/30 rounded-full px-5 py-2 backdrop-blur-md">
+              <span className="w-3 h-3 rounded-full bg-brand-accent text-brand-dark animate-pulse" />
               <span className="text-[#6D3DF5] dark:text-[#A78BFA] font-semibold text-sm">
                 All-In-One Hiring Platform
               </span>
@@ -40,7 +40,7 @@ export const LandingHero = () => {
                 <Button
                   size="lg"
                   variant="gradient"
-                  className="w-full sm:w-auto bg-gradient-to-r from-[#C63FC5] via-[#F56681] to-[#FC9559] text-white font-bold px-8 py-3.5 rounded-full text-lg shadow-xl shadow-[#C63FC5]/25 hover:opacity-95 transition"
+                  className="w-full sm:w-auto bg-brand-accent text-brand-dark text-foreground font-bold px-8 py-3.5 rounded-full text-lg shadow-xl shadow-[#C63FC5]/25 hover:opacity-95 transition"
                 >
                   Get Started
                 </Button>
@@ -49,7 +49,7 @@ export const LandingHero = () => {
               <Link to={ROUTES.LOGIN}>
                 <Button
                   size="lg"
-                  className="w-full sm:w-auto bg-[#6D3DF5] hover:bg-[#5b2fd4] text-white font-bold px-8 py-3.5 rounded-full text-lg shadow-lg transition"
+                  className="w-full sm:w-auto bg-brand-navy text-white hover:bg-brand-blue font-bold px-8 py-3.5 rounded-full text-lg shadow-lg transition"
                 >
                   Contact Us
                 </Button>

@@ -46,7 +46,7 @@ export const NotificationBell = () => {
         <Button variant="ghost" size="icon" className="relative rounded-full">
           <Bell className="w-5 h-5 text-foreground" />
           {unreadCount > 0 && (
-            <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white ring-2 ring-background">
+            <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-brand-blue text-[10px] font-bold text-foreground ring-2 ring-background">
               {unreadCount}
             </span>
           )}

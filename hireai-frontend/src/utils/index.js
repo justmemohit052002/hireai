@@ -12,7 +12,9 @@ export function cn(...inputs) {
 // Date & Time Formatters
 // ─────────────────────────────────────────
 export function formatRelativeTime(date) {
+  if (!date) return 'just now';
   const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d?.getTime())) return 'just now';
   const now = new Date();
   const diffMs = now.getTime() - d.getTime();
   const diffSec = Math.floor(diffMs / 1000);
@@ -28,12 +30,16 @@ export function formatRelativeTime(date) {
 }
 
 export function formatDate(date) {
+  if (!date) return '';
   const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d?.getTime())) return '';
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
 export function formatShortDate(date) {
+  if (!date) return '';
   const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d?.getTime())) return '';
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
@@ -106,6 +112,7 @@ export function formatSalary(salary) {
 // Label Helpers
 // ─────────────────────────────────────────
 export function getJobTypeLabel(type) {
+  if (!type) return 'Full-time';
   const map = {
     'full-time': 'Full-time',
     'part-time': 'Part-time',
@@ -113,10 +120,11 @@ export function getJobTypeLabel(type) {
     internship: 'Internship',
     remote: 'Remote',
   };
-  return map[type];
+  return map[type] || type;
 }
 
 export function getExperienceLevelLabel(level) {
+  if (!level) return 'Mid Level';
   const map = {
     entry: 'Entry Level',
     mid: 'Mid Level',
@@ -124,10 +132,11 @@ export function getExperienceLevelLabel(level) {
     lead: 'Lead',
     executive: 'Executive',
   };
-  return map[level];
+  return map[level] || level;
 }
 
 export function getApplicationStatusLabel(status) {
+  if (!status) return 'Applied';
   const map = {
     applied: 'Applied',
     screening: 'Screening',
@@ -137,7 +146,7 @@ export function getApplicationStatusLabel(status) {
     rejected: 'Rejected',
     withdrawn: 'Withdrawn',
   };
-  return map[status];
+  return map[status] || status;
 }
 
 export function getApplicationStatusColor(status) {
@@ -148,9 +157,9 @@ export function getApplicationStatusColor(status) {
     technical: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20',
     offer: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
     rejected: 'bg-red-500/10 text-red-500 border-red-500/20',
-    withdrawn: 'bg-slate-500/10 text-slate-500 border-slate-500/20',
+    withdrawn: 'bg-slate-500/10 text-muted-foreground border-slate-500/20',
   };
-  return map[status];
+  return map[status] || 'bg-slate-500/10 text-muted-foreground border-slate-500/20';
 }
 
 export function getBadgeLabel(badge) {
@@ -161,13 +170,14 @@ export function getBadgeLabel(badge) {
     'rising-star': 'Rising Star',
     verified: 'Verified',
   };
-  return map[badge];
+  return map[badge] || badge;
 }
 
 // ─────────────────────────────────────────
 // Number Formatter
 // ─────────────────────────────────────────
 export function formatNumber(n) {
+  if (!n || isNaN(n)) return '0';
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
   return `${n}`;
@@ -176,14 +186,17 @@ export function formatNumber(n) {
 // ─────────────────────────────────────────
 // String helpers
 // ─────────────────────────────────────────
-export function truncate(text, maxLength) {
+export function truncate(text, maxLength = 50) {
+  if (!text || typeof text !== 'string') return '';
   if (text.length <= maxLength) return text;
   return `${text.slice(0, maxLength).trimEnd()}…`;
 }
 
 export function getInitials(name) {
-  return name
-    .split(' ')
+  if (!name || typeof name !== 'string') return 'U';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'U';
+  return parts
     .slice(0, 2)
     .map(part => part[0]?.toUpperCase() ?? '')
     .join('');

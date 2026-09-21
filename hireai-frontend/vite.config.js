@@ -32,6 +32,13 @@ export default defineConfig({
       '/candidates': proxyConfig,
       '/candidate': proxyConfig,
       '/applications': proxyConfig,
+      '/chat': proxyConfig,
+      '/uploads': proxyConfig,
+      '/ws/chat': {
+        target: backendTarget,
+        ws: true,
+        changeOrigin: true,
+      },
       '/test': proxyConfig,
     },
   },

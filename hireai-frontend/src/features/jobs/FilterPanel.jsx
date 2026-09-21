@@ -50,8 +50,8 @@ export const FilterPanel = ({ filters, onChange, onReset }) => {
                 onClick={() => toggleJobType(jt.value)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
                   isSelected
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
-                    : 'bg-surface-2/60 text-muted-foreground border-border/60 hover:border-blue-500/40'
+                    ? 'bg-brand-blue text-white border-brand-blue shadow-md shadow-brand-blue/20'
+                    : 'bg-surface-2/60 text-muted-foreground border-border/60 hover:border-brand-blue/40'
                 }`}
               >
                 {jt.label}
@@ -75,8 +75,8 @@ export const FilterPanel = ({ filters, onChange, onReset }) => {
                 onClick={() => toggleLevel(el.value)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
                   isSelected
-                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20'
-                    : 'bg-surface-2/60 text-muted-foreground border-border/60 hover:border-indigo-500/40'
+                    ? 'bg-brand-navy text-white border-brand-navy shadow-md shadow-brand-navy/20'
+                    : 'bg-surface-2/60 text-muted-foreground border-border/60 hover:border-brand-blue/40'
                 }`}
               >
                 {el.label}
@@ -120,8 +120,8 @@ export const FilterPanel = ({ filters, onChange, onReset }) => {
                 onClick={() => onChange({ ...filters, salaryMin: sal.value })}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
                   isSelected
-                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/20'
-                    : 'bg-surface-2/60 text-muted-foreground border-border/60 hover:border-emerald-500/40'
+                    ? 'bg-brand-blue text-white border-brand-blue shadow-md shadow-brand-blue/20'
+                    : 'bg-surface-2/60 text-muted-foreground border-border/60 hover:border-brand-blue/40'
                 }`}
               >
                 {sal.label}

@@ -42,6 +42,7 @@ public final class CandidateMapper {
 				.expectedCtc(request.getExpectedCtc())
 				.noticePeriod(request.getNoticePeriod())
 				.location(request.getLocation())
+				.bio(request.getBio())
 				.skills(new HashSet<>())
 				.build();
 	}
@@ -69,6 +70,7 @@ public final class CandidateMapper {
 				.expectedCtc(request.getExpectedCtc())
 				.noticePeriod(request.getNoticePeriod())
 				.location(request.getLocation())
+				.bio(request.getBio())
 				.skills(new HashSet<>())
 				.build();
 	}
@@ -108,6 +110,7 @@ public final class CandidateMapper {
 				.expectedCtc(candidate.getExpectedCtc())
 				.noticePeriod(candidate.getNoticePeriod())
 				.location(candidate.getLocation())
+				.bio(candidate.getBio())
 				.candidateStatus(candidate.getCandidateStatus())
 				.resumeId(resumeId)
 				.skillIds(
@@ -119,6 +122,15 @@ public final class CandidateMapper {
 										Collectors.toSet()
 								)
 								: new HashSet<>()
+				)
+				.skills(
+						candidate.getSkills() != null
+								? candidate.getSkills()
+								.stream()
+								.map(Skill::getName)
+								.sorted(String.CASE_INSENSITIVE_ORDER)
+								.collect(Collectors.toList())
+								: new java.util.ArrayList<>()
 				)
 				.createdAt(candidate.getCreatedAt())
 				.updatedAt(candidate.getUpdatedAt())

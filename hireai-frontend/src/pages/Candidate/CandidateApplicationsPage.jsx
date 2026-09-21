@@ -35,14 +35,14 @@ export const CandidateApplicationsPage = () => {
             Track status, stage updates, and live ATS match scoring across your active job pipeline.
           </p>
         </div>
-        <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-gradient-to-r from-[#C63FC5]/15 via-[#F56681]/15 to-[#FC9559]/15 text-foreground border border-[#F56681]/30">
+        <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-brand-blue-light/30 text-brand-navy dark:text-brand-blue-light border border-brand-blue/20">
           {hydratedApplications.length} Applications Active
         </span>
       </div>
 
       {hydratedApplications.length === 0 ? (
         <div className="py-16 text-center space-y-4 rounded-3xl border border-dashed border-border/80 p-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#C63FC5]/10 to-[#F56681]/10 border border-[#F56681]/20 flex items-center justify-center mx-auto text-[#F56681]">
+          <div className="w-14 h-14 rounded-2xl bg-brand-blue-light/20 border border-brand-blue/20 flex items-center justify-center mx-auto text-brand-blue">
             <Briefcase className="w-7 h-7" />
           </div>
           <div className="space-y-1">

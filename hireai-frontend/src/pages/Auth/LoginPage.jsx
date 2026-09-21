@@ -54,7 +54,7 @@ export const LoginPage = () => {
             onClick={() => setRole('candidate')}
             className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
               role === 'candidate'
-                ? 'bg-gradient-to-r from-[#C63FC5] via-[#F56681] to-[#FC9559] text-white shadow-md shadow-[#C63FC5]/20'
+                ? 'bg-brand-accent text-brand-dark text-foreground shadow-md shadow-[#C63FC5]/20'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -65,7 +65,7 @@ export const LoginPage = () => {
             onClick={() => setRole('recruiter')}
             className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
               role === 'recruiter'
-                ? 'bg-[#22214B] text-white shadow-md shadow-[#22214B]/20'
+                ? 'bg-brand-navy text-foreground shadow-md shadow-[#22214B]/20'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >

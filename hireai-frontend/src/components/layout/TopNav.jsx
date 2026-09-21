@@ -17,7 +17,7 @@ export const TopNav = ({ title, role }) => {
 
   return (
     <header className="sticky top-4 z-40 flex justify-center w-full mb-6 px-2 sm:px-4 pointer-events-none">
-      <nav className="pointer-events-auto flex items-center justify-between w-full max-w-6xl h-16 px-6 rounded-full glass border border-white/20 dark:border-white/10 shadow-2xl backdrop-blur-xl">
+      <nav className="pointer-events-auto flex items-center justify-between w-full max-w-6xl h-16 px-6 rounded-full glass border border-border shadow-2xl backdrop-blur-xl">
         {/* Brand Logo - Matches Landing Navbar */}
         <Link to={homeRoute} className="flex items-center gap-2 shrink-0">
           <Logo size="md" />
@@ -33,8 +33,8 @@ export const TopNav = ({ title, role }) => {
                 cn(
                   'px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap',
                   isActive
-                    ? 'bg-gradient-to-r from-[#C63FC5] via-[#F56681] to-[#FC9559] text-white shadow-md shadow-[#C63FC5]/20 font-bold scale-[1.02]'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-white/10 dark:hover:bg-white/5'
+                    ? 'bg-brand-blue text-white shadow-md shadow-[#C63FC5]/20 font-bold scale-[1.02]'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-surface/10 dark:hover:bg-surface/5'
                 )
               }
             >
