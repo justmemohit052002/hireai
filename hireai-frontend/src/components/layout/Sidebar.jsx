@@ -43,7 +43,7 @@ export const Sidebar = ({ role }) => {
   return (
     <aside
       className={cn(
-        'fixed top-4 bottom-4 left-4 z-40 flex flex-col rounded-[24px] bg-[#22214B] border border-white/10 p-4 transition-all duration-300 shadow-2xl backdrop-blur-2xl text-white',
+        'fixed top-4 bottom-4 left-4 z-40 flex flex-col rounded-[24px] bg-brand-dark border border-border p-4 transition-all duration-300 shadow-2xl text-white',
         collapsed ? 'w-20' : 'w-64'
       )}
     >
@@ -52,7 +52,7 @@ export const Sidebar = ({ role }) => {
         <Logo iconOnly={collapsed} size="md" />
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="rounded-full p-1.5 hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+          className="rounded-full p-1.5 hover:bg-white/10 text-white/70 hover:text-white transition-colors cursor-pointer"
           title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -71,7 +71,7 @@ export const Sidebar = ({ role }) => {
                 cn(
                   'flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group relative',
                   isActive
-                    ? 'bg-gradient-to-r from-[#C63FC5] via-[#F56681] to-[#FC9559] text-white shadow-lg shadow-[#C63FC5]/25 font-bold scale-[1.02]'
+                    ? 'bg-brand-blue text-white shadow-lg font-bold scale-[1.02]'
                     : 'text-white/75 hover:bg-white/10 hover:text-white'
                 )
               }
@@ -79,14 +79,14 @@ export const Sidebar = ({ role }) => {
               <div className="shrink-0 relative">
                 {iconMap[item.icon]}
                 {isInbox && unreadTotal > 0 && collapsed && (
-                  <span className="w-2.5 h-2.5 rounded-full bg-pink-500 absolute -top-1 -right-1 ring-2 ring-[#22214B]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-brand-accent absolute -top-1 -right-1 ring-2 ring-brand-dark" />
                 )}
               </div>
               {!collapsed && (
                 <div className="flex items-center justify-between flex-1">
                   <span>{item.label}</span>
                   {isInbox && unreadTotal > 0 && (
-                    <span className="px-2 py-0.5 rounded-full bg-pink-500 text-white text-[10px] font-bold shadow-xs">
+                    <span className="px-2 py-0.5 rounded-full bg-brand-accent text-brand-dark text-[10px] font-bold shadow-xs">
                       {unreadTotal}
                     </span>
                   )}
@@ -97,11 +97,11 @@ export const Sidebar = ({ role }) => {
         })}
       </nav>
 
-      {/* AI Pro Banner */}
+      {/* AI Engine Banner */}
       {!collapsed && (
-        <div className="p-3.5 my-2 rounded-2xl bg-gradient-to-br from-[#C63FC5]/15 via-[#F56681]/15 to-[#FC9559]/15 border border-white/15 text-xs space-y-2">
+        <div className="p-3.5 my-2 rounded-2xl bg-brand-blue/20 border border-brand-blue/30 text-xs space-y-2">
           <div className="flex items-center gap-1.5 font-bold text-white">
-            <Sparkles className="w-4 h-4 text-[#F56681] animate-pulse" />
+            <Sparkles className="w-4 h-4 text-brand-accent animate-pulse" />
             <span>HireAI Engine</span>
           </div>
           <p className="text-[11px] text-white/70">
@@ -115,7 +115,7 @@ export const Sidebar = ({ role }) => {
         <button
           onClick={logout}
           className={cn(
-            'flex items-center gap-3 w-full px-3.5 py-3 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/15 hover:text-red-300 transition-colors',
+            'flex items-center gap-3 w-full px-3.5 py-3 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/15 hover:text-red-300 transition-colors cursor-pointer',
             collapsed && 'justify-center px-0'
           )}
         >

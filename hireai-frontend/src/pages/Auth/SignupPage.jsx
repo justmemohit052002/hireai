@@ -94,8 +94,8 @@ export const SignupPage = () => {
 
         {/* Step Indicator Bar */}
         <div className="flex gap-2">
-          <div className={`h-1.5 flex-1 rounded-full ${step >= 1 ? 'bg-gradient-to-r from-[#C63FC5] via-[#F56681] to-[#FC9559]' : 'bg-muted'}`} />
-          <div className={`h-1.5 flex-1 rounded-full ${step >= 2 ? 'bg-gradient-to-r from-[#C63FC5] via-[#F56681] to-[#FC9559]' : 'bg-muted'}`} />
+          <div className={`h-1.5 flex-1 rounded-full ${step >= 1 ? 'bg-brand-blue' : 'bg-muted'}`} />
+          <div className={`h-1.5 flex-1 rounded-full ${step >= 2 ? 'bg-brand-blue' : 'bg-muted'}`} />
         </div>
 
         {/* Error Notice */}
@@ -131,7 +131,7 @@ export const SignupPage = () => {
                   onClick={() => setRole('recruiter')}
                   className={`p-4 rounded-2xl border text-center transition-all flex flex-col items-center gap-2 ${
                     role === 'recruiter'
-                      ? 'bg-[#22214B]/10 border-[#22214B] dark:border-[#F56681] text-foreground font-bold shadow-md'
+                      ? 'bg-brand-navy/10 border-[#22214B] dark:border-[#F56681] text-foreground font-bold shadow-md'
                       : 'bg-surface-2 border-border text-muted-foreground'
                   }`}
                 >

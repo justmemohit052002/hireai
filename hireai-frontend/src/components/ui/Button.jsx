@@ -3,18 +3,18 @@ import { cva } from 'class-variance-authority';
 import { cn } from '@/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 rounded-xl text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F56681] disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] select-none cursor-pointer',
+  'inline-flex items-center justify-center gap-2 rounded-xl text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] select-none cursor-pointer',
   {
     variants: {
       variant: {
-        default: 'bg-[#22214B] text-white shadow-md shadow-[#22214B]/20 hover:bg-[#1A193B] dark:bg-[#F56681] dark:text-white dark:hover:bg-[#E4536E]',
-        gradient: 'bg-gradient-to-r from-[#C63FC5] via-[#F56681] to-[#FC9559] text-white shadow-md shadow-[#C63FC5]/20 hover:brightness-105 hover:shadow-lg hover:shadow-[#C63FC5]/30',
-        secondary: 'bg-[#F56681] text-white shadow-md shadow-[#F56681]/20 hover:bg-[#E4536E]',
-        accent: 'bg-[#FC9559] text-white shadow-md shadow-[#FC9559]/20 hover:bg-[#EA8347]',
-        outline: 'border border-border bg-background/50 hover:bg-muted hover:border-[#F56681]/40 hover:text-foreground backdrop-blur-md',
-        ghost: 'hover:bg-muted hover:text-foreground',
-        glass: 'glass hover:bg-white/20 dark:hover:bg-slate-800/60 text-foreground border border-white/20 dark:border-white/10',
-        danger: 'bg-red-600 text-white hover:bg-red-500 shadow-md shadow-red-500/20',
+        default: 'btn-primary',
+        gradient: 'btn-primary', // Fallback to primary
+        secondary: 'btn-secondary',
+        accent: 'btn-primary', // Fallback to primary
+        outline: 'btn-outline',
+        ghost: 'btn-ghost',
+        glass: 'glass hover:bg-surface/20 dark:hover:bg-surface/60 text-foreground border border-white/20 dark:border-white/10',
+        danger: 'bg-red-600 text-foreground hover:bg-red-500 shadow-md shadow-red-500/20',
       },
       size: {
         default: 'h-10 px-4 py-2',

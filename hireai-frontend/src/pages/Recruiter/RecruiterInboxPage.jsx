@@ -4,7 +4,7 @@ import { ConversationView } from '@/features/messages/ConversationView';
 import { Card } from '@/components/ui/Card';
 import { useChat } from '@/context/ChatContext';
 import { useAuth } from '@/context/AuthContext';
-import { Sparkles, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 
 export const RecruiterInboxPage = () => {
   const { user } = useAuth();
@@ -37,16 +37,18 @@ export const RecruiterInboxPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold font-heading text-foreground">Candidate Messages</h1>
-          <p className="text-xs text-muted-foreground">Direct real-time conversations with active applicants and shortlisted candidates</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Direct real-time conversations with active applicants and shortlisted candidates
+          </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-200px)] min-h-[550px]">
         {/* Left: Threads Sidebar */}
-        <Card glass className="md:col-span-1 p-4 flex flex-col h-full overflow-hidden">
+        <Card glass className="md:col-span-1 p-4 flex flex-col h-full overflow-hidden rounded-[24px] border border-border shadow-lg">
           <div className="flex items-center justify-between mb-3 px-1">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <MessageSquare className="w-3.5 h-3.5 text-blue-500" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-brand-blue flex items-center gap-1.5">
+              <MessageSquare className="w-3.5 h-3.5" />
               <span>Candidate Threads ({conversations.length})</span>
             </h3>
           </div>

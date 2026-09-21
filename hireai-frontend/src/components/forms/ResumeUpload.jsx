@@ -394,15 +394,15 @@ export const ResumeUpload = ({
           }}
           className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer text-center select-none group ${
             isDragging
-              ? 'border-[#F56681] bg-[#F56681]/10 scale-[1.01]'
-              : 'border-border/80 hover:border-[#F56681]/60 bg-background/50 hover:bg-surface-2/60'
+              ? 'border-brand-blue bg-brand-blue-light/10 scale-[1.01]'
+              : 'border-border/80 hover:border-brand-blue/60 bg-background/50 hover:bg-surface-2/60'
           }`}
         >
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#C63FC5]/15 to-[#F56681]/15 text-[#F56681] flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+          <div className="w-12 h-12 rounded-2xl bg-brand-blue-light/20 border border-brand-blue/20 text-brand-blue flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
             <Upload className="w-6 h-6" />
           </div>
           <span className="text-xs font-bold text-foreground">
-            <span className="text-[#F56681] underline underline-offset-2">Click to upload</span> or drag & drop
+            <span className="text-brand-blue underline underline-offset-2">Click to upload</span> or drag & drop
           </span>
           <span className="text-[10px] text-muted-foreground mt-1">PDF or DOCX up to 10MB</span>
         </div>

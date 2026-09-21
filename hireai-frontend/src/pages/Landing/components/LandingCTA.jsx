@@ -27,13 +27,13 @@ export const LandingCTA = () => {
         {/* Buttons */}
         <div className="mt-10 flex flex-col sm:flex-row justify-center items-center gap-5">
           <Link to={ROUTES.SIGNUP} className="w-full sm:w-auto">
-            <Button size="lg" variant="gradient" className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-gradient-to-r from-[#C63FC5] via-[#F56681] to-[#FC9559] hover:opacity-95 text-white text-lg font-semibold shadow-xl shadow-[#C63FC5]/25 transition">
+            <Button size="lg" variant="gradient" className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-brand-accent text-brand-dark hover:opacity-95 text-foreground text-lg font-semibold shadow-xl shadow-[#C63FC5]/25 transition">
               Get Started
             </Button>
           </Link>
 
           <Link to={ROUTES.LOGIN} className="w-full sm:w-auto">
-            <Button size="lg" className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[#6D3DF5] hover:bg-[#5b2fd4] text-white text-lg font-semibold shadow-lg transition">
+            <Button size="lg" className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-brand-navy text-white hover:bg-brand-blue text-lg font-semibold shadow-lg transition">
               Book Demo
             </Button>
           </Link>

@@ -304,10 +304,10 @@ export const JobApplicantsDrawer = ({
                 </div>
               </div>
               <div className="p-3 rounded-xl bg-[#F56681]/10 border border-[#F56681]/20 text-center">
-                <div className="text-[10px] uppercase font-bold tracking-wider text-[#F56681]">
+                <div className="text-[10px] uppercase font-bold tracking-wider text-brand-blue">
                   Avg ATS Score
                 </div>
-                <div className="text-lg font-bold font-mono text-[#F56681] mt-0.5">
+                <div className="text-lg font-bold font-mono text-brand-blue mt-0.5">
                   {applicants.length > 0
                     ? `${Math.round(
                         applicants.reduce((acc, c) => acc + (c.atsMatchScore || 0), 0) /
@@ -337,7 +337,7 @@ export const JobApplicantsDrawer = ({
                     onClick={() => setFilterStage(stage)}
                     className={`px-3 py-1 rounded-lg font-semibold whitespace-nowrap transition-all ${
                       isActive
-                        ? 'bg-gradient-to-r from-[#C63FC5] to-[#F56681] text-white shadow-sm'
+                        ? 'bg-brand-blue text-white shadow-sm'
                         : 'bg-surface-2 text-muted-foreground hover:text-foreground border border-border/40'
                     }`}
                   >
@@ -498,7 +498,7 @@ export const JobApplicantsDrawer = ({
                         <Button
                           size="sm"
                           onClick={() => setChatApplicant(applicant)}
-                          className="h-8 text-xs font-semibold gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-xs"
+                          className="h-8 text-xs font-semibold gap-1.5 bg-brand-blue hover:bg-brand-navy text-white shadow-xs"
                         >
                           <MessageSquare className="w-3.5 h-3.5" />
                           <span>Contact Candidate</span>
@@ -537,7 +537,7 @@ export const JobApplicantsDrawer = ({
               })
             ) : (
               <div className="py-16 flex flex-col items-center justify-center text-center space-y-3 p-6 rounded-2xl bg-surface-2/30 border border-dashed border-border/60">
-                <div className="w-12 h-12 rounded-2xl bg-[#F56681]/15 text-[#F56681] flex items-center justify-center">
+                <div className="w-12 h-12 rounded-2xl bg-brand-blue-light/15 text-brand-blue flex items-center justify-center">
                   <User className="w-6 h-6" />
                 </div>
                 <h4 className="text-base font-bold text-foreground">No Applicants Found</h4>
@@ -605,7 +605,7 @@ export const JobApplicantsDrawer = ({
                     <iframe
                       src={previewModal.url}
                       title="Candidate Resume"
-                      className="w-full flex-1 rounded-xl border border-border bg-white shadow-inner"
+                      className="w-full flex-1 rounded-xl border border-border bg-surface shadow-inner"
                     />
                   ) : (
                     <div className="flex-1 flex flex-col items-center justify-center text-center p-8 space-y-4 rounded-xl border border-dashed border-border bg-surface">
@@ -621,7 +621,7 @@ export const JobApplicantsDrawer = ({
                       <a
                         href={previewModal.url}
                         download={previewModal.filename}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#C63FC5] to-[#F56681] text-white font-bold text-sm shadow-md hover:opacity-95 transition-opacity"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl btn-primary font-bold text-sm shadow-md hover:opacity-95 transition-opacity"
                       >
                         <Download className="w-4 h-4" />
                         <span>Download {previewModal.filename}</span>

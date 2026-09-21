@@ -37,16 +37,18 @@ export const CandidateInboxPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold font-heading text-foreground">Recruiter Conversations</h1>
-          <p className="text-xs text-muted-foreground">Direct messaging with hiring teams regarding your applications and interview schedules</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Direct messaging with hiring teams regarding your applications and interview schedules
+          </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-200px)] min-h-[550px]">
         {/* Left: Threads Sidebar */}
-        <Card glass className="md:col-span-1 p-4 flex flex-col h-full overflow-hidden">
+        <Card glass className="md:col-span-1 p-4 flex flex-col h-full overflow-hidden rounded-[24px] border border-border shadow-lg">
           <div className="flex items-center justify-between mb-3 px-1">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <MessageSquare className="w-3.5 h-3.5 text-blue-500" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-brand-blue flex items-center gap-1.5">
+              <MessageSquare className="w-3.5 h-3.5" />
               <span>Recruiter Threads ({conversations.length})</span>
             </h3>
           </div>

@@ -201,7 +201,7 @@ export const RecruiterProfilePage = () => {
 
       {/* Hero Header Banner */}
       <div className="relative overflow-hidden rounded-3xl glass border border-border/70 p-6 md:p-8 shadow-md">
-        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#C63FC5] via-[#F56681] to-[#FC9559]" />
+        <div className="absolute top-0 inset-x-0 h-1.5 bg-brand-blue" />
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-5">

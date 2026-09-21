@@ -41,7 +41,7 @@ export const RecruiterJobsPage = () => {
               className="p-5 glass border border-border/60 hover:border-primary/50 hover:shadow-lg rounded-2xl transition-all cursor-pointer group flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden"
             >
               {/* Left Active Indicator Bar */}
-              <div className="absolute left-0 inset-y-0 w-1 bg-gradient-to-b from-[#C63FC5] to-[#F56681] opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute left-0 inset-y-0 w-1 bg-brand-blue opacity-0 group-hover:opacity-100 transition-opacity" />
 
               <div className="space-y-2 flex-1 min-w-0">
                 <div className="flex items-center gap-2.5 flex-wrap">
@@ -55,7 +55,7 @@ export const RecruiterJobsPage = () => {
                         ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                         : job.listingStatus === 'paused'
                         ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
-                        : 'bg-slate-500/15 text-slate-500 border border-slate-500/30'
+                        : 'bg-slate-500/15 text-muted-foreground border border-slate-500/30'
                     }`}
                   >
                     {job.listingStatus}
@@ -93,8 +93,8 @@ export const RecruiterJobsPage = () => {
                     </div>
                   </div>
                   <div className="text-center md:text-right">
-                    <div className="text-[11px] font-bold tracking-wider uppercase text-[#F56681]">AI Parsed</div>
-                    <div className="text-base font-bold text-[#F56681] mt-0.5 font-mono">
+                    <div className="text-[11px] font-bold tracking-wider uppercase text-brand-blue">AI Parsed</div>
+                    <div className="text-base font-bold text-brand-blue mt-0.5 font-mono">
                       {job.aiParsedCount || job.applicantsCount || 0}
                     </div>
                   </div>

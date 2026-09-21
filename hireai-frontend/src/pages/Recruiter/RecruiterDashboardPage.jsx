@@ -86,7 +86,7 @@ export const RecruiterDashboardPage = () => {
         <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={() => navigate(ROUTES.RECRUITER_JOBS_CREATE)}
-            className="inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-[#C63FC5] via-[#F56681] to-[#FC9559] text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-md hover:brightness-105 transition-all cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 bg-brand-blue text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-md hover:brightness-105 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" /> Post New Job
           </button>
@@ -114,7 +114,7 @@ export const RecruiterDashboardPage = () => {
           value={aiShortlistedCount}
           change={totalCandidates > 0 ? '84% ATS match avg' : 'Awaiting applicants'}
           isPositive={aiShortlistedCount > 0}
-          icon={<Sparkles className="w-5 h-5 text-[#F56681]" />}
+          icon={<Sparkles className="w-5 h-5 text-brand-blue" />}
         />
       </div>
 
@@ -122,7 +122,7 @@ export const RecruiterDashboardPage = () => {
       <Card className="p-6 glass border border-border/60 rounded-2xl shadow-xs space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <UserCheck className="w-5 h-5 text-[#F56681]" />
+            <UserCheck className="w-5 h-5 text-brand-blue" />
             <h3 className="text-lg font-bold text-foreground">Hiring Pipeline Status</h3>
           </div>
           <span className="text-[13px] font-semibold text-muted-foreground">
@@ -153,7 +153,7 @@ export const RecruiterDashboardPage = () => {
       {/* When recruiter has no jobs yet, show onboarding state */}
       {jobs.length === 0 ? (
         <Card className="p-8 glass border border-border/60 rounded-2xl text-center space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#C63FC5]/20 via-[#F56681]/20 to-[#FC9559]/20 border border-[#F56681]/30 flex items-center justify-center mx-auto text-primary">
+          <div className="w-14 h-14 rounded-2xl bg-brand-blue-light/20 border border-brand-blue/20 flex items-center justify-center mx-auto text-brand-blue">
             <Briefcase className="w-7 h-7" />
           </div>
           <div className="space-y-1 max-w-md mx-auto">

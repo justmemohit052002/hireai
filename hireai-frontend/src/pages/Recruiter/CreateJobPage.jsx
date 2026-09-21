@@ -274,7 +274,7 @@ export const CreateJobPage = () => {
               size="sm"
               onClick={handleGenerateWithAi}
               disabled={isAiGenerating}
-              className="border-[#F56681]/30 hover:bg-[#F56681]/10 text-foreground"
+              className="border-[#F56681]/30 hover:bg-brand-blue-light/10 text-foreground"
             >
               {isAiGenerating ? (
                 <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-[#F56681]" />

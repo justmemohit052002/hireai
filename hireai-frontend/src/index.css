@@ -1,10 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-heading: 'Space Grotesk', -apple-system, sans-serif;
+  --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
+  /* Mapped CSS Variables for Tailwind Utility Support */
   --color-background: var(--color-bg);
   --color-foreground: var(--color-text);
   --color-surface: var(--color-surface);
@@ -13,130 +14,133 @@
   --color-muted: var(--color-muted);
   --color-muted-foreground: var(--color-text-muted);
 
-  --color-brand-purple: #6D3DF5;
-  --color-brand-pink: #E94F9F;
-  --color-brand-coral: #F4776A;
-  --color-brand-orange: #F59A5B;
-  --color-brand-teal: #22AFA6;
-  --color-brand-blue: #4D78E8;
-  --color-brand-navy: #1F2049;
-
-  --color-brand-start: #C63FC5;
-  --color-brand-mid: #F56681;
-  --color-brand-end: #FC9559;
-
-  --color-purple-tint: var(--color-purple-tint);
-  --color-pink-tint: var(--color-pink-tint);
-  --color-orange-tint: var(--color-orange-tint);
-  --color-teal-tint: var(--color-teal-tint);
-  --color-blue-tint: var(--color-blue-tint);
+  --color-brand-accent: #F1FF62;
+  --color-brand-blue-light: #D4EAFF;
+  --color-brand-blue: #0192C6;
+  --color-brand-navy: #004499;
+  --color-brand-dark: #112358;
 }
 
 /* ─────────────────────────────────────────
-   CSS Custom Properties — Design Tokens
+   Design Tokens & Color Hierarchy
 ───────────────────────────────────────── */
 @layer base {
   :root {
-    /* Brand Foundation Tokens */
-    --color-primary: #6D3DF5;
-    --color-pink: #E94F9F;
-    --color-coral: #F4776A;
-    --color-orange: #F59A5B;
-    --color-teal: #22AFA6;
-    --color-blue: #4D78E8;
-    --color-navy: #1F2049;
+    /* Palette Tokens Extracted from Palette Card */
+    --color-white-solid: #F4F5FA;
+    --color-veiling-waterfalls: #D4EAFF;
+    --color-lemon-pie: #F1FF62;
+    --color-dynamic-blue: #0192C6;
+    --color-fright-night: #004499;
+    --color-fibonacci-blue: #112358;
 
-    --gradient-brand: linear-gradient(135deg, #C63FC5 0%, #F56681 50%, #FC9559 100%);
-    --gradient-brand-subtle: linear-gradient(135deg, rgba(198, 63, 197, 0.08) 0%, rgba(245, 102, 129, 0.08) 50%, rgba(252, 149, 89, 0.08) 100%);
+    /* Light Theme (3rd Image Gradient: Lemon Pie -> White Solid -> Light Blue) */
+    --gradient-bg-light: linear-gradient(180deg, #eff79e 0%, #F4F5FA 25%, #D4EAFF 100%);
 
-    /* Supporting Background Tints — Light */
-    --color-purple-tint: #F3EEFF;
-    --color-pink-tint: #FCEEF5;
-    --color-orange-tint: #FFF4EA;
-    --color-teal-tint: #EAF8F6;
-    --color-blue-tint: #EEF3FF;
-
-    /* Neutrals — Light Mode */
-    --color-bg: #F8FAFC;
+    --color-bg: #F4F5FA;
+    /* Crisp, neutral base background */
     --color-surface: #FFFFFF;
-    --color-surface-2: #F1F5F9;
-    --color-muted: #F1F5F9;
-    --color-border: #E2E8F0;
-    --color-text: #0F172A;
-    --color-text-muted: #64748B;
-    --color-text-subtle: #94A3B8;
+    /* Distinct white cards layer above bg */
+    --color-surface-2: #ffffff;
+    /* Soft light blue tint for inner elements */
+    --color-muted: #E2E8F0;
+    --color-border: rgba(1, 146, 198, 0.18);
+    /* Subtle dynamic blue border for contrast */
 
-    --color-warning: #F4776A;
-    --color-danger: #EF4444;
-    --color-info: #4D78E8;
+    --color-text: #112358;
+    /* Deep Fibonacci Blue for highest readability */
+    --color-text-muted: #004499;
+    /* Fright Night blue for body secondary */
+    --color-text-subtle: #0192C6;
+    /* Dynamic blue for subtle captions */
 
-    /* Glows */
-    --glow-primary: 0 0 20px rgba(109, 61, 245, 0.22);
-    --glow-accent: 0 0 20px rgba(34, 175, 166, 0.22);
+    --color-accent: #0192C6;
+    /* High-contrast blue primary actions */
+    --color-accent-hover: #004499;
+    --color-badge: #F1FF62;
+    /* Vibrant Lemon Pie highlight badge */
+    --color-badge-text: #112358;
 
-    /* Glassmorphism — Light */
-    --glass-bg: rgba(255, 255, 255, 0.88);
-    --glass-border: rgba(226, 232, 240, 0.8);
-    --glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
+    --radius-sm: 6px;
+    --radius: 8px;
+    --radius-lg: 12px;
 
-    /* Layout & Radius */
-    --sidebar-width: 260px;
-    --topnav-height: 64px;
-
-    --radius: 12px;
-    --radius-lg: 18px;
-    --radius-xl: 24px;
+    --glass-bg: rgba(255, 255, 255, 0.75);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   }
 
   .dark {
-    /* Neutrals — Dark Mode */
-    --color-bg: #090A15;
-    --color-surface: #121324;
-    --color-surface-2: #1A1C35;
-    --color-muted: #1A1C35;
-    --color-border: rgba(255, 255, 255, 0.1);
-    --color-text: #F8FAFC;
-    --color-text-muted: #94A3B8;
-    --color-text-subtle: #64748B;
+    /* Dark Theme (2nd Image Gradient: Deep Navy -> Dynamic Blue -> Green-Yellow) */
+    --gradient-bg-dark: linear-gradient(180deg, #112358 0%, #004499 40%, #0192C6 75%, #edf780 100%);
 
-    /* Supporting Background Tints — Dark */
-    --color-purple-tint: #231B3D;
-    --color-pink-tint: #3B1B2C;
-    --color-orange-tint: #3B221B;
-    --color-teal-tint: #162E2D;
-    --color-blue-tint: #1A2542;
+    --color-bg: #0B173B;
+    /* Elevated deep shade derived from Fibonacci Blue */
+    --color-surface: #112358;
+    /* Strong Fibonacci Blue container cards */
+    --color-surface-2: rgba(18, 20, 29, 0.75);
+    /* Lighter blue layer for nested components */
+    --color-muted: #1E3A8A;
+    --color-border: rgba(212, 234, 255, 0.12);
+    /* Light blue border glow on dark containers */
 
-    --color-warning: #F59A5B;
-    --color-danger: #F87171;
-    --color-info: #4D78E8;
+    --color-text: #F4F5FA;
+    /* Clean off-white text */
+    --color-text-muted: #D4EAFF;
+    /* Veiling Waterfalls light blue for muted text */
+    --color-text-subtle: #89C4FA;
 
-    /* Glows */
-    --glow-primary: 0 0 24px rgba(109, 61, 245, 0.35);
-    --glow-accent: 0 0 24px rgba(34, 175, 166, 0.35);
+    --color-accent: #F1FF62;
+    /* Electric Lemon Pie highlight for CTAs */
+    --color-accent-hover: #E0F04B;
+    --color-badge: rgba(241, 255, 98, 0.15);
+    --color-badge-text: #F1FF62;
 
-    /* Glassmorphism — Dark */
-    --glass-bg: rgba(18, 19, 36, 0.85);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    --glass-bg: rgba(18, 20, 29, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   }
 
-  * {
+  *,
+  ::before,
+  ::after {
     box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
   }
 
   html {
     scroll-behavior: smooth;
+    font-size: 16px;
   }
 
   body {
     font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    /* 15px UI standard density */
+    line-height: 1.5;
+    /* Always-on gradient — light mode */
+    background-image: var(--gradient-bg-light);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-size: cover;
     background-color: var(--color-bg);
     color: var(--color-text);
-    transition: background-color 0.25s ease, color 0.25s ease;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Dark mode gradient — html.dark is set by ThemeContext */
+  html.dark body {
+    background-image: var(--gradient-bg-dark);
+  }
+
+  /* Typography Scale */
   h1,
   h2,
   h3,
@@ -144,9 +148,77 @@
   h5,
   h6 {
     font-family: var(--font-heading);
-    font-weight: 700;
-    line-height: 1.25;
     color: var(--color-text);
+    letter-spacing: -0.025em;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  h1 {
+    font-size: 2rem;
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    line-height: 1.3;
+    font-weight: 600;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    line-height: 1.35;
+    font-weight: 600;
+  }
+
+  h4 {
+    font-size: 1rem;
+    line-height: 1.4;
+    font-weight: 600;
+  }
+
+  h5 {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    font-weight: 600;
+  }
+
+  h6 {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  p {
+    margin: 0;
+    line-height: 1.55;
+    color: var(--color-text-muted);
+  }
+
+  /* Global Selection Highlight */
+  ::selection {
+    background-color: #F1FF62;
+    color: #112358;
+  }
+  ::-moz-selection {
+    background-color: #F1FF62;
+    color: #112358;
+  }
+
+  /* Input / Text Field Focus States */
+  input:focus,
+  textarea:focus,
+  select:focus,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    border-color: #F1FF62 !important;
+    outline: 2px solid #F1FF62 !important;
+    outline-offset: 1px;
   }
 
   /* Scrollbar */
@@ -155,26 +227,152 @@
     height: 6px;
   }
 
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
   ::-webkit-scrollbar-thumb {
     background: var(--color-border);
     border-radius: 99px;
   }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-text-subtle);
-  }
 }
 
 /* ─────────────────────────────────────────
-   Utility Classes
+   Card & Utility Classes
 ───────────────────────────────────────── */
 @layer utilities {
 
-  /* Glass card */
+  /* Surface Container (Deliberately offset from background color) */
+  .surface {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+  }
+
+  .surface-nested {
+    background-color: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+  }
+
+  /* Interactive SaaS Card with Subtle Depth */
+  .interactive-card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .interactive-card:hover {
+    transform: translateY(-1px);
+    border-color: var(--color-text-subtle);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .dark .interactive-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  /* High-contrast Buttons & Badges */
+  .btn-primary {
+    background-color: #F1FF62;
+    color: #112358;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: #e6f545;
+  }
+
+  .btn-secondary {
+    background-color: #D4EAFF;
+    color: #004499;
+    font-weight: 500;
+    transition: all 0.15s ease;
+  }
+
+  .btn-secondary:hover {
+    background-color: #bce0ff;
+  }
+
+  .dark .btn-secondary {
+    background-color: #004499;
+    color: #F4F5FA;
+  }
+
+  .dark .btn-secondary:hover {
+    background-color: #003880;
+  }
+
+  .btn-outline {
+    background-color: #F4F5FA;
+    border: 1px solid rgba(1, 146, 198, 0.4);
+    color: #112358;
+    font-weight: 500;
+    transition: all 0.15s ease;
+  }
+
+  .btn-outline:hover {
+    background-color: rgba(212, 234, 255, 0.5);
+  }
+
+  .dark .btn-outline {
+    background-color: #112358;
+    border-color: #004499;
+    color: #F4F5FA;
+  }
+
+  .dark .btn-outline:hover {
+    background-color: rgba(0, 68, 153, 0.4);
+  }
+
+  .btn-ghost {
+    background-color: transparent;
+    color: var(--color-text);
+    font-weight: 500;
+    transition: all 0.15s ease;
+  }
+
+  .btn-ghost:hover {
+    background-color: rgba(212, 234, 255, 0.5);
+  }
+
+  .dark .btn-ghost:hover {
+    background-color: rgba(0, 68, 153, 0.3);
+  }
+
+  .badge-highlight {
+    background-color: var(--color-badge);
+    color: var(--color-badge-text);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Functional Focus State */
+  .focus-ring {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* Glassmorphism Utilities */
+  .glass-island {
+    background: var(--glass-bg);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 9999px;
+  }
+
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 1rem;
+  }
+
   .glass {
     background: var(--glass-bg);
     backdrop-filter: blur(16px);
@@ -183,142 +381,17 @@
     box-shadow: var(--glass-shadow);
   }
 
-  /* Supporting Background Tints */
-  .bg-purple-tint {
-    background-color: var(--color-purple-tint);
-    color: var(--color-primary);
-  }
-
-  .bg-pink-tint {
-    background-color: var(--color-pink-tint);
-    color: var(--color-pink);
-  }
-
-  .bg-orange-tint {
-    background-color: var(--color-orange-tint);
-    color: var(--color-orange);
-  }
-
-  .bg-teal-tint {
-    background-color: var(--color-teal-tint);
-    color: var(--color-teal);
-  }
-
-  .bg-blue-tint {
-    background-color: var(--color-blue-tint);
-    color: var(--color-blue);
-  }
-
-  /* Brand Gradient Utilities */
-  .bg-gradient-brand {
-    background: var(--gradient-brand);
-  }
-
-  .gradient-text-brand {
-    background: var(--gradient-brand);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  /* Aurora background */
-  .aurora-bg {
-    background:
-      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(198, 63, 197, 0.12) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 80% at 80% 90%, rgba(245, 102, 129, 0.1) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 60% at 50% 50%, rgba(252, 149, 89, 0.08) 0%, transparent 60%),
-      var(--color-bg);
-  }
-
-  /* Glow effects */
-  .glow-primary {
-    box-shadow: var(--glow-primary);
-  }
-
-  .glow-accent {
-    box-shadow: var(--glow-accent);
-  }
-
-  /* Gradient text */
-  .gradient-text {
-    background: var(--gradient-brand);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  /* Hover lift */
+  /* Hover Lift — used by .interactive-card and Card hoverable prop */
   .hover-lift {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   }
 
   .hover-lift:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 36px rgba(15, 23, 42, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   }
 
-  /* Surface */
-  .surface {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-  }
-
-  /* Focus ring */
-  .focus-ring {
-    outline: 2px solid #F56681;
-    outline-offset: 2px;
-  }
-
-  /* Shimmer animation for skeletons */
-  .shimmer {
-    background: linear-gradient(90deg,
-        var(--color-surface-2) 25%,
-        var(--color-border) 50%,
-        var(--color-surface-2) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-  }
-
-  @keyframes shimmer {
-    0% {
-      background-position: 200% 0;
-    }
-
-    100% {
-      background-position: -200% 0;
-    }
-  }
-
-  /* Pulse glow */
-  @keyframes pulse-glow {
-    0%,
-    100% {
-      box-shadow: 0 0 20px rgba(245, 102, 129, 0.2);
-    }
-
-    50% {
-      box-shadow: 0 0 35px rgba(245, 102, 129, 0.45);
-    }
-  }
-
-  .pulse-glow {
-    animation: pulse-glow 2s ease-in-out infinite;
-  }
-
-  /* Float animation */
-  @keyframes float {
-    0%,
-    100% {
-      transform: translateY(0px);
-    }
-
-    50% {
-      transform: translateY(-8px);
-    }
-  }
-
-  .float {
-    animation: float 4s ease-in-out infinite;
+  .dark .hover-lift:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   }
 }

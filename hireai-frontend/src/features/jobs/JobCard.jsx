@@ -29,14 +29,14 @@ export const JobCard = ({ job, onSelect, onApply, isPaused = false }) => {
         onClick={() => onSelect && onSelect(job)}
       >
         {/* Top Banner Accent */}
-        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-[#C63FC5] via-[#F56681] to-[#FC9559] opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="absolute top-0 inset-x-0 h-1 bg-brand-blue opacity-0 group-hover:opacity-100 transition-opacity" />
 
         {/* Left / Main info area */}
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#C63FC5]/15 via-[#F56681]/15 to-[#FC9559]/15 border border-[#F56681]/30 flex items-center justify-center font-bold text-foreground shrink-0 text-base shadow-sm">
+              <div className="w-11 h-11 rounded-2xl bg-brand-blue-light/30 border border-brand-blue/20 flex items-center justify-center font-bold text-foreground shrink-0 text-base shadow-sm">
                 {companyInitial}
               </div>
               <div className="min-w-0">

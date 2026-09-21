@@ -172,9 +172,9 @@ export const ApplyModal = ({
             Your application has been delivered to {job.company?.name || 'the recruiter'}.
           </p>
           {matchScore && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#C63FC5]/15 via-[#F56681]/15 to-[#FC9559]/15 border border-[#F56681]/30 text-foreground font-bold text-sm">
-              <Sparkles className="w-4 h-4 text-[#F56681]" />
-              <span>Initial ATS Match Score: {matchScore}%</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-blue-light/30 border border-brand-blue/30 text-brand-navy dark:text-brand-blue-light font-bold text-sm">
+              <Sparkles className="w-4 h-4 text-brand-blue" />
+              <span>{matchScore}% ATS Role Match</span>
             </div>
           )}
         </div>
