@@ -39,10 +39,10 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
-      <Card glass className="w-full max-w-md p-8 space-y-6 shadow-2xl rounded-[28px] border border-white/20 dark:border-white/10">
-        <div className="text-center space-y-2">
-          <Logo size="lg" className="justify-center mb-2" />
+    <div className="w-full my-auto">
+      <Card glass className="w-full max-w-md mx-auto p-6 sm:p-8 space-y-6 shadow-2xl rounded-[28px] border border-white/20 dark:border-white/10">
+        <div className="text-center space-y-1.5">
+          <Logo size="lg" className="justify-center mb-1.5" />
           <h2 className="text-2xl font-bold font-heading text-foreground">Welcome Back</h2>
           <p className="text-xs text-muted-foreground">Sign in to your HireAI account</p>
         </div>
@@ -54,7 +54,7 @@ export const LoginPage = () => {
             onClick={() => setRole('candidate')}
             className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
               role === 'candidate'
-                ? 'bg-brand-accent text-brand-dark text-foreground shadow-md shadow-[#C63FC5]/20'
+                ? 'bg-brand-accent text-slate-950 shadow-md shadow-brand-accent/20'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >

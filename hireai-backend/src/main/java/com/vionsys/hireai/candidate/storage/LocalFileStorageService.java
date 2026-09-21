@@ -72,11 +72,19 @@ public class LocalFileStorageService implements FileStorageService {
         try {
             Path path = Paths.get(filePath).toAbsolutePath().normalize();
             if (!path.startsWith(uploadPath)) {
-                throw new FileStorageException("Unauthorized file path access.");
+                // If path does not start with uploadPath (e.g. relative filename or different working directory),
+                // resolve it directly against uploadPath
+                path = uploadPath.resolve(Paths.get(filePath).getFileName()).normalize();
             }
 
             Resource resource = new UrlResource(path.toUri());
             if (!resource.exists() || !resource.isReadable()) {
+                // Fallback check: check if filename exists directly in uploadPath
+                Path fallback = uploadPath.resolve(Paths.get(filePath).getFileName()).normalize();
+                if (Files.exists(fallback) && Files.isReadable(fallback)) {
+                    log.info("Resolved resume resource using uploadPath filename fallback: {}", fallback);
+                    return new UrlResource(fallback.toUri());
+                }
                 throw new FileStorageException("Resume file could not be found or is not readable.");
             }
             return resource;

@@ -7,7 +7,8 @@ import {
   Send,
   Eye,
   DollarSign,
-  Briefcase
+  Briefcase,
+  Sparkles,
 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -20,6 +21,13 @@ export const JobCard = ({ job, onSelect, onApply, isPaused = false }) => {
   const companyName = job.company?.name || job.companyName || 'HireAI Partner';
   const companyInitial = companyName ? companyName[0].toUpperCase() : 'H';
   const salaryDisplay = formatSalary(job.salary);
+
+  // Mark jobs posted in last 48 hours as NEW
+  const isRecent = (() => {
+    if (!job.postedAt) return false;
+    const diffMs = Date.now() - new Date(job.postedAt).getTime();
+    return diffMs >= 0 && diffMs <= 48 * 60 * 60 * 1000;
+  })();
 
   return (
     <div className="flex flex-col w-full">
@@ -44,6 +52,12 @@ export const JobCard = ({ job, onSelect, onApply, isPaused = false }) => {
                   <h3 className="font-bold text-base sm:text-lg font-heading text-foreground group-hover:text-primary transition-colors line-clamp-1">
                     {job.title}
                   </h3>
+                  {isRecent && (
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-brand-accent text-slate-950 shadow-xs flex items-center gap-1 shrink-0">
+                      <Sparkles className="w-2.5 h-2.5 text-slate-950" />
+                      NEW
+                    </span>
+                  )}
                   <Badge variant="default" className="shrink-0 font-mono text-[10px]">
                     {getJobTypeLabel(job.type) || job.jobType || 'Full-time'}
                   </Badge>

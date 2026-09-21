@@ -63,12 +63,6 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     @Override
     public JobApplicationResponse applyToJob(UUID candidateUserId, UUID jobId, JobApplicationRequest request, MultipartFile resumeFile) {
 
-        // 1. If candidate provided a new resume file during application, upload & parse it first
-        if (resumeFile != null && !resumeFile.isEmpty()) {
-            log.info("Uploading and processing new resume file for candidate user {} during job application", candidateUserId);
-            resumeService.uploadMyResume(candidateUserId, resumeFile);
-        }
-
         Candidate candidate = candidateRepository.findByUserId(candidateUserId)
                 .orElseGet(() -> createDefaultCandidateForUser(candidateUserId));
 
@@ -81,6 +75,12 @@ public class JobApplicationServiceImpl implements JobApplicationService {
 
         if (jobApplicationRepository.existsByJobIdAndCandidateId(jobId, candidate.getId())) {
             throw new DuplicateResourceException("You have already submitted an application for this job posting.");
+        }
+
+        // 1. If candidate provided a new resume file during application, upload & parse it only AFTER all validations pass
+        if (resumeFile != null && !resumeFile.isEmpty()) {
+            log.info("Uploading and processing new resume file for candidate user {} during job application", candidateUserId);
+            resumeService.uploadMyResume(candidateUserId, resumeFile);
         }
 
         // Run ATS Intelligent Match Scoring

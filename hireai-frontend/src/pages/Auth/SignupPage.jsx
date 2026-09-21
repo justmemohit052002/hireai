@@ -84,10 +84,10 @@ export const SignupPage = () => {
   };
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
-      <Card glass className="w-full max-w-md p-8 space-y-6 shadow-2xl rounded-[28px] border border-white/20 dark:border-white/10">
-        <div className="text-center space-y-2">
-          <Logo size="lg" className="justify-center mb-2" />
+    <div className="w-full my-auto">
+      <Card glass className="w-full max-w-md mx-auto p-6 sm:p-8 space-y-6 shadow-2xl rounded-[28px] border border-white/20 dark:border-white/10">
+        <div className="text-center space-y-1.5">
+          <Logo size="lg" className="justify-center mb-1.5" />
           <h2 className="text-2xl font-bold font-heading text-foreground">Create Your Account</h2>
           <p className="text-xs text-muted-foreground">Step {step} of 2 • Account Configuration</p>
         </div>

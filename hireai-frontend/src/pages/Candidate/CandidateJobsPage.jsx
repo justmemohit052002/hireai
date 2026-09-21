@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Clock } from 'lucide-react';
 import { DynamicIslandSearch } from '@/components/common/DynamicIslandSearch';
 import { JobCard } from '@/features/jobs/JobCard';
 import { JobDetailDrawer } from '@/features/jobs/JobDetailDrawer';
@@ -71,6 +72,13 @@ export const CandidateJobsPage = () => {
     return true;
   });
 
+  // Sort jobs descending by date: newest first, older jobs later
+  const sortedJobs = [...filteredJobs].sort((a, b) => {
+    const timeA = new Date(a.postedAt || a.createdAt || 0).getTime();
+    const timeB = new Date(b.postedAt || b.createdAt || 0).getTime();
+    return timeB - timeA;
+  });
+
   return (
     <div className="space-y-6">
       {/* Dynamic Search Island Header */}
@@ -93,9 +101,20 @@ export const CandidateJobsPage = () => {
 
         {/* Jobs List */}
         <div className={showFilters ? 'lg:col-span-3' : 'lg:col-span-4'}>
-          {filteredJobs.length > 0 ? (
+          {sortedJobs.length > 0 ? (
             <div className="flex flex-col gap-4">
-              {filteredJobs.map((job) => (
+              {/* Sort Order Header */}
+              <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
+                <span>
+                  Showing <strong className="text-foreground font-mono">{sortedJobs.length}</strong> open position{sortedJobs.length > 1 ? 's' : ''}
+                </span>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-blue/10 text-brand-blue font-semibold text-[11px] border border-brand-blue/20">
+                  <Clock className="w-3 h-3" />
+                  <span>Sorted by: Newest First</span>
+                </div>
+              </div>
+
+              {sortedJobs.map((job) => (
                 <JobCard
                   key={job.id}
                   job={job}

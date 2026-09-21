@@ -1,13 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ConversationList } from '@/features/messages/ConversationList';
 import { ConversationView } from '@/features/messages/ConversationView';
 import { Card } from '@/components/ui/Card';
 import { useChat } from '@/context/ChatContext';
 import { useAuth } from '@/context/AuthContext';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Users } from 'lucide-react';
 
 export const RecruiterInboxPage = () => {
   const { user } = useAuth();
+  const [mobileView, setMobileView] = useState('list'); // 'list' | 'chat'
+
   const {
     conversations,
     activeConversationId,
@@ -31,39 +33,70 @@ export const RecruiterInboxPage = () => {
     }
   }, [activeConversationId, conversations, selectConversation]);
 
+  const handleSelectThread = (id) => {
+    selectConversation(id);
+    setMobileView('chat');
+  };
+
   return (
-    <div className="space-y-4">
-      {/* Header Banner */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold font-heading text-foreground">Candidate Messages</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Direct real-time conversations with active applicants and shortlisted candidates
-          </p>
+    <div className="flex flex-col h-[calc(100dvh-120px)] md:h-[calc(100dvh-135px)] min-h-[480px] max-h-[calc(100dvh-120px)] overflow-hidden">
+      {/* Compact Header Bar */}
+      <div className="flex items-center justify-between shrink-0 mb-3 px-1">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-brand-blue/15 text-brand-blue flex items-center justify-center shrink-0">
+            <MessageSquare className="w-4 h-4" />
+          </div>
+          <div>
+            <h1 className="text-base sm:text-lg font-bold font-heading text-foreground leading-tight">
+              Candidate Messages
+            </h1>
+            <p className="text-[11px] text-muted-foreground hidden sm:block">
+              Direct real-time conversations and interview coordination with applicants
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[11px] font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Live Chat
+          </span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-200px)] min-h-[550px]">
-        {/* Left: Threads Sidebar */}
-        <Card glass className="md:col-span-1 p-4 flex flex-col h-full overflow-hidden rounded-[24px] border border-border shadow-lg">
-          <div className="flex items-center justify-between mb-3 px-1">
+      {/* Main Chat Grid (Master-Detail on mobile, 2-column on desktop) */}
+      <div className="flex-1 min-h-0 flex gap-4 lg:gap-6 overflow-hidden">
+        {/* Left: Candidate Threads Sidebar */}
+        <Card
+          glass
+          className={`p-3.5 sm:p-4 flex-col h-full min-h-0 overflow-hidden rounded-[24px] border border-border shadow-lg ${
+            mobileView === 'chat'
+              ? 'hidden md:flex md:w-80 lg:w-96 shrink-0'
+              : 'flex w-full md:w-80 lg:w-96 shrink-0'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-2.5 px-1 shrink-0">
             <h3 className="text-xs font-bold uppercase tracking-wider text-brand-blue flex items-center gap-1.5">
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span>Candidate Threads ({conversations.length})</span>
+              <Users className="w-3.5 h-3.5" />
+              <span>Threads ({conversations.length})</span>
             </h3>
           </div>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-hidden">
             <ConversationList
               conversations={conversations}
               activeId={activeConversationId}
-              onSelect={selectConversation}
+              onSelect={handleSelectThread}
               currentUserId={user?.id}
             />
           </div>
         </Card>
 
         {/* Right: Active Chat Window */}
-        <div className="md:col-span-2 h-full overflow-hidden">
+        <div
+          className={`flex-1 min-w-0 h-full min-h-0 overflow-hidden ${
+            mobileView === 'list' ? 'hidden md:flex flex-col' : 'flex flex-col'
+          }`}
+        >
           <ConversationView
             conversation={activeConversation}
             messages={activeMessages}
@@ -72,6 +105,7 @@ export const RecruiterInboxPage = () => {
             onSendTyping={sendTyping}
             isPartnerTyping={isPartnerTyping}
             isLoadingMessages={isLoadingMessages}
+            onBackToList={() => setMobileView('list')}
           />
         </div>
       </div>

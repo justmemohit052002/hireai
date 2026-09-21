@@ -21,9 +21,9 @@ export const ConversationList = ({
   });
 
   return (
-    <div className="flex flex-col h-full space-y-3">
+    <div className="flex flex-col h-full min-h-0 space-y-2.5">
       {/* Search Filter */}
-      <div className="relative">
+      <div className="relative shrink-0">
         <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
@@ -34,11 +34,11 @@ export const ConversationList = ({
         />
       </div>
 
-      {/* Conversation Thread List */}
-      <div className="space-y-1.5 overflow-y-auto flex-1 pr-1">
+      {/* Conversation Thread List - strictly scrollable internally */}
+      <div className="space-y-1.5 overflow-y-auto flex-1 min-h-0 pr-1">
         {filteredConversations.length === 0 ? (
           <div className="text-center py-10 text-muted-foreground space-y-2">
-            <div className="w-10 h-10 rounded-2xl bg-brand-blue-light/20 text-brand-blue flex items-center justify-center mx-auto">
+            <div className="w-10 h-10 rounded-2xl bg-brand-blue/15 text-brand-blue flex items-center justify-center mx-auto">
               <MessageSquare className="w-5 h-5 opacity-75" />
             </div>
             <p className="text-xs font-medium">No conversations found</p>
@@ -61,15 +61,15 @@ export const ConversationList = ({
                 key={conv.id}
                 onClick={() => onSelect(conv.id)}
                 className={cn(
-                  'flex items-center gap-3 w-full p-3 rounded-2xl transition-all text-left border relative group cursor-pointer',
+                  'flex items-center gap-3 w-full p-2.5 sm:p-3 rounded-2xl transition-all text-left border relative group cursor-pointer',
                   isActive
-                    ? 'bg-brand-blue-light/25 dark:bg-brand-blue/20 border-brand-blue/40 text-foreground shadow-xs font-medium'
+                    ? 'bg-brand-blue/15 dark:bg-brand-blue/20 border-brand-blue/40 text-foreground shadow-xs font-medium'
                     : 'border-transparent hover:bg-surface-2/60 text-muted-foreground hover:text-foreground'
                 )}
               >
                 {/* Active Left Indicator */}
                 {isActive && (
-                  <span className="absolute left-0 top-3 bottom-3 w-1 bg-brand-blue rounded-r-full" />
+                  <span className="absolute left-0 top-2.5 bottom-2.5 w-1 bg-brand-blue rounded-r-full" />
                 )}
 
                 <div className="relative shrink-0">
@@ -97,7 +97,7 @@ export const ConversationList = ({
                 </div>
 
                 {unreadCount > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-brand-accent text-brand-dark text-[10px] font-extrabold shadow-xs shrink-0">
+                  <span className="px-2 py-0.5 rounded-full bg-brand-accent text-slate-950 text-[10px] font-black shadow-xs shrink-0">
                     {unreadCount}
                   </span>
                 )}

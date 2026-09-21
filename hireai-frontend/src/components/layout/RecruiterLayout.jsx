@@ -8,7 +8,7 @@ export const RecruiterLayout = () => {
       {/* Main Content Area */}
       <div className="w-full max-w-7xl mx-auto flex-1 flex flex-col min-w-0">
         <TopNav role="recruiter" title="Recruiter Studio" />
-        <main className="pb-10 flex-1">
+        <main className="flex-1 flex flex-col min-w-0">
           <Outlet />
         </main>
       </div>

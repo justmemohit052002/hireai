@@ -24,6 +24,10 @@ export const CandidateApplicationsPage = () => {
       ...app,
       job,
     };
+  }).sort((a, b) => {
+    const timeA = new Date(a.appliedAt || a.createdAt || 0).getTime();
+    const timeB = new Date(b.appliedAt || b.createdAt || 0).getTime();
+    return timeB - timeA;
   });
 
   return (

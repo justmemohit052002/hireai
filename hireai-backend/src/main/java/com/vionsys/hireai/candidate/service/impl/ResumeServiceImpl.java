@@ -15,6 +15,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -105,12 +107,27 @@ public class ResumeServiceImpl implements ResumeService {
             Resume resume = resumeRepository.findByCandidateId(candidate.getId())
                     .orElse(new Resume());
 
-            // If an older physical file exists, delete it safely
-            if (resume.getFilePath() != null && !resume.getFilePath().equals(filePath)) {
-                try {
-                    fileStorageService.delete(resume.getFilePath());
-                } catch (Exception ex) {
-                    log.warn("Failed to delete older resume file: {}", ex.getMessage());
+            // If an older physical file exists, delete it safely AFTER the transaction successfully commits
+            final String oldFilePath = resume.getFilePath();
+            if (oldFilePath != null && !oldFilePath.equals(filePath)) {
+                if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            try {
+                                fileStorageService.delete(oldFilePath);
+                                log.info("Deleted older resume file after transaction commit: {}", oldFilePath);
+                            } catch (Exception ex) {
+                                log.warn("Failed to delete older resume file: {}", ex.getMessage());
+                            }
+                        }
+                    });
+                } else {
+                    try {
+                        fileStorageService.delete(oldFilePath);
+                    } catch (Exception ex) {
+                        log.warn("Failed to delete older resume file: {}", ex.getMessage());
+                    }
                 }
             }
 
@@ -344,8 +361,16 @@ public class ResumeServiceImpl implements ResumeService {
 
         try {
             return fileStorageService.loadAsResource(resume.getFilePath());
-        } catch (IOException ex) {
-            throw new FileStorageException("Could not read resume file: " + ex.getMessage(), ex);
+        } catch (Exception ex) {
+            log.warn("Primary file path {} failed to load for candidate {}: {}. Attempting stored file name fallback...",
+                    resume.getFilePath(), candidateId, ex.getMessage());
+            if (resume.getStoredFileName() != null && !resume.getStoredFileName().isBlank()) {
+                try {
+                    return fileStorageService.loadAsResource(resume.getStoredFileName());
+                } catch (Exception ignored) {
+                }
+            }
+            throw new FileStorageException("Resume file could not be found or is not readable.", ex);
         }
     }
 
@@ -357,8 +382,16 @@ public class ResumeServiceImpl implements ResumeService {
 
         try {
             return fileStorageService.loadAsResource(resume.getFilePath());
-        } catch (IOException ex) {
-            throw new FileStorageException("Could not read resume file: " + ex.getMessage(), ex);
+        } catch (Exception ex) {
+            log.warn("Primary file path {} failed to load for user {}: {}. Attempting stored file name fallback...",
+                    resume.getFilePath(), userId, ex.getMessage());
+            if (resume.getStoredFileName() != null && !resume.getStoredFileName().isBlank()) {
+                try {
+                    return fileStorageService.loadAsResource(resume.getStoredFileName());
+                } catch (Exception ignored) {
+                }
+            }
+            throw new FileStorageException("Resume file could not be found or is not readable.", ex);
         }
     }
 

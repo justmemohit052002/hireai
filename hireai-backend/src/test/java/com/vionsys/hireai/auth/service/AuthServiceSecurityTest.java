@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -40,6 +42,7 @@ import com.vionsys.hireai.role.entity.Role;
 import com.vionsys.hireai.role.repository.RoleRepository;
 import com.vionsys.hireai.security.jwt.JwtProperties;
 import com.vionsys.hireai.security.jwt.JwtService;
+import com.vionsys.hireai.security.ratelimit.AccountBackoffManager;
 import com.vionsys.hireai.user.entity.User;
 import com.vionsys.hireai.user.repository.UserRepository;
 
@@ -76,6 +79,9 @@ class AuthServiceSecurityTest {
     @Mock
     private EmailService emailService;
 
+    @Mock
+    private AccountBackoffManager accountBackoffManager;
+
     @InjectMocks
     private AuthService authService;
 
@@ -100,6 +106,9 @@ class AuthServiceSecurityTest {
                 .failedLoginAttempts(0)
                 .role(candidateRole)
                 .build();
+
+        lenient().when(accountBackoffManager.checkBackoff(anyString()))
+                .thenReturn(new AccountBackoffManager.BackoffResult(false, 0, 0));
     }
 
     @Test
@@ -193,6 +202,7 @@ class AuthServiceSecurityTest {
         testUser.setFailedLoginAttempts(4);
         when(userRepository.findByEmail("candidate@example.com")).thenReturn(Optional.of(testUser));
         when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("Bad credentials"));
+        when(accountBackoffManager.recordFailure("candidate@example.com")).thenReturn(60L);
 
         LoginRequest request = LoginRequest.builder()
                 .email("candidate@example.com")
@@ -203,6 +213,7 @@ class AuthServiceSecurityTest {
         assertEquals(5, testUser.getFailedLoginAttempts());
         assertNotNull(testUser.getLockoutUntil());
         verify(userRepository).save(testUser);
+        verify(accountBackoffManager).recordFailure("candidate@example.com");
     }
 
     @Test
@@ -210,6 +221,21 @@ class AuthServiceSecurityTest {
         testUser.setFailedLoginAttempts(5);
         testUser.setLockoutUntil(LocalDateTime.now().plusMinutes(10));
         when(userRepository.findByEmail("candidate@example.com")).thenReturn(Optional.of(testUser));
+
+        LoginRequest request = LoginRequest.builder()
+                .email("candidate@example.com")
+                .password("any-password")
+                .build();
+
+        assertThrows(AccountLockedException.class, () -> authService.login(request));
+        verify(authenticationManager, never()).authenticate(any());
+    }
+
+    @Test
+    void testLogin_WhenAccountBackoffActive_ThrowsAccountLockedException() {
+        when(userRepository.findByEmail("candidate@example.com")).thenReturn(Optional.of(testUser));
+        when(accountBackoffManager.checkBackoff("candidate@example.com"))
+                .thenReturn(new AccountBackoffManager.BackoffResult(true, 30L, 5));
 
         LoginRequest request = LoginRequest.builder()
                 .email("candidate@example.com")
