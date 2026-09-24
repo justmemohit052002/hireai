@@ -45,6 +45,7 @@ import com.vionsys.hireai.security.jwt.JwtProperties;
 import com.vionsys.hireai.security.jwt.JwtService;
 import com.vionsys.hireai.user.entity.User;
 import com.vionsys.hireai.user.repository.UserRepository;
+import com.vionsys.hireai.security.ratelimit.AccountBackoffManager;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -66,6 +67,7 @@ public class AuthService {
     private final CandidateRepository candidateRepository;
     private final CandidateIdGenerator candidateIdGenerator;
     private final com.vionsys.hireai.email.EmailService emailService;
+    private final com.vionsys.hireai.security.ratelimit.AccountBackoffManager accountBackoffManager;
 
     @Transactional
     public AuthResponse registerCandidate(RegisterRequest request) {
@@ -196,12 +198,23 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
 
-        // 1. Check account lockout
+        // 1. Check account exponential backoff and lockout state
+        AccountBackoffManager.BackoffResult inMemoryBackoff = accountBackoffManager.checkBackoff(request.getEmail());
+        if (inMemoryBackoff.isBlocked()) {
+            throw new AccountLockedException(
+                    "Too many failed login attempts for this account. Exponential backoff active. Please wait "
+                    + inMemoryBackoff.getRemainingCooldownSeconds() + " seconds before retrying.",
+                    inMemoryBackoff.getRemainingCooldownSeconds()
+            );
+        }
+
         if (user.getLockoutUntil() != null) {
             if (LocalDateTime.now().isBefore(user.getLockoutUntil())) {
+                long remainingSeconds = Math.max(1L, java.time.Duration.between(LocalDateTime.now(), user.getLockoutUntil()).toSeconds());
                 throw new AccountLockedException(
-                        "Account is temporarily locked due to consecutive failed login attempts. Please try again after " 
-                        + user.getLockoutUntil() + " or reset your password."
+                        "Account is temporarily locked due to failed login attempts. Please try again after " 
+                        + remainingSeconds + " seconds or reset your password.",
+                        remainingSeconds
                 );
             } else {
                 // Lockout period has elapsed, reset lockout state
@@ -220,17 +233,20 @@ public class AuthService {
                     )
             );
         } catch (BadCredentialsException ex) {
+            long backoffSeconds = accountBackoffManager.recordFailure(request.getEmail());
             int attempts = (user.getFailedLoginAttempts() != null ? user.getFailedLoginAttempts() : 0) + 1;
             user.setFailedLoginAttempts(attempts);
-            if (attempts >= 5) {
-                user.setLockoutUntil(LocalDateTime.now().plusMinutes(15));
-                log.warn("Account {} locked until {} due to 5 failed login attempts", user.getEmail(), user.getLockoutUntil());
+            if (backoffSeconds > 0) {
+                user.setLockoutUntil(LocalDateTime.now().plusSeconds(backoffSeconds));
+                log.warn("Account {} placed on exponential backoff for {}s due to {} failed login attempts",
+                        user.getEmail(), backoffSeconds, attempts);
             }
             userRepository.save(user);
             throw ex;
         }
 
-        // 3. Reset failed attempts counter on successful login
+        // 3. Reset failed attempts counter and backoff on successful login
+        accountBackoffManager.recordSuccess(request.getEmail());
         if ((user.getFailedLoginAttempts() != null && user.getFailedLoginAttempts() > 0) || user.getLockoutUntil() != null) {
             user.setFailedLoginAttempts(0);
             user.setLockoutUntil(null);
@@ -446,6 +462,7 @@ public class AuthService {
         user.setFailedLoginAttempts(0);
         user.setLockoutUntil(null);
         userRepository.save(user);
+        accountBackoffManager.recordSuccess(user.getEmail());
 
         // Invalidate all active refresh tokens on password reset for security
         refreshTokenRepository.revokeAllUserTokens(user);

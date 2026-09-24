@@ -51,14 +51,17 @@ public class GlobalExceptionHandler {
 
 		ErrorResponse response = new ErrorResponse(
 				false,
-				HttpStatus.LOCKED.value(),
-				HttpStatus.LOCKED.getReasonPhrase(),
+				HttpStatus.TOO_MANY_REQUESTS.value(),
+				HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase(),
 				ex.getMessage(),
 				request.getRequestURI());
 
-		return ResponseEntity
-				.status(HttpStatus.LOCKED)
-				.body(response);
+		ResponseEntity.BodyBuilder builder = ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS);
+		if (ex.getRetryAfterSeconds() > 0) {
+			builder.header(org.springframework.http.HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfterSeconds()));
+		}
+
+		return builder.body(response);
 	}
 
 	@ExceptionHandler(TokenReuseDetectedException.class)

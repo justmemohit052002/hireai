@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { PublicLayout } from '@/components/layout/PublicLayout';
+import { AuthLayout } from '@/components/layout/AuthLayout';
 import { CandidateLayout } from '@/components/layout/CandidateLayout';
 import { RecruiterLayout } from '@/components/layout/RecruiterLayout';
 import { ProtectedRoute } from './ProtectedRoute';
@@ -36,7 +37,7 @@ const SuspenseFallback = () => (
 );
 
 const router = createBrowserRouter([
-  // Public Routes (Floating Navbar + Hero + Footer)
+  // Public Landing Page (Floating Navbar + Hero + Footer)
   {
     path: '/',
     element: <PublicLayout />,
@@ -49,6 +50,13 @@ const router = createBrowserRouter([
           </Suspense>
         ),
       },
+    ],
+  },
+
+  // Auth Routes (Clean AuthLayout with no floating navbar or footer)
+  {
+    element: <AuthLayout />,
+    children: [
       {
         path: ROUTES.LOGIN,
         element: (

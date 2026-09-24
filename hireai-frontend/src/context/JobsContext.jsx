@@ -10,7 +10,11 @@ function seedMockJobs() {
     ...j,
     listingStatus: j.listingStatus || 'open',
     status: j.status || 'active',
-  }));
+  })).sort((a, b) => {
+    const timeA = new Date(a.postedAt || a.createdAt || 0).getTime();
+    const timeB = new Date(b.postedAt || b.createdAt || 0).getTime();
+    return timeB - timeA;
+  });
 }
 
 function normalizeJob(backendJob) {
@@ -129,6 +133,11 @@ export const JobsProvider = ({ children }) => {
 
       if (Array.isArray(rawJobs)) {
         const normalized = rawJobs.map(normalizeJob).filter(Boolean);
+        normalized.sort((a, b) => {
+          const timeA = new Date(a.postedAt || a.createdAt || 0).getTime();
+          const timeB = new Date(b.postedAt || b.createdAt || 0).getTime();
+          return timeB - timeA;
+        });
         setJobs(normalized);
       } else {
         setJobs([]);
@@ -157,12 +166,22 @@ export const JobsProvider = ({ children }) => {
         const myApps = await applicationsApi.getMyApplications();
         if (Array.isArray(myApps)) {
           const normalized = myApps.map(normalizeApplication).filter(Boolean);
+          normalized.sort((a, b) => {
+            const timeA = new Date(a.appliedAt || a.createdAt || 0).getTime();
+            const timeB = new Date(b.appliedAt || b.createdAt || 0).getTime();
+            return timeB - timeA;
+          });
           setApplications(normalized);
         }
       } else if (role === 'recruiter' && jobIdForRecruiter) {
         const jobApps = await applicationsApi.getJobApplications(jobIdForRecruiter);
         if (Array.isArray(jobApps)) {
           const normalized = jobApps.map(normalizeApplication).filter(Boolean);
+          normalized.sort((a, b) => {
+            const timeA = new Date(a.appliedAt || a.createdAt || 0).getTime();
+            const timeB = new Date(b.appliedAt || b.createdAt || 0).getTime();
+            return timeB - timeA;
+          });
           setApplications((prev) => {
             const others = prev.filter((a) => a.jobId !== jobIdForRecruiter);
             return [...normalized, ...others];

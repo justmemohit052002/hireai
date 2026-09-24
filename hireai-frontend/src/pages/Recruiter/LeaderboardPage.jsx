@@ -139,10 +139,10 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
               </div>
             </div>
             <div>
-              <div className="text-[11px] font-bold tracking-wider uppercase text-[#F56681]">
+              <div className="text-[11px] font-bold tracking-wider uppercase text-brand-blue">
                 Top ATS Match
               </div>
-              <div className="text-base font-bold text-[#F56681] mt-0.5">
+              <div className="text-base font-bold text-brand-blue mt-0.5">
                 {jobApplicants[0]?.aiScore || jobApplicants[0]?.atsMatchScore
                   ? `${Math.round(jobApplicants[0]?.aiScore || jobApplicants[0]?.atsMatchScore)}%`
                   : '85%+'}
@@ -171,7 +171,7 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
 
           {isLoadingApplicants ? (
             <div className="py-8 flex items-center justify-center text-xs text-muted-foreground">
-              <Loader2 className="w-5 h-5 animate-spin mr-2 text-[#F56681]" /> Loading applicants...
+              <Loader2 className="w-5 h-5 animate-spin mr-2 text-brand-blue" /> Loading applicants...
             </div>
           ) : jobApplicants.length === 0 ? (
             <div className="py-6 text-center text-xs text-muted-foreground">
@@ -190,7 +190,7 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
                   >
                     {/* Candidate Info */}
                     <div className="flex items-center gap-3.5">
-                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#C63FC5]/20 to-[#F56681]/20 border border-[#F56681]/30 flex items-center justify-center font-bold text-sm text-[#F56681] shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-brand-blue/15 border border-brand-blue/30 flex items-center justify-center font-bold text-sm text-brand-blue shrink-0">
                         #{idx + 1}
                       </div>
                       <div>
@@ -214,8 +214,8 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
                     {/* ATS Score & Status Actions */}
                     <div className="flex items-center gap-3 flex-wrap md:flex-nowrap justify-between md:justify-end">
                       {/* ATS Score Badge */}
-                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-[#C63FC5]/10 via-[#F56681]/10 to-[#FC9559]/10 border border-[#F56681]/30 font-mono font-bold text-xs text-foreground">
-                        <Sparkles className="w-3.5 h-3.5 text-[#F56681]" />
+                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-brand-blue/10 border border-brand-blue/30 font-mono font-bold text-xs text-brand-blue">
+                        <Sparkles className="w-3.5 h-3.5 text-brand-blue" />
                         <span>ATS: {score}%</span>
                       </div>
 
@@ -223,7 +223,7 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
                       <select
                         value={app.rawStatus || app.status?.toUpperCase() || 'APPLIED'}
                         onChange={(e) => onUpdateStage(app.id, e.target.value)}
-                        className="text-xs font-semibold px-2.5 py-1.5 rounded-xl bg-surface-2 border border-border text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#F56681]"
+                        className="text-xs font-semibold px-2.5 py-1.5 rounded-xl bg-surface-2 border border-border text-foreground cursor-pointer focus:outline-none focus:ring-1 focus:ring-brand-blue"
                       >
                         {STAGES.map((s) => (
                           <option key={s.value} value={s.value}>
@@ -312,8 +312,8 @@ export const LeaderboardPage = () => {
             AI evaluated candidate ranking with automated skills match and decision classifications.
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#C63FC5]/10 via-[#F56681]/10 to-[#FC9559]/10 border border-[#F56681]/30 text-xs font-bold font-mono">
-          <Sparkles className="w-3.5 h-3.5 text-[#F56681]" /> AI Ranking Engine Active
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-blue/10 border border-brand-blue/30 text-xs font-bold font-mono text-brand-blue">
+          <Sparkles className="w-3.5 h-3.5 text-brand-blue" /> AI Ranking Engine Active
         </div>
       </div>
 
