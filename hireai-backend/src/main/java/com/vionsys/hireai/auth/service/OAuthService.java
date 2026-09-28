@@ -84,8 +84,13 @@ public class OAuthService {
                     throw new InvalidTokenException("Google OAuth token does not contain a valid email.");
                 }
 
-                String firstName = json.hasNonNull("given_name") ? json.get("given_name").asText() : "Google";
-                String lastName = json.hasNonNull("family_name") ? json.get("family_name").asText() : "User";
+                String fullName = json.hasNonNull("name") ? json.get("name").asText().trim() : "";
+                String firstName = json.hasNonNull("given_name") && !json.get("given_name").asText().isBlank()
+                        ? json.get("given_name").asText().trim()
+                        : (fullName.contains(" ") ? fullName.substring(0, fullName.indexOf(" ")).trim() : (!fullName.isBlank() ? fullName : "Google"));
+                String lastName = json.hasNonNull("family_name") && !json.get("family_name").asText().isBlank()
+                        ? json.get("family_name").asText().trim()
+                        : (fullName.contains(" ") ? fullName.substring(fullName.indexOf(" ") + 1).trim() : "User");
                 String avatarUrl = json.hasNonNull("picture") ? json.get("picture").asText() : null;
                 String providerId = json.hasNonNull("sub") ? json.get("sub").asText() : null;
 
@@ -137,8 +142,13 @@ public class OAuthService {
                     throw new InvalidTokenException("LinkedIn profile does not have a verified email.");
                 }
 
-                String firstName = json.hasNonNull("given_name") ? json.get("given_name").asText() : "LinkedIn";
-                String lastName = json.hasNonNull("family_name") ? json.get("family_name").asText() : "User";
+                String fullName = json.hasNonNull("name") ? json.get("name").asText().trim() : "";
+                String firstName = json.hasNonNull("given_name") && !json.get("given_name").asText().isBlank()
+                        ? json.get("given_name").asText().trim()
+                        : (fullName.contains(" ") ? fullName.substring(0, fullName.indexOf(" ")).trim() : (!fullName.isBlank() ? fullName : "LinkedIn"));
+                String lastName = json.hasNonNull("family_name") && !json.get("family_name").asText().isBlank()
+                        ? json.get("family_name").asText().trim()
+                        : (fullName.contains(" ") ? fullName.substring(fullName.indexOf(" ") + 1).trim() : "User");
                 String avatarUrl = json.hasNonNull("picture") ? json.get("picture").asText() : null;
                 String providerId = json.hasNonNull("sub") ? json.get("sub").asText() : null;
 

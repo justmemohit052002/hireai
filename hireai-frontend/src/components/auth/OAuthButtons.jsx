@@ -14,8 +14,8 @@ export const OAuthButtons = ({ role = 'candidate', companyName = '', onError }) 
     setLoadingProvider('GOOGLE');
     if (onError) onError('');
 
-    // Check if Google Identity Services SDK is ready
-    if (window.google?.accounts?.oauth2) {
+    // Check if Google Identity Services SDK is ready and Client ID is configured
+    if (window.google?.accounts?.oauth2 && GOOGLE_CLIENT_ID) {
       try {
         const tokenClient = window.google.accounts.oauth2.initTokenClient({
           client_id: GOOGLE_CLIENT_ID,
