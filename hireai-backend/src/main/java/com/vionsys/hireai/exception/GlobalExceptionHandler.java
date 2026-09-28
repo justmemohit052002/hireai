@@ -15,6 +15,7 @@ import com.vionsys.hireai.ai.exception.AiEngineException;
 import com.vionsys.hireai.candidate.exception.DuplicateResourceException;
 import com.vionsys.hireai.candidate.exception.FileStorageException;
 import com.vionsys.hireai.candidate.exception.ResumeNotFoundException;
+import com.vionsys.hireai.exception.NotificationNotFoundException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -120,6 +121,23 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(UserNotFoundException.class)
 	public ResponseEntity<ErrorResponse> handleUserNotFound(
 			UserNotFoundException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.NOT_FOUND.value(),
+				HttpStatus.NOT_FOUND.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.NOT_FOUND)
+				.body(response);
+	}
+
+	@ExceptionHandler(NotificationNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handleNotificationNotFound(
+			NotificationNotFoundException ex,
 			HttpServletRequest request) {
 
 		ErrorResponse response = new ErrorResponse(

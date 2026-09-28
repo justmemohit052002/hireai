@@ -1,0 +1,24 @@
+package com.vionsys.hireai.notification.enums;
+
+public enum NotificationType {
+
+    APPLICATION_RECEIVED,
+
+    APPLICATION_SHORTLISTED,
+
+    APPLICATION_REJECTED,
+
+    INTERVIEW_SCHEDULED,
+
+    INTERVIEW_RESCHEDULED,
+
+    INTERVIEW_CANCELLED,
+
+    OFFER_RELEASED,
+
+    DOCUMENT_REQUIRED,
+
+    APPLICATION_WITHDRAWN,
+
+    CUSTOM
+}

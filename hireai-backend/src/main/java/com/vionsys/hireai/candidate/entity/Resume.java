@@ -56,7 +56,7 @@ public class Resume extends BaseEntity {
     @Column(
             name = "file_type",
             nullable = false,
-            length = 50
+            length = 255
     )
     private String fileType;
 
