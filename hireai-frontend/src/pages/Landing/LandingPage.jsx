@@ -31,31 +31,31 @@ export const LandingPage = () => {
 
   return (
     <>
-      {/* 0. Initial Web Page Loading Animation Effect */}
+      {/* 0. Non-blocking Top Page Stream Loading Animation */}
       {showPageLoader && (
         <LandingPageLoader onComplete={() => setShowPageLoader(false)} />
       )}
 
-      <div className="space-y-4 pb-20 overflow-x-hidden animate-fade-in-up">
-        {/* 1. Hero Section With Floating Candidate Hiring Badges */}
+      <div className="space-y-6 sm:space-y-10 pb-20 overflow-x-hidden">
+        {/* 1. Hero Section With Live Interactive ATS Dashboard Preview */}
         <LandingHero />
 
-        {/* 2. Continuous Horizontal Marquee Slider (Wellfound / Top Companies Style) */}
+        {/* 2. Continuous Horizontal Marquee Slider (Wellfound Style) */}
         <LandingLogoMarquee />
 
         {/* 3. Interactive Candidate & Hiring Showcase Carousel */}
         <LandingShowcaseCarousel />
 
-        {/* 4. Dual Audience Hiring Section (For Recruiters & Candidates) */}
+        {/* 4. Dual Audience Hiring Section (Recruiters & Engineers) */}
         <LandingHiring />
 
-        {/* 5. Platform Stats Grid */}
+        {/* 5. Platform Performance Stats */}
         <LandingStats />
 
-        {/* 6. How Candidate Hiring Works 6-Step Workflow */}
+        {/* 6. How Candidate Hiring Works 4-Step Progressive Timeline */}
         <LandingWorks />
 
-        {/* 7. Powerful Features Section */}
+        {/* 7. Platform Capabilities Feature Grid */}
         <LandingFeatures />
 
         {/* 8. Call to Action Banner */}
