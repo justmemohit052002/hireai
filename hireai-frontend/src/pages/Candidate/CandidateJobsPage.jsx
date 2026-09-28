@@ -155,8 +155,7 @@ export const CandidateJobsPage = () => {
         job={applyingJob}
         isOpen={Boolean(applyingJob)}
         onClose={() => setApplyingJob(null)}
-        onSubmit={(jobId, coverLetter) => {
-          submitApplication({ jobId, coverLetter });
+        onSubmit={() => {
           setApplyingJob(null);
         }}
       />

@@ -89,7 +89,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         log.info("Calculated ATS Match Score {}% for Candidate {} on Job {}",
                 matchScore, candidate.getCandidateId(), job.getTitle());
 
-        // Automated Workflow Rule: If ATS Match Score >= threshold (70%), shortlist for interview; otherwise reject
+        // Automated Workflow Rule: If ATS Match Score >= threshold (70%), shortlist for interview; otherwise keep as APPLIED (under review)
         ApplicationStatus initialStatus;
         String autoNotes;
         if (matchScore >= atsProperties.getShortlistThreshold()) {
@@ -99,11 +99,11 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             log.info("Candidate {} automatically SHORTLISTED for Job {} (Score: {}%)",
                     candidate.getCandidateId(), job.getTitle(), matchScore);
         } else {
-            initialStatus = ApplicationStatus.REJECTED;
-            autoNotes = String.format("Application Rejected: ATS Skill Match Score (%d%%) is below the required %d%% threshold",
-                    matchScore, atsProperties.getShortlistThreshold());
-            log.info("Candidate {} REJECTED for Job {} (Score: {}% < {}%)",
-                    candidate.getCandidateId(), job.getTitle(), matchScore, atsProperties.getShortlistThreshold());
+            initialStatus = ApplicationStatus.APPLIED;
+            autoNotes = String.format("Application Received: ATS Match Score %d%%. Under review by recruiter.",
+                    matchScore);
+            log.info("Candidate {} application received for Job {} (Score: {}%)",
+                    candidate.getCandidateId(), job.getTitle(), matchScore);
         }
 
         JobApplication application = JobApplication.builder()
@@ -140,10 +140,25 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public List<JobApplicationResponse> getCandidateApplications(UUID candidateUserId) {
-        return jobApplicationRepository.findByCandidateUserId(candidateUserId)
-                .stream()
+        List<JobApplication> applications = jobApplicationRepository.findByCandidateUserId(candidateUserId);
+        boolean changed = false;
+        for (JobApplication app : applications) {
+            // Auto-heal any legacy applications that were prematurely auto-rejected by ATS score rule
+            if (app.getStatus() == ApplicationStatus.REJECTED &&
+                    app.getRecruiterNotes() != null &&
+                    app.getRecruiterNotes().contains("ATS Skill Match Score")) {
+                app.setStatus(ApplicationStatus.APPLIED);
+                app.setRecruiterNotes(String.format("Application Received: ATS Match Score %d%%. Under review by recruiter.",
+                        app.getAtsMatchScore() != null ? app.getAtsMatchScore() : 0));
+                changed = true;
+            }
+        }
+        if (changed) {
+            jobApplicationRepository.saveAll(applications);
+        }
+        return applications.stream()
                 .map(JobApplicationMapper::toResponse)
                 .toList();
     }
@@ -255,5 +270,24 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 .build();
 
         return candidateRepository.save(candidate);
+    }
+
+    @Override
+    @Transactional
+    public JobApplicationResponse withdrawApplication(UUID candidateUserId, UUID applicationId) {
+        JobApplication application = jobApplicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ApplicationNotFoundException("Job application not found"));
+
+        if (application.getCandidate() == null ||
+                application.getCandidate().getUser() == null ||
+                !application.getCandidate().getUser().getId().equals(candidateUserId)) {
+            throw new AccessDeniedException("You do not have permission to withdraw this application.");
+        }
+
+        application.setStatus(ApplicationStatus.WITHDRAWN);
+        application.setRecruiterNotes("Application withdrawn by candidate.");
+        JobApplication updated = jobApplicationRepository.save(application);
+        log.info("Candidate user {} withdrew application {}", candidateUserId, applicationId);
+        return JobApplicationMapper.toResponse(updated);
     }
 }

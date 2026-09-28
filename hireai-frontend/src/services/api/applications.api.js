@@ -24,6 +24,11 @@ export const applicationsApi = {
     return apiClient.get('/candidate/applications');
   },
 
+  /** Withdraw application (Candidate) */
+  withdrawApplication: async (applicationId) => {
+    return apiClient.patch(`/applications/${applicationId}/withdraw`);
+  },
+
   /** Get all applicants for a job posting owned by recruiter (Ranked by ATS match score) */
   getJobApplications: async (jobId) => {
     return apiClient.get(`/jobs/${jobId}/applications`);

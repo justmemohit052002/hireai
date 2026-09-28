@@ -114,6 +114,22 @@ public class JobApplicationController {
         return ResponseEntity.ok(ApiResponse.success(response, "Retrieved submitted applications"));
     }
 
+    @PatchMapping("/applications/{applicationId}/withdraw")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CANDIDATE')")
+    @Operation(
+            summary = "Withdraw Application (Candidate)",
+            description = "Allows the applicant candidate to withdraw their submitted application."
+    )
+    public ResponseEntity<ApiResponse<JobApplicationResponse>> withdrawApplication(
+            @CurrentUser CustomUserDetails currentUser,
+            @PathVariable UUID applicationId) {
+
+        JobApplicationResponse response =
+                jobApplicationService.withdrawApplication(currentUser.getId(), applicationId);
+
+        return ResponseEntity.ok(ApiResponse.success(response, "Application withdrawn successfully"));
+    }
+
     // =========================================================
     // RECRUITER: VIEW APPLICANTS RANKED BY ATS SCORE
     // =========================================================

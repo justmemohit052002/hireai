@@ -14,6 +14,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { formatShortDate, formatRelativeTime } from '@/utils';
 import { ROUTES } from '@/constants';
+import { useJobs } from '@/context/JobsContext';
 
 const STAGE_CONFIG = {
   applied: {
@@ -41,13 +42,23 @@ const STAGE_CONFIG = {
     badgeStyle: 'bg-pink-500/10 text-pink-500 border-pink-500/20 dark:bg-pink-500/20 dark:border-pink-500/30',
     icon: Sparkles,
   },
+  interview_scheduled: {
+    label: 'Interview Scheduled',
+    badgeStyle: 'bg-pink-500/10 text-pink-500 border-pink-500/20 dark:bg-pink-500/20 dark:border-pink-500/30',
+    icon: Sparkles,
+  },
   offer: {
     label: 'Offer Extended',
     badgeStyle: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30 dark:bg-emerald-500/20 dark:border-emerald-500/40',
     icon: Award,
   },
+  offered: {
+    label: 'Offer Extended',
+    badgeStyle: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30 dark:bg-emerald-500/20 dark:border-emerald-500/40',
+    icon: Award,
+  },
   rejected: {
-    label: 'Application Closed',
+    label: 'Not Selected',
     badgeStyle: 'bg-red-500/10 text-red-500 border-red-500/20 dark:bg-red-500/20 dark:border-red-500/30',
     icon: XCircle,
   },
@@ -65,19 +76,33 @@ const STAGE_CONFIG = {
 
 export const ApplicationCard = ({ application }) => {
   const navigate = useNavigate();
-  const { job, status, appliedAt, updatedAt, aiScore, atsMatchScore } = application;
-  const companyName = job?.company?.name || job?.companyName || 'HireAI Employer';
-  const jobTitle = job?.title || 'Applied Position';
+  const { withdrawApplication } = useJobs();
+  const [isWithdrawing, setIsWithdrawing] = React.useState(false);
 
-  const currentStage = STAGE_CONFIG[status] || {
-    label: 'Application Received',
-    badgeStyle: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-    icon: Clock,
-  };
+  const { job, status, appliedAt, updatedAt, aiScore, atsMatchScore } = application;
+  const companyName = job?.company?.name || job?.companyName || application.companyName || 'HireAI Employer';
+  const jobTitle = job?.title || job?.jobTitle || application.jobTitle || 'Applied Position';
+
+  const isJobClosed = job?.status === 'CLOSED' || job?.listingStatus === 'closed' || job?.status === 'closed';
+  const stageKey = (status || 'applied').toLowerCase();
+  const currentStage = isJobClosed
+    ? STAGE_CONFIG.closed
+    : (STAGE_CONFIG[stageKey] || STAGE_CONFIG.applied);
 
   const StageIcon = currentStage.icon;
   const lastUpdated = updatedAt || appliedAt;
-  const matchPercent = aiScore || (atsMatchScore ? Math.round(atsMatchScore) : 85);
+  const matchPercent = aiScore || (atsMatchScore ? Math.round(atsMatchScore) : null);
+
+  const handleWithdraw = async () => {
+    if (window.confirm(`Are you sure you want to withdraw your application for "${jobTitle}"?`)) {
+      setIsWithdrawing(true);
+      try {
+        await withdrawApplication(application.id);
+      } finally {
+        setIsWithdrawing(false);
+      }
+    }
+  };
 
   return (
     <Card hoverable className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -116,6 +141,19 @@ export const ApplicationCard = ({ application }) => {
             <MessageSquare className="w-3 h-3" />
             <span>Chat</span>
           </Button>
+
+          {status !== 'withdrawn' && !isJobClosed && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleWithdraw}
+              disabled={isWithdrawing}
+              className="h-7 text-xs text-muted-foreground hover:text-red-500 hover:bg-red-500/10 px-2 font-medium"
+              title="Withdraw Application"
+            >
+              {isWithdrawing ? 'Withdrawing...' : 'Withdraw'}
+            </Button>
+          )}
         </div>
         
         <p className="text-[11px] text-muted-foreground flex items-center gap-1 font-medium">

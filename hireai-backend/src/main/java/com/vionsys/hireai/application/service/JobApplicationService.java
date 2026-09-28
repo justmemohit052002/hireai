@@ -45,4 +45,9 @@ public interface JobApplicationService {
      * Download the resume attached to a specific job application.
      */
     org.springframework.core.io.Resource downloadApplicationResume(UUID currentUserId, UUID applicationId);
+
+    /**
+     * Candidate withdraws their job application.
+     */
+    JobApplicationResponse withdrawApplication(UUID candidateUserId, UUID applicationId);
 }

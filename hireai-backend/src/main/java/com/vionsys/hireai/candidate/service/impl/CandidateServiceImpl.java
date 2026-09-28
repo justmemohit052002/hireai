@@ -329,13 +329,22 @@ public class CandidateServiceImpl implements CandidateService {
                 app.setMissingSkills(String.join(", ", atsResult.getMissingSkills()));
 
                 if (newScore >= atsProperties.getShortlistThreshold()) {
-                    app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.SHORTLISTED);
+                    if (app.getStatus() == com.vionsys.hireai.application.enums.ApplicationStatus.APPLIED ||
+                            app.getStatus() == com.vionsys.hireai.application.enums.ApplicationStatus.SCREENING ||
+                            (app.getStatus() == com.vionsys.hireai.application.enums.ApplicationStatus.REJECTED &&
+                                    app.getRecruiterNotes() != null && app.getRecruiterNotes().contains("ATS Skill Match Score"))) {
+                        app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.SHORTLISTED);
+                    }
                     app.setRecruiterNotes(String.format("Shortlisted for interview by AI ATS (Match Score: %d%% >= %d%% threshold)",
                             newScore, atsProperties.getShortlistThreshold()));
                 } else {
-                    app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.REJECTED);
-                    app.setRecruiterNotes(String.format("Application Rejected: ATS Skill Match Score (%d%%) is below the required %d%% threshold",
-                            newScore, atsProperties.getShortlistThreshold()));
+                    if (app.getStatus() == com.vionsys.hireai.application.enums.ApplicationStatus.REJECTED &&
+                            app.getRecruiterNotes() != null &&
+                            app.getRecruiterNotes().contains("ATS Skill Match Score")) {
+                        app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.APPLIED);
+                    }
+                    app.setRecruiterNotes(String.format("Application Received: ATS Match Score %d%%. Under review by recruiter.",
+                            newScore));
                 }
                 jobApplicationRepository.save(app);
             }
