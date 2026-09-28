@@ -66,10 +66,10 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('hireai-logout', handleLogoutEvent);
   }, [refreshUserProfile]);
 
-  const login = async (email, password) => {
+  const login = async (email, password, requestedRole) => {
     setIsLoading(true);
     try {
-      const response = await authApi.login(email, password);
+      const response = await authApi.login(email, password, requestedRole);
       const loggedUser = {
         id: response.id || response.userId,
         email: response.email,
@@ -92,6 +92,9 @@ export function AuthProvider({ children }) {
     setIsLoading(true);
     try {
       const response = await authApi.registerCandidate(payload);
+      if (response && response.requiresVerification) {
+        return { requiresVerification: true, email: response.email, message: response.message };
+      }
       const registeredUser = {
         id: response.id || response.userId,
         email: response.email,
@@ -110,6 +113,9 @@ export function AuthProvider({ children }) {
     setIsLoading(true);
     try {
       const response = await authApi.registerRecruiter(payload);
+      if (response && response.requiresVerification) {
+        return { requiresVerification: true, email: response.email, message: response.message };
+      }
       const registeredUser = {
         id: response.id || response.userId,
         email: response.email,
@@ -120,6 +126,67 @@ export function AuthProvider({ children }) {
       };
       setUser(registeredUser);
       return { success: true, user: registeredUser, role: 'recruiter' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verifyEmailOtp = async ({ email, otp }) => {
+    setIsLoading(true);
+    try {
+      const response = await authApi.verifyEmailOtp({ email, otp });
+      const loggedUser = {
+        id: response.id || response.userId,
+        email: response.email,
+        firstName: response.firstName,
+        lastName: response.lastName,
+        role: response.role,
+        companyName: response.companyName,
+      };
+      setUser(loggedUser);
+      return { success: true, user: loggedUser, role: normalizeRole(response.role) };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resendEmailOtp = async ({ email }) => {
+    return authApi.resendEmailOtp({ email });
+  };
+
+  const loginWithGoogle = async (payload) => {
+    setIsLoading(true);
+    try {
+      const response = await authApi.loginWithGoogle(payload);
+      const loggedUser = {
+        id: response.id || response.userId,
+        email: response.email,
+        firstName: response.firstName,
+        lastName: response.lastName,
+        role: response.role,
+        companyName: response.companyName,
+      };
+      setUser(loggedUser);
+      return { success: true, user: loggedUser, role: normalizeRole(response.role) };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginWithLinkedIn = async (payload) => {
+    setIsLoading(true);
+    try {
+      const response = await authApi.loginWithLinkedIn(payload);
+      const loggedUser = {
+        id: response.id || response.userId,
+        email: response.email,
+        firstName: response.firstName,
+        lastName: response.lastName,
+        role: response.role,
+        companyName: response.companyName,
+      };
+      setUser(loggedUser);
+      return { success: true, user: loggedUser, role: normalizeRole(response.role) };
     } finally {
       setIsLoading(false);
     }
@@ -144,6 +211,10 @@ export function AuthProvider({ children }) {
         login,
         registerCandidate,
         registerRecruiter,
+        verifyEmailOtp,
+        resendEmailOtp,
+        loginWithGoogle,
+        loginWithLinkedIn,
         logout,
         refreshUserProfile,
       }}

@@ -14,9 +14,12 @@ import com.vionsys.hireai.auth.dto.AuthResponse;
 import com.vionsys.hireai.auth.dto.ForgotPasswordRequest;
 import com.vionsys.hireai.auth.dto.ForgotPasswordResponse;
 import com.vionsys.hireai.auth.dto.LoginRequest;
+import com.vionsys.hireai.auth.dto.OAuthRequest;
 import com.vionsys.hireai.auth.dto.RecruiterRegisterRequest;
 import com.vionsys.hireai.auth.dto.RegisterRequest;
+import com.vionsys.hireai.auth.dto.ResendOtpRequest;
 import com.vionsys.hireai.auth.dto.ResetPasswordRequest;
+import com.vionsys.hireai.auth.dto.VerifyEmailOtpRequest;
 import com.vionsys.hireai.auth.dto.VerifyTokenResponse;
 import com.vionsys.hireai.auth.service.AuthService;
 import com.vionsys.hireai.common.dto.ApiResponse;
@@ -35,7 +38,7 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @Operation(summary = "Register Candidate", description = "Creates a new candidate account and returns JWT tokens")
+    @Operation(summary = "Register Candidate", description = "Creates a new candidate account and sends 6-digit email OTP verification code")
     @PostMapping("/register/candidate")
     public ResponseEntity<AuthResponse> registerCandidate(
             @Valid @RequestBody RegisterRequest request) {
@@ -47,7 +50,7 @@ public class AuthController {
                 .body(response);
     }
 
-    @Operation(summary = "Register Recruiter", description = "Creates a new recruiter account with company name and returns JWT tokens")
+    @Operation(summary = "Register Recruiter", description = "Creates a new recruiter account with company name and sends 6-digit email OTP verification code")
     @PostMapping("/register/recruiter")
     public ResponseEntity<AuthResponse> registerRecruiter(
             @Valid @RequestBody RecruiterRegisterRequest request) {
@@ -57,6 +60,47 @@ public class AuthController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
+    }
+
+    @Operation(summary = "Verify Email OTP", description = "Verifies 6-digit OTP code sent to user email and activates the account, returning JWT tokens")
+    @PostMapping("/verify-email-otp")
+    public ResponseEntity<AuthResponse> verifyEmailOtp(
+            @Valid @RequestBody VerifyEmailOtpRequest request) {
+
+        AuthResponse response = authService.verifyEmailOtp(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Resend Email OTP", description = "Resends a new 6-digit OTP code with rate limit cooldown of 60 seconds")
+    @PostMapping("/resend-email-otp")
+    public ResponseEntity<ApiResponse<Void>> resendEmailOtp(
+            @Valid @RequestBody ResendOtpRequest request) {
+
+        authService.resendEmailOtp(request);
+        return ResponseEntity.ok(
+                ApiResponse.<Void>builder()
+                        .success(true)
+                        .message("A new 6-digit verification code has been sent to your email.")
+                        .build()
+        );
+    }
+
+    @Operation(summary = "Google OAuth SSO", description = "Authenticates or registers user via Google ID Token, returning active JWT session tokens")
+    @PostMapping("/oauth/google")
+    public ResponseEntity<AuthResponse> loginWithGoogle(
+            @Valid @RequestBody OAuthRequest request) {
+
+        AuthResponse response = authService.processOAuthLogin(request, "GOOGLE");
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "LinkedIn OAuth SSO", description = "Authenticates or registers user via LinkedIn access token, returning active JWT session tokens")
+    @PostMapping("/oauth/linkedin")
+    public ResponseEntity<AuthResponse> loginWithLinkedIn(
+            @Valid @RequestBody OAuthRequest request) {
+
+        AuthResponse response = authService.processOAuthLogin(request, "LINKEDIN");
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "User Login", description = "Authenticates user credentials and returns JWT access and refresh tokens")

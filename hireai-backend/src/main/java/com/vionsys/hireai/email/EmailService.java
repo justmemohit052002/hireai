@@ -41,6 +41,11 @@ public interface EmailService {
     void sendPasswordResetEmail(com.vionsys.hireai.user.entity.User user, String token, java.time.LocalDateTime expiryDate);
 
     /**
+     * Send 6-digit email verification OTP to user.
+     */
+    void sendEmailVerificationOtp(com.vionsys.hireai.user.entity.User user, String otpCode, int expiryMinutes);
+
+    /**
      * Send generic HTML formatted email asynchronously.
      */
     void sendHtmlEmail(String toEmail, String subject, String htmlContent);

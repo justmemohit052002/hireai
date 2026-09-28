@@ -15,7 +15,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
         SELECT u
         FROM User u
         JOIN FETCH u.role
-        WHERE u.email = :email
+        WHERE LOWER(u.email) = LOWER(:email)
     """)
     Optional<User> findByEmail(@Param("email") String email);
 

@@ -601,6 +601,76 @@ public class EmailServiceImpl implements EmailService {
     }
 
     // =========================================================
+    // 8. USER: 6-DIGIT EMAIL VERIFICATION OTP EMAIL
+    // =========================================================
+
+    @Async
+    @Override
+    public void sendEmailVerificationOtp(com.vionsys.hireai.user.entity.User user, String otpCode, int expiryMinutes) {
+        if (!emailProperties.isEnabled() || user == null || user.getEmail() == null) {
+            return;
+        }
+
+        String name = (user.getFirstName() != null ? user.getFirstName() : "User")
+                + (user.getLastName() != null ? " " + user.getLastName() : "");
+        String subject = "Verify Your Email Address - HireAI";
+
+        String htmlContent = String.format("""
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #0f172a; margin: 0; padding: 20px; color: #f8fafc; }
+                .container { max-width: 580px; margin: 0 auto; background: #1e293b; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.4); border: 1px solid #334155; }
+                .header { background: linear-gradient(135deg, #4f46e5 0%%%%, #7c3aed 100%%%%); padding: 32px 24px; text-align: center; color: #ffffff; }
+                .header h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+                .header p { margin: 6px 0 0; font-size: 14px; opacity: 0.9; }
+                .content { padding: 32px 28px; }
+                .greeting { font-size: 16px; line-height: 1.6; color: #cbd5e1; margin-bottom: 20px; }
+                .otp-card { background: #0f172a; border: 2px dashed #6366f1; border-radius: 12px; padding: 24px; text-align: center; margin: 28px 0; }
+                .otp-label { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; color: #a5b4fc; margin-bottom: 12px; }
+                .otp-number { font-family: 'Courier New', monospace; font-size: 38px; font-weight: 800; letter-spacing: 10px; color: #ffffff; text-shadow: 0 0 12px rgba(99, 102, 241, 0.6); }
+                .info-text { font-size: 13px; color: #94a3b8; line-height: 1.6; margin-top: 20px; }
+                .security-note { background: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; font-size: 12px; color: #fcd34d; margin-top: 24px; }
+                .footer { background: #0b0f19; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #1e293b; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>HireAI Email Verification</h1>
+                  <p>Confirm your email to complete registration</p>
+                </div>
+                <div class="content">
+                  <p class="greeting">Hello <strong>%s</strong>,</p>
+                  <p class="greeting">Thank you for registering on <strong>HireAI</strong>! To activate your account and start using the platform, please use the 6-digit verification code below:</p>
+
+                  <div class="otp-card">
+                    <div class="otp-label">Your Verification Code</div>
+                    <div class="otp-number">%s</div>
+                  </div>
+
+                  <p class="info-text">
+                    ⏱️ This verification code is valid for <strong>%d minutes</strong>.
+                  </p>
+
+                  <div class="security-note">
+                    🔒 <strong>Security Tip:</strong> Never share this code with anyone. HireAI staff will never ask for your verification code.
+                  </div>
+                </div>
+                <div class="footer">
+                  © 2026 HireAI Intelligent Recruitment Platform • All rights reserved.
+                </div>
+              </div>
+            </body>
+            </html>
+            """, name, otpCode, expiryMinutes);
+
+        sendHtmlEmail(user.getEmail(), subject, htmlContent);
+    }
+
+    // =========================================================
     // 4. CORE ASYNCHRONOUS HTML EMAIL SENDER
     // =========================================================
 

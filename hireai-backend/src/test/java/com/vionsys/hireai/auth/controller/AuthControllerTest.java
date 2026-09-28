@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vionsys.hireai.auth.dto.AuthResponse;
 import com.vionsys.hireai.auth.dto.LoginRequest;
+import com.vionsys.hireai.auth.dto.OAuthRequest;
 import com.vionsys.hireai.auth.dto.RecruiterRegisterRequest;
 import com.vionsys.hireai.auth.dto.RegisterRequest;
 import com.vionsys.hireai.auth.service.AuthService;
@@ -172,5 +173,107 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void testVerifyEmailOtp_Success() throws Exception {
+        com.vionsys.hireai.auth.dto.VerifyEmailOtpRequest request = com.vionsys.hireai.auth.dto.VerifyEmailOtpRequest.builder()
+                .email("candidate@example.com")
+                .otp("123456")
+                .build();
+
+        AuthResponse authResponse = AuthResponse.builder()
+                .userId(UUID.randomUUID())
+                .email("candidate@example.com")
+                .role("CANDIDATE")
+                .accessToken("mock-verified-access-token")
+                .refreshToken("mock-verified-refresh-token")
+                .emailVerified(true)
+                .requiresVerification(false)
+                .build();
+
+        when(authService.verifyEmailOtp(any())).thenReturn(authResponse);
+
+        mockMvc.perform(post("/auth/verify-email-otp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("mock-verified-access-token"))
+                .andExpect(jsonPath("$.emailVerified").value(true));
+    }
+
+    @Test
+    void testResendEmailOtp_Success() throws Exception {
+        com.vionsys.hireai.auth.dto.ResendOtpRequest request = com.vionsys.hireai.auth.dto.ResendOtpRequest.builder()
+                .email("candidate@example.com")
+                .build();
+
+        mockMvc.perform(post("/auth/resend-email-otp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    void testLoginWithGoogle_Success() throws Exception {
+        com.vionsys.hireai.auth.dto.OAuthRequest request = com.vionsys.hireai.auth.dto.OAuthRequest.builder()
+                .token("mock-google-token-12345")
+                .role("CANDIDATE")
+                .email("google.user@example.com")
+                .firstName("Google")
+                .lastName("Candidate")
+                .build();
+
+        AuthResponse authResponse = AuthResponse.builder()
+                .userId(UUID.randomUUID())
+                .email("google.user@example.com")
+                .role("CANDIDATE")
+                .accessToken("mock-google-jwt-access-token")
+                .refreshToken("mock-google-jwt-refresh-token")
+                .emailVerified(true)
+                .requiresVerification(false)
+                .build();
+
+        when(authService.processOAuthLogin(any(), any())).thenReturn(authResponse);
+
+        mockMvc.perform(post("/auth/oauth/google")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("mock-google-jwt-access-token"))
+                .andExpect(jsonPath("$.email").value("google.user@example.com"))
+                .andExpect(jsonPath("$.emailVerified").value(true));
+    }
+
+    @Test
+    void testLoginWithLinkedIn_Success() throws Exception {
+        com.vionsys.hireai.auth.dto.OAuthRequest request = com.vionsys.hireai.auth.dto.OAuthRequest.builder()
+                .token("mock-linkedin-token-67890")
+                .role("RECRUITER")
+                .email("linkedin.recruiter@example.com")
+                .firstName("LinkedIn")
+                .lastName("Recruiter")
+                .build();
+
+        AuthResponse authResponse = AuthResponse.builder()
+                .userId(UUID.randomUUID())
+                .email("linkedin.recruiter@example.com")
+                .role("RECRUITER")
+                .accessToken("mock-linkedin-jwt-access-token")
+                .refreshToken("mock-linkedin-jwt-refresh-token")
+                .emailVerified(true)
+                .requiresVerification(false)
+                .build();
+
+        when(authService.processOAuthLogin(any(), any())).thenReturn(authResponse);
+
+        mockMvc.perform(post("/auth/oauth/linkedin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("mock-linkedin-jwt-access-token"))
+                .andExpect(jsonPath("$.role").value("RECRUITER"))
+                .andExpect(jsonPath("$.emailVerified").value(true));
     }
 }

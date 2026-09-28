@@ -2,31 +2,87 @@ import { apiClient, setAuthSession, clearAuthSession } from './apiClient';
 
 export const authApi = {
   /** Authenticates candidate or recruiter and returns JWT tokens */
-  login: async (email, password) => {
-    const data = await apiClient.post('/auth/login', { email, password }, { requireAuth: false });
+  login: async (email, password, role) => {
+    const payload = { email, password };
+    if (role) {
+      payload.role = typeof role === 'string' ? role.toUpperCase() : role;
+    }
+    const data = await apiClient.post('/auth/login', payload, { requireAuth: false });
     setAuthSession(data);
     return data;
   },
 
-  /** Registers a new candidate */
+  /** Registers a new candidate (sends 6-digit verification OTP) */
   registerCandidate: async ({ firstName, lastName, email, phoneNumber, password }) => {
     const data = await apiClient.post(
       '/auth/register/candidate',
       { firstName, lastName, email, phoneNumber, password },
       { requireAuth: false }
     );
-    setAuthSession(data);
+    if (data && data.accessToken) {
+      setAuthSession(data);
+    }
     return data;
   },
 
-  /** Registers a new recruiter */
+  /** Registers a new recruiter (sends 6-digit verification OTP) */
   registerRecruiter: async ({ firstName, lastName, email, phoneNumber, password, companyName }) => {
     const data = await apiClient.post(
       '/auth/register/recruiter',
       { firstName, lastName, email, phoneNumber, password, companyName },
       { requireAuth: false }
     );
-    setAuthSession(data);
+    if (data && data.accessToken) {
+      setAuthSession(data);
+    }
+    return data;
+  },
+
+  /** Verifies 6-digit email OTP and activates user account, issuing JWT tokens */
+  verifyEmailOtp: async ({ email, otp }) => {
+    const data = await apiClient.post(
+      '/auth/verify-email-otp',
+      { email, otp },
+      { requireAuth: false }
+    );
+    if (data && data.accessToken) {
+      setAuthSession(data);
+    }
+    return data;
+  },
+
+  /** Resends 6-digit email verification OTP with 60s cooldown */
+  resendEmailOtp: async ({ email }) => {
+    return apiClient.post(
+      '/auth/resend-email-otp',
+      { email },
+      { requireAuth: false }
+    );
+  },
+
+  /** Authenticates or registers using Google OAuth */
+  loginWithGoogle: async (payload) => {
+    const data = await apiClient.post(
+      '/auth/oauth/google',
+      payload,
+      { requireAuth: false }
+    );
+    if (data && data.accessToken) {
+      setAuthSession(data);
+    }
+    return data;
+  },
+
+  /** Authenticates or registers using LinkedIn OAuth */
+  loginWithLinkedIn: async (payload) => {
+    const data = await apiClient.post(
+      '/auth/oauth/linkedin',
+      payload,
+      { requireAuth: false }
+    );
+    if (data && data.accessToken) {
+      setAuthSession(data);
+    }
     return data;
   },
 

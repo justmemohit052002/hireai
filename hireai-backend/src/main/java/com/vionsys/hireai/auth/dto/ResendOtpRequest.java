@@ -3,7 +3,6 @@ package com.vionsys.hireai.auth.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,22 +11,14 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "User Login Request Payload")
-public class LoginRequest {
+@Builder
+@Schema(description = "Request body for resending email OTP verification code")
+public class ResendOtpRequest {
 
-    @Schema(description = "Registered email address", example = "sarah.connor@cyberdyne.com")
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
+    @Schema(description = "Registered email address to resend OTP to", example = "candidate@example.com")
     private String email;
-
-    @Schema(description = "Account password", example = "Password@123")
-    @NotBlank(message = "Password is required")
-    private String password;
-
-    @Schema(description = "Requested login role context (e.g. CANDIDATE or RECRUITER)", example = "RECRUITER")
-    private String role;
-
 }

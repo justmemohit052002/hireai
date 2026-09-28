@@ -98,6 +98,40 @@ public class GlobalExceptionHandler {
 				.body(response);
 	}
 
+	@ExceptionHandler(AccountNotVerifiedException.class)
+	public ResponseEntity<ErrorResponse> handleAccountNotVerified(
+			AccountNotVerifiedException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.FORBIDDEN.value(),
+				"ACCOUNT_NOT_VERIFIED",
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.FORBIDDEN)
+				.body(response);
+	}
+
+	@ExceptionHandler(InvalidOtpException.class)
+	public ResponseEntity<ErrorResponse> handleInvalidOtp(
+			InvalidOtpException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.BAD_REQUEST.value(),
+				HttpStatus.BAD_REQUEST.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.BAD_REQUEST)
+				.body(response);
+	}
+
 	@ExceptionHandler(AccessDeniedException.class)
 	public ResponseEntity<ErrorResponse> handleAccessDenied(
 			AccessDeniedException ex,

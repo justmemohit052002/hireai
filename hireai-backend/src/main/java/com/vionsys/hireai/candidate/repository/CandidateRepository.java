@@ -58,6 +58,15 @@ public interface CandidateRepository
 	@org.springframework.data.jpa.repository.Query(value = "SELECT COUNT(*) > 0 FROM candidates WHERE candidate_id = :candidateId", nativeQuery = true)
 	boolean existsByCandidateIdNative(@org.springframework.data.repository.query.Param("candidateId") String candidateId);
 
+	@org.springframework.data.jpa.repository.Query(value = "SELECT COUNT(*) > 0 FROM candidates WHERE LOWER(email) = LOWER(:email)", nativeQuery = true)
+	boolean existsByEmailNative(@org.springframework.data.repository.query.Param("email") String email);
+
+	@org.springframework.data.jpa.repository.Query(value = "SELECT COUNT(*) > 0 FROM candidates WHERE user_id = :userId", nativeQuery = true)
+	boolean existsByUserIdNative(@org.springframework.data.repository.query.Param("userId") UUID userId);
+
+	@org.springframework.data.jpa.repository.Query(value = "SELECT * FROM candidates WHERE LOWER(email) = LOWER(:email) LIMIT 1", nativeQuery = true)
+	Optional<Candidate> findByEmailNative(@org.springframework.data.repository.query.Param("email") String email);
+
 	@org.springframework.data.jpa.repository.Query("SELECT COUNT(c) > 0 FROM Candidate c WHERE c.id = :candidateId AND c.user.id = :userId")
 	boolean existsByIdAndUserId(@org.springframework.data.repository.query.Param("candidateId") UUID candidateId, @org.springframework.data.repository.query.Param("userId") UUID userId);
 }

@@ -160,6 +160,7 @@ export async function request(endpoint, options = {}) {
         `Request failed with status ${response.status}`;
       const err = new Error(errorMsg);
       err.status = response.status;
+      err.error = data && typeof data === 'object' ? data.error : null;
       err.data = data;
       throw err;
     }

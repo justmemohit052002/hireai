@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { User, Building2, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Logo } from '@/components/common/Logo';
+import { OAuthButtons } from '@/components/auth/OAuthButtons';
 import { ROUTES } from '@/constants';
 
 export const LoginPage = () => {
-  const [role, setRole] = useState('candidate');
+  const location = useLocation();
+  const [role, setRole] = useState(() => location.state?.role || 'candidate');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isUnverified, setIsUnverified] = useState(false);
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -21,18 +24,30 @@ export const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMsg('');
+    setIsUnverified(false);
     setIsLoading(true);
 
     try {
-      const result = await login(email, password);
+      const result = await login(email, password, role);
       const targetRole = result.role || role;
-      if (targetRole === 'candidate') {
-        navigate(ROUTES.CANDIDATE_JOBS);
-      } else {
+      if (targetRole === 'recruiter') {
         navigate(ROUTES.RECRUITER_DASHBOARD);
+      } else {
+        navigate(ROUTES.CANDIDATE_JOBS);
       }
     } catch (err) {
-      setErrorMsg(err.message || 'Invalid email or password. Please try again.');
+      const msg = err.message || '';
+      if (
+        err.status === 403 ||
+        err.error === 'ACCOUNT_NOT_VERIFIED' ||
+        msg.toLowerCase().includes('not verified')
+      ) {
+        setIsUnverified(true);
+        setErrorMsg('Your account email is not verified yet. Please enter the 6-digit OTP code to complete activation.');
+      } else {
+        setIsUnverified(false);
+        setErrorMsg(err.message || 'Invalid email or password. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -75,9 +90,22 @@ export const LoginPage = () => {
 
         {/* Error Notice */}
         {errorMsg && (
-          <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-medium flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>{errorMsg}</span>
+          <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-medium space-y-2">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{errorMsg}</span>
+            </div>
+            {isUnverified && (
+              <Button
+                type="button"
+                variant="gradient"
+                size="sm"
+                onClick={() => navigate(ROUTES.SIGNUP, { state: { email, step: 3, role } })}
+                className="w-full mt-2 font-bold shadow-md"
+              >
+                Verify Email Now <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              </Button>
+            )}
           </div>
         )}
 
@@ -117,9 +145,11 @@ export const LoginPage = () => {
           </Button>
         </form>
 
+        <OAuthButtons role={role} onError={(err) => setErrorMsg(err)} />
+
         <div className="text-center pt-2 text-xs text-muted-foreground">
           Don't have an account yet?{' '}
-          <Link to={ROUTES.SIGNUP} className="font-bold text-[#F56681] hover:underline">
+          <Link to={ROUTES.SIGNUP} state={{ role }} className="font-bold text-[#F56681] hover:underline">
             Sign Up
           </Link>
         </div>

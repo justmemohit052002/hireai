@@ -63,6 +63,16 @@ public class User extends BaseEntity {
     @Column(name = "lockout_until")
     private java.time.LocalDateTime lockoutUntil;
 
+    @Column(name = "auth_provider", length = 30)
+    @Builder.Default
+    private String authProvider = "LOCAL";
+
+    @Column(name = "provider_id", length = 150)
+    private String providerId;
+
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
     public Integer getFailedLoginAttempts() {
         return failedLoginAttempts != null ? failedLoginAttempts : 0;
     }
