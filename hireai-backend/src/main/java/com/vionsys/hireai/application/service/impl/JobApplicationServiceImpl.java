@@ -41,7 +41,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 @Transactional
 public class JobApplicationServiceImpl implements JobApplicationService {
 
@@ -54,6 +53,31 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     private final AtsProperties atsProperties;
     private final ResumeService resumeService;
     private final com.vionsys.hireai.email.EmailService emailService;
+    private final com.vionsys.hireai.notification.service.NotificationService notificationService;
+
+    public JobApplicationServiceImpl(
+            JobApplicationRepository jobApplicationRepository,
+            JobRepository jobRepository,
+            CandidateRepository candidateRepository,
+            UserRepository userRepository,
+            CandidateIdGenerator candidateIdGenerator,
+            AtsMatchScoringService atsMatchScoringService,
+            AtsProperties atsProperties,
+            ResumeService resumeService,
+            com.vionsys.hireai.email.EmailService emailService,
+            com.vionsys.hireai.notification.service.NotificationService notificationService
+    ) {
+        this.jobApplicationRepository = jobApplicationRepository;
+        this.jobRepository = jobRepository;
+        this.candidateRepository = candidateRepository;
+        this.userRepository = userRepository;
+        this.candidateIdGenerator = candidateIdGenerator;
+        this.atsMatchScoringService = atsMatchScoringService;
+        this.atsProperties = atsProperties;
+        this.resumeService = resumeService;
+        this.emailService = emailService;
+        this.notificationService = notificationService;
+    }
 
     @Override
     public JobApplicationResponse applyToJob(UUID candidateUserId, UUID jobId, JobApplicationRequest request) {
@@ -136,6 +160,69 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             log.warn("Failed to dispatch application notification emails: {}", ex.getMessage());
         }
 
+        // Send real-time in-app notifications
+        try {
+            String companyName = (job.getRecruiterProfile() != null && job.getRecruiterProfile().getCompanyName() != null)
+                    ? job.getRecruiterProfile().getCompanyName()
+                    : "HireAI";
+
+            boolean isAutoShortlisted = matchScore >= atsProperties.getShortlistThreshold();
+
+            // 1. Candidate notification
+            if (candidate.getUser() != null) {
+                String candidateTitle = isAutoShortlisted
+                        ? "Application Auto-Shortlisted 🎉"
+                        : "Application Submitted Successfully";
+                String candidateMsg = isAutoShortlisted
+                        ? "Congratulations! Your profile is a " + matchScore + "% match for " + job.getTitle() + " at " + companyName + " and was automatically shortlisted!"
+                        : "You applied for " + job.getTitle() + " at " + companyName + " (ATS Match: " + matchScore + "%).";
+
+                notificationService.createAndSendNotification(
+                        candidate.getUser(),
+                        candidateTitle,
+                        candidateMsg,
+                        isAutoShortlisted
+                                ? com.vionsys.hireai.notification.enums.NotificationType.AI_MATCH
+                                : com.vionsys.hireai.notification.enums.NotificationType.APPLICATION_STATUS,
+                        "/candidate/applications"
+                );
+            }
+
+            // 2. Recruiter notification with shortlist highlighting
+            if (job.getRecruiterProfile() != null && job.getRecruiterProfile().getUser() != null) {
+                String recruiterTitle = isAutoShortlisted
+                        ? "🌟 High-Match Candidate Auto-Shortlisted (" + matchScore + "%)"
+                        : "New Applicant Received";
+                String recruiterMsg = isAutoShortlisted
+                        ? "Candidate " + candidate.getFirstName() + " " + candidate.getLastName() + " scored " + matchScore + "% on " + job.getTitle() + " (≥ " + atsProperties.getShortlistThreshold() + "% threshold) - Automatically Shortlisted!"
+                        : candidate.getFirstName() + " " + candidate.getLastName() + " applied for " + job.getTitle() + " (Match: " + matchScore + "%).";
+
+                notificationService.createAndSendNotification(
+                        job.getRecruiterProfile().getUser(),
+                        recruiterTitle,
+                        recruiterMsg,
+                        isAutoShortlisted
+                                ? com.vionsys.hireai.notification.enums.NotificationType.AI_MATCH
+                                : com.vionsys.hireai.notification.enums.NotificationType.NEW_APPLICATION,
+                        "/recruiter/jobs"
+                );
+
+                // 3. Job application capacity milestone check
+                long applicantCount = jobApplicationRepository.countByJobId(job.getId());
+                if (applicantCount == 10 || applicantCount == 25 || applicantCount == 50 || applicantCount == 100) {
+                    notificationService.createAndSendNotification(
+                            job.getRecruiterProfile().getUser(),
+                            "Job Capacity Milestone 📈",
+                            "Your job posting '" + job.getTitle() + "' has reached " + applicantCount + " applicants. Review candidates or update listing status.",
+                            com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
+                            "/recruiter/jobs"
+                    );
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("Failed to dispatch real-time in-app application notifications: {}", ex.getMessage());
+        }
+
         return response;
     }
 
@@ -183,6 +270,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     }
 
     @Override
+    @Transactional
     public JobApplicationResponse updateApplicationStatus(UUID recruiterUserId, UUID applicationId, UpdateApplicationStatusRequest request) {
 
         JobApplication application = jobApplicationRepository.findById(applicationId)
@@ -207,6 +295,58 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             emailService.sendStatusUpdateToCandidate(response, request.getStatus(), request.getRecruiterNotes());
         } catch (Exception ex) {
             log.warn("Failed to dispatch status update email: {}", ex.getMessage());
+        }
+
+        // Send real-time notification to candidate
+        try {
+            if (application.getCandidate() != null && application.getCandidate().getUser() != null) {
+                String title;
+                String msg;
+                com.vionsys.hireai.notification.enums.NotificationType notifType;
+
+                switch (request.getStatus()) {
+                    case SHORTLISTED -> {
+                        title = "Congratulations! You're Shortlisted 🎉";
+                        msg = "Your application for " + application.getJob().getTitle() + " has advanced to the Shortlisted stage.";
+                        notifType = com.vionsys.hireai.notification.enums.NotificationType.APPLICATION_STATUS;
+                    }
+                    case INTERVIEW_SCHEDULED -> {
+                        title = "Interview Scheduled 📅";
+                        msg = "An interview has been scheduled for " + application.getJob().getTitle() + ". Please review meeting details in your inbox.";
+                        notifType = com.vionsys.hireai.notification.enums.NotificationType.INTERVIEW;
+                    }
+                    case OFFERED -> {
+                        title = "Job Offer Extended! 🏆";
+                        msg = "Congratulations! A job offer has been released for " + application.getJob().getTitle() + ". View your application details.";
+                        notifType = com.vionsys.hireai.notification.enums.NotificationType.APPLICATION_STATUS;
+                    }
+                    case REJECTED -> {
+                        title = "Application Update: " + application.getJob().getTitle();
+                        msg = "Thank you for applying. The hiring team has updated your application status.";
+                        notifType = com.vionsys.hireai.notification.enums.NotificationType.APPLICATION_STATUS;
+                    }
+                    case SCREENING -> {
+                        title = "Application Under Review 🔍";
+                        msg = "The hiring team is currently reviewing your resume for " + application.getJob().getTitle() + ".";
+                        notifType = com.vionsys.hireai.notification.enums.NotificationType.APPLICATION_STATUS;
+                    }
+                    default -> {
+                        title = "Application Status Updated";
+                        msg = "Your application for " + application.getJob().getTitle() + " has moved to: " + request.getStatus() + ".";
+                        notifType = com.vionsys.hireai.notification.enums.NotificationType.APPLICATION_STATUS;
+                    }
+                }
+
+                notificationService.createAndSendNotification(
+                        application.getCandidate().getUser(),
+                        title,
+                        msg,
+                        notifType,
+                        "/candidate/applications"
+                );
+            }
+        } catch (Exception ex) {
+            log.warn("Failed to dispatch real-time in-app notification on status update: {}", ex.getMessage());
         }
 
         return response;

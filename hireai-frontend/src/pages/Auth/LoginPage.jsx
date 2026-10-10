@@ -30,7 +30,9 @@ export const LoginPage = () => {
     try {
       const result = await login(email, password, role);
       const targetRole = result.role || role;
-      if (targetRole === 'recruiter') {
+      if (targetRole === 'admin') {
+        navigate(ROUTES.ADMIN_DASHBOARD);
+      } else if (targetRole === 'recruiter') {
         navigate(ROUTES.RECRUITER_DASHBOARD);
       } else {
         navigate(ROUTES.CANDIDATE_JOBS);
@@ -55,10 +57,10 @@ export const LoginPage = () => {
 
   return (
     <div className="w-full my-auto">
-      <Card glass className="w-full max-w-md mx-auto p-6 sm:p-8 space-y-6 shadow-2xl rounded-[28px] border border-white/20 dark:border-white/10">
-        <div className="text-center space-y-1.5">
-          <Logo size="lg" className="justify-center mb-1.5" />
-          <h2 className="text-2xl font-bold font-heading text-foreground">Welcome Back</h2>
+      <Card glass className="w-full max-w-md mx-auto p-5 sm:p-6 space-y-4 sm:space-y-4.5 shadow-2xl rounded-[24px] border border-white/20 dark:border-white/10">
+        <div className="text-center space-y-1">
+          <Logo size="lg" className="justify-center mb-1" />
+          <h2 className="text-xl sm:text-2xl font-bold font-heading text-foreground">Welcome Back</h2>
           <p className="text-xs text-muted-foreground">Sign in to your HireAI account</p>
         </div>
 
@@ -67,7 +69,7 @@ export const LoginPage = () => {
           <button
             type="button"
             onClick={() => setRole('candidate')}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all ${
               role === 'candidate'
                 ? 'bg-brand-accent text-slate-950 shadow-md shadow-brand-accent/20'
                 : 'text-muted-foreground hover:text-foreground'
@@ -78,9 +80,9 @@ export const LoginPage = () => {
           <button
             type="button"
             onClick={() => setRole('recruiter')}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all ${
               role === 'recruiter'
-                ? 'bg-brand-navy text-foreground shadow-md shadow-[#22214B]/20'
+                ? 'bg-brand-accent text-slate-950 shadow-md shadow-brand-accent/20'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >

@@ -195,4 +195,64 @@ public class AiEngineClient {
             return Optional.empty();
         }
     }
+
+    /**
+     * Admin: AI Engine Health Summary for all 6 modules
+     */
+    public Optional<java.util.Map<String, Object>> getAdminHealthSummary() {
+        try {
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> response = restClient.get()
+                    .uri("/api/v1/admin/health-summary")
+                    .retrieve()
+                    .body(java.util.Map.class);
+            return Optional.ofNullable(response);
+        } catch (Exception ex) {
+            log.warn("AI Engine health summary check failed ({}). Marking modules as degraded.", ex.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Admin: AI Engine LLM Usage, Cost & Quota Statistics
+     */
+    public Optional<java.util.Map<String, Object>> getAdminStats() {
+        try {
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> response = restClient.get()
+                    .uri("/api/v1/admin/stats")
+                    .retrieve()
+                    .body(java.util.Map.class);
+            return Optional.ofNullable(response);
+        } catch (Exception ex) {
+            log.warn("AI Engine stats check failed: {}", ex.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Admin: AI Engine Call Logs and Audit Trail
+     */
+    public Optional<java.util.Map<String, Object>> getAdminLogs(
+            String query, String taskType, String status, String provider, int page, int size) {
+        try {
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> response = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/api/v1/admin/logs")
+                            .queryParam("query", query != null && !query.isBlank() ? query : null)
+                            .queryParam("task_type", taskType != null && !taskType.isBlank() && !"ALL".equalsIgnoreCase(taskType) ? taskType : null)
+                            .queryParam("status", status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status) ? status : null)
+                            .queryParam("provider", provider != null && !provider.isBlank() && !"ALL".equalsIgnoreCase(provider) ? provider : null)
+                            .queryParam("page", page > 0 ? page : 1)
+                            .queryParam("size", size > 0 ? size : 20)
+                            .build())
+                    .retrieve()
+                    .body(java.util.Map.class);
+            return Optional.ofNullable(response);
+        } catch (Exception ex) {
+            log.warn("AI Engine logs query failed: {}", ex.getMessage());
+            return Optional.empty();
+        }
+    }
 }

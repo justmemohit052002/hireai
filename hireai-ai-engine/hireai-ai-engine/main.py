@@ -20,7 +20,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.config import CORS_ALLOWED_ORIGINS, LLM_PROVIDER, OLLAMA_MODEL
+from app.config import CORS_ALLOWED_ORIGINS, LLM_PROVIDER, OLLAMA_MODEL, SHOW_ERROR_DETAILS
 from app.logger import get_logger
 from app.llm_client import LLMCallError, check_ollama_reachable
 from app.models import (
@@ -66,30 +66,44 @@ app.add_middleware(
 # endpoint inventing its own error format.
 @app.exception_handler(LLMCallError)
 def handle_llm_error(request: Request, exc: LLMCallError):
-    logger.error(f"LLM call error on {request.url.path}: {exc}")
+    logger.error(f"LLM call error on {request.url.path}: {exc}", exc_info=True)
+    msg = str(exc) if SHOW_ERROR_DETAILS else "The AI service is temporarily unavailable. Please try again later."
     return JSONResponse(
         status_code=502,
-        content={"error": True, "errorCode": "LLM_CALL_FAILED", "message": str(exc)},
+        content={"error": True, "errorCode": "LLM_CALL_FAILED", "message": msg},
     )
 
 
 @app.exception_handler(ValueError)
 def handle_value_error(request: Request, exc: ValueError):
-    logger.error(f"Invalid LLM response on {request.url.path}: {exc}")
+    logger.error(f"Invalid LLM response or parameter on {request.url.path}: {exc}", exc_info=True)
+    msg = str(exc) if SHOW_ERROR_DETAILS else "Failed to parse or process AI response. Please try again."
     return JSONResponse(
         status_code=502,
-        content={"error": True, "errorCode": "LLM_RESPONSE_INVALID", "message": str(exc)},
+        content={"error": True, "errorCode": "LLM_RESPONSE_INVALID", "message": msg},
+    )
+
+
+@app.exception_handler(HTTPException)
+def handle_http_exception(request: Request, exc: HTTPException):
+    logger.warning(f"HTTP {exc.status_code} on {request.url.path}: {exc.detail}")
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": True, "errorCode": f"HTTP_{exc.status_code}", "message": str(exc.detail)},
     )
 
 
 @app.exception_handler(Exception)
 def handle_unexpected_error(request: Request, exc: Exception):
-    logger.error(f"Unexpected error on {request.url.path}: {exc}")
+    logger.error(f"Unexpected error on {request.url.path}: {exc}", exc_info=True)
+    msg = str(exc) if SHOW_ERROR_DETAILS else "An unexpected internal error occurred. Please try again later."
     return JSONResponse(
         status_code=500,
-        content={"error": True, "errorCode": "INTERNAL_ERROR", "message": str(exc)},
+        content={"error": True, "errorCode": "INTERNAL_ERROR", "message": msg},
     )
 
+
+from app import admin_service
 
 # ---- Health check ----
 @app.get("/health")
@@ -103,12 +117,43 @@ def health_check():
     }
 
 
+# ---- Admin APIs ----
+@app.get("/api/v1/admin/health-summary")
+def admin_health_summary():
+    return admin_service.get_system_health()
+
+
+@app.get("/api/v1/admin/stats")
+def admin_stats():
+    return admin_service.get_llm_statistics()
+
+
+@app.get("/api/v1/admin/logs")
+def admin_call_logs(
+    query: str = None,
+    task_type: str = None,
+    status: str = None,
+    provider: str = None,
+    page: int = 1,
+    size: int = 20,
+):
+    return admin_service.query_call_logs(
+        query=query,
+        task_type=task_type,
+        status=status,
+        provider=provider,
+        page=page,
+        size=size,
+    )
+
+
 @app.get("/")
 def root():
     return {
         "service": "HireAI AI Engine",
         "docs": "/docs",
         "health": "/health",
+        "adminHealth": "/api/v1/admin/health-summary",
     }
 
 

@@ -40,6 +40,14 @@ export function useChatSocket({
 
     const client = new Client({
       brokerURL,
+      beforeConnect: () => {
+        const freshToken = passedToken || getStoredToken();
+        if (freshToken) {
+          client.connectHeaders = {
+            Authorization: `Bearer ${freshToken}`,
+          };
+        }
+      },
       connectHeaders: {
         Authorization: `Bearer ${token}`,
       },
@@ -85,13 +93,28 @@ export function useChatSocket({
             console.error('[STOMP] Failed to parse read receipt', err);
           }
         });
+
+        // 4. Subscribe to real-time user notifications
+        client.subscribe('/user/queue/notifications', (messageFrame) => {
+          try {
+            const parsed = JSON.parse(messageFrame.body);
+            window.dispatchEvent(new CustomEvent('hireai:new-notification', { detail: parsed }));
+          } catch (err) {
+            console.error('[STOMP] Failed to parse notification body', err);
+          }
+        });
       },
       onDisconnect: () => {
         setIsConnected(false);
       },
       onStompError: (frame) => {
-        console.warn('[STOMP Error]', frame?.headers?.['message'], frame?.body);
+        const msg = frame?.headers?.['message'] || frame?.body || '';
+        console.warn('[STOMP Error]', msg);
         setIsConnected(false);
+        // If authentication failed or token expired, deactivate to prevent continuous loop
+        if (typeof msg === 'string' && (msg.includes('JWT') || msg.includes('expired') || msg.includes('401') || msg.includes('Unauthorized'))) {
+          client.deactivate();
+        }
       },
       onWebSocketError: (event) => {
         console.warn('[WebSocket Error]', event);

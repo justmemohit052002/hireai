@@ -155,9 +155,16 @@ export async function request(endpoint, options = {}) {
     }
 
     if (!response.ok) {
-      const errorMsg =
+      const showDetails = import.meta.env.VITE_SHOW_ERROR_DETAILS === 'true';
+      let errorMsg =
         (data && (data.message || data.error || (data.errors && Object.values(data.errors).join(', ')))) ||
         `Request failed with status ${response.status}`;
+
+      // Prevent exposure of internal server stack traces or raw diagnostics to users
+      if (!showDetails && response.status >= 500) {
+        errorMsg = 'An unexpected server error occurred. Please try again later.';
+      }
+
       const err = new Error(errorMsg);
       err.status = response.status;
       err.error = data && typeof data === 'object' ? data.error : null;

@@ -52,6 +52,9 @@ def get_active_provider_info() -> tuple[str, str]:
     return prov, mdl
 
 
+import uuid
+from datetime import datetime, timezone
+
 def call_llm(prompt: str, task_type: str = "general", provider_override: str = None, model_override: str = None) -> str:
     last_error = None
     provider = provider_override or ACTIVE_PROVIDER or LLM_PROVIDER
@@ -71,7 +74,7 @@ def call_llm(prompt: str, task_type: str = "general", provider_override: str = N
 
             latency = round(time.time() - start, 2)
             logger.info(f"[{task_type}] {provider} ({model or 'default'}) call succeeded in {latency}s (attempt {attempt})")
-            _log_call(prompt, text, task_type, latency, attempt, provider=provider)
+            _log_call(prompt, text, task_type, latency, attempt, provider=provider, status="SUCCESS")
             return text
 
         except Exception as e:
@@ -80,7 +83,18 @@ def call_llm(prompt: str, task_type: str = "general", provider_override: str = N
             if attempt <= LLM_MAX_RETRIES:
                 time.sleep(LLM_RETRY_BACKOFF_SECONDS * attempt)  # simple linear backoff
 
+    latency = round(time.time() - start, 2)
     logger.error(f"[{task_type}] All {LLM_MAX_RETRIES + 1} attempts failed. Last error: {last_error}")
+    _log_call(
+        prompt=prompt,
+        response_text="",
+        task_type=task_type,
+        latency=latency,
+        attempt=LLM_MAX_RETRIES + 1,
+        provider=provider,
+        status="FAILED",
+        error_message=str(last_error),
+    )
     raise LLMCallError(f"LLM call failed after {LLM_MAX_RETRIES + 1} attempts: {last_error}")
 
 
@@ -158,14 +172,38 @@ def check_ollama_reachable() -> bool:
         return False
 
 
-def _log_call(prompt: str, response_text: str, task_type: str, latency: float, attempt: int, provider: str = None) -> None:
+def mask_key(key: str | None) -> str:
+    if not key:
+        return ""
+    if len(key) <= 8:
+        return "****"
+    return f"{key[:3]}...{key[-4:]}"
+
+
+def _log_call(
+    prompt: str,
+    response_text: str,
+    task_type: str,
+    latency: float,
+    attempt: int,
+    provider: str = None,
+    status: str = "SUCCESS",
+    error_message: str = None,
+) -> None:
     entry = {
+        "id": str(uuid.uuid4()),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "task_type": task_type,
         "provider": provider or LLM_PROVIDER,
         "latency_seconds": latency,
         "attempt": attempt,
-        "prompt_preview": prompt[:200],
-        "response_preview": response_text[:200],
+        "status": status,
+        "error_message": error_message,
+        "prompt_preview": prompt[:200] if prompt else "",
+        "response_preview": response_text[:200] if response_text else "",
     }
-    with open(LLM_CALL_LOG_PATH, "a") as f:
-        f.write(json.dumps(entry) + "\n")
+    try:
+        with open(LLM_CALL_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception as e:
+        logger.error(f"Failed to append to LLM call log: {e}")

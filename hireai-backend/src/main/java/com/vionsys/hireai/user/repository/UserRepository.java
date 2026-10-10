@@ -27,5 +27,33 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     """)
     Optional<User> findById(@Param("id") UUID id);
 
+    @Query(value = """
+        SELECT u
+        FROM User u
+        JOIN FETCH u.role r
+        WHERE (:search IS NULL OR LOWER(u.firstName) LIKE :search OR LOWER(u.lastName) LIKE :search OR LOWER(u.email) LIKE :search)
+          AND (:role IS NULL OR r.name = :role)
+          AND (:enabled IS NULL OR u.enabled = :enabled)
+        ORDER BY u.createdAt DESC
+    """, countQuery = """
+        SELECT COUNT(u)
+        FROM User u
+        JOIN u.role r
+        WHERE (:search IS NULL OR LOWER(u.firstName) LIKE :search OR LOWER(u.lastName) LIKE :search OR LOWER(u.email) LIKE :search)
+          AND (:role IS NULL OR r.name = :role)
+          AND (:enabled IS NULL OR u.enabled = :enabled)
+    """)
+    org.springframework.data.domain.Page<User> searchUsers(
+            @Param("search") String search,
+            @Param("role") com.vionsys.hireai.common.enums.RoleType role,
+            @Param("enabled") Boolean enabled,
+            org.springframework.data.domain.Pageable pageable);
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.enabled = true")
+    long countActiveUsers();
+
+    @Query("SELECT COUNT(u) FROM User u")
+    long countTotalUsers();
+
     boolean existsByEmail(String email);
 }

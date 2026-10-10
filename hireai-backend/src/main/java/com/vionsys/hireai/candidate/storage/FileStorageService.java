@@ -12,4 +12,11 @@ public interface FileStorageService {
     Resource loadAsResource(String filePath) throws IOException;
 
     void delete(String filePath) throws IOException;
+
+    String storeAttachment(MultipartFile file) throws IOException;
+
+    Resource loadAttachmentAsResource(String filename) throws IOException;
+
+    void deleteAttachment(String filename) throws IOException;
 }
+

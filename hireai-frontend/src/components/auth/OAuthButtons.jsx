@@ -3,19 +3,61 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { ROUTES } from '@/constants';
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+const GOOGLE_CLIENT_ID =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  '902036029804-64f1a7fp4h1bc2ctb77mja3v392bkdu8.apps.googleusercontent.com';
+
+const loadGoogleScript = () => {
+  return new Promise((resolve) => {
+    if (window.google?.accounts?.oauth2) {
+      resolve(true);
+      return;
+    }
+    const existing = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
+    if (existing) {
+      if (window.google?.accounts?.oauth2) return resolve(true);
+      existing.addEventListener('load', () => resolve(true), { once: true });
+      existing.addEventListener('error', () => resolve(false), { once: true });
+      let checks = 0;
+      const interval = setInterval(() => {
+        checks++;
+        if (window.google?.accounts?.oauth2) {
+          clearInterval(interval);
+          resolve(true);
+        } else if (checks > 20) {
+          clearInterval(interval);
+          resolve(false);
+        }
+      }, 100);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.head.appendChild(script);
+  });
+};
 
 export const OAuthButtons = ({ role = 'candidate', companyName = '', onError }) => {
   const { loginWithGoogle, loginWithLinkedIn } = useAuth();
   const navigate = useNavigate();
   const [loadingProvider, setLoadingProvider] = useState(null);
 
-  const handleGoogleAuth = () => {
+  const handleGoogleAuth = async () => {
     setLoadingProvider('GOOGLE');
     if (onError) onError('');
 
+    // Ensure Google Identity Services SDK is ready
+    let isGoogleReady = !!window.google?.accounts?.oauth2;
+    if (!isGoogleReady) {
+      isGoogleReady = await loadGoogleScript();
+    }
+
     // Check if Google Identity Services SDK is ready and Client ID is configured
-    if (window.google?.accounts?.oauth2 && GOOGLE_CLIENT_ID) {
+    if (isGoogleReady && window.google?.accounts?.oauth2 && GOOGLE_CLIENT_ID) {
       try {
         const tokenClient = window.google.accounts.oauth2.initTokenClient({
           client_id: GOOGLE_CLIENT_ID,
@@ -36,8 +78,8 @@ export const OAuthButtons = ({ role = 'candidate', companyName = '', onError }) 
                 companyName: role === 'recruiter' ? companyName || 'Company Inc.' : null,
               });
 
-              const targetRole = result?.role?.toLowerCase() || role.toLowerCase();
-              if (targetRole === 'recruiter' || role === 'recruiter') {
+              const chosenRole = (result?.role || role).toLowerCase();
+              if (chosenRole === 'recruiter') {
                 navigate(ROUTES.RECRUITER_DASHBOARD);
               } else {
                 navigate(ROUTES.CANDIDATE_JOBS);
@@ -56,6 +98,7 @@ export const OAuthButtons = ({ role = 'candidate', companyName = '', onError }) 
           },
         });
 
+        // Opens the Google email account picker container
         tokenClient.requestAccessToken({ prompt: 'select_account' });
         return;
       } catch (err) {
@@ -82,8 +125,8 @@ export const OAuthButtons = ({ role = 'candidate', companyName = '', onError }) 
         ? await loginWithGoogle(payload) 
         : await loginWithLinkedIn(payload);
 
-      const targetRole = result?.role?.toLowerCase() || role.toLowerCase();
-      if (targetRole === 'recruiter' || role === 'recruiter') {
+      const chosenRole = (result?.role || role).toLowerCase();
+      if (chosenRole === 'recruiter') {
         navigate(ROUTES.RECRUITER_DASHBOARD);
       } else {
         navigate(ROUTES.CANDIDATE_JOBS);

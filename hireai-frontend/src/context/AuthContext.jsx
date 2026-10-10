@@ -13,7 +13,8 @@ export function normalizeRole(backendRole) {
     roleStr = String(backendRole);
   }
   const upper = roleStr.toUpperCase();
-  if (upper.includes('RECRUITER') || upper.includes('ADMIN') || upper.includes('HR')) return 'recruiter';
+  if (upper.includes('ADMIN')) return 'admin';
+  if (upper.includes('RECRUITER') || upper.includes('HR')) return 'recruiter';
   if (upper.includes('CANDIDATE') || upper.includes('USER') || upper.includes('JOB_SEEKER')) return 'candidate';
   return roleStr.toLowerCase();
 }
@@ -158,16 +159,17 @@ export function AuthProvider({ children }) {
     setIsLoading(true);
     try {
       const response = await authApi.loginWithGoogle(payload);
+      const effectiveRole = response?.role || payload?.role;
       const loggedUser = {
-        id: response.id || response.userId,
-        email: response.email,
-        firstName: response.firstName,
-        lastName: response.lastName,
-        role: response.role,
-        companyName: response.companyName,
+        id: response?.id || response?.userId,
+        email: response?.email,
+        firstName: response?.firstName,
+        lastName: response?.lastName,
+        role: effectiveRole,
+        companyName: response?.companyName || payload?.companyName,
       };
       setUser(loggedUser);
-      return { success: true, user: loggedUser, role: normalizeRole(response.role) };
+      return { success: true, user: loggedUser, role: normalizeRole(effectiveRole) };
     } finally {
       setIsLoading(false);
     }
@@ -177,16 +179,17 @@ export function AuthProvider({ children }) {
     setIsLoading(true);
     try {
       const response = await authApi.loginWithLinkedIn(payload);
+      const effectiveRole = response?.role || payload?.role;
       const loggedUser = {
-        id: response.id || response.userId,
-        email: response.email,
-        firstName: response.firstName,
-        lastName: response.lastName,
-        role: response.role,
-        companyName: response.companyName,
+        id: response?.id || response?.userId,
+        email: response?.email,
+        firstName: response?.firstName,
+        lastName: response?.lastName,
+        role: effectiveRole,
+        companyName: response?.companyName || payload?.companyName,
       };
       setUser(loggedUser);
-      return { success: true, user: loggedUser, role: normalizeRole(response.role) };
+      return { success: true, user: loggedUser, role: normalizeRole(effectiveRole) };
     } finally {
       setIsLoading(false);
     }

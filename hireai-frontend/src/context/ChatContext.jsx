@@ -166,9 +166,14 @@ export function ChatProvider({ children }) {
       if (!activeConversationId || !user) return;
 
       const activeConv = conversations.find((c) => c.id === activeConversationId);
-      const recipientId = activeConv?.partner?.id;
+      const recipientId =
+        activeConv?.partner?.id ||
+        activeConv?.candidateId ||
+        activeConv?.recruiterId ||
+        activeConv?.participantDetails?.find((p) => p.id !== user.id)?.id ||
+        null;
 
-      if (!recipientId) return;
+      if (!text?.trim() && !attachmentUrl) return;
 
       // 1. Optimistic Message Entry
       const optimisticMsg = {
@@ -176,7 +181,7 @@ export function ChatProvider({ children }) {
         conversationId: activeConversationId,
         senderId: user.id,
         senderName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'You',
-        recipientId,
+        recipientId: recipientId || 'partner',
         messageText: text,
         messageType,
         attachmentUrl,
@@ -195,7 +200,7 @@ export function ChatProvider({ children }) {
       // 2. Dispatch via WebSocket or REST fallback
       const payload = {
         conversationId: activeConversationId,
-        recipientId,
+        ...(recipientId ? { recipientId } : {}),
         messageText: text,
         messageType,
         attachmentUrl,

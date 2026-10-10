@@ -5,8 +5,9 @@ pydantic>=2.9.2
 sentence-transformers>=3.1.1
 python-dotenv>=1.0.1
 streamlit>=1.38.0
-pypdf>=4.0.0
+pypdf>=6.19.0
 python-docx>=1.1.0
 torchvision
+urllib3>=2.8.0
 
 

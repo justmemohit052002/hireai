@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { JobsProvider } from '@/context/JobsContext';
 import { ChatProvider } from '@/context/ChatContext';
+import { NotificationProvider } from '@/context/NotificationContext';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { AppRoutes } from '@/routes';
 
@@ -25,7 +26,9 @@ export function App() {
           <AuthProvider>
             <JobsProvider>
               <ChatProvider>
-                <AppRoutes />
+                <NotificationProvider>
+                  <AppRoutes />
+                </NotificationProvider>
               </ChatProvider>
             </JobsProvider>
           </AuthProvider>

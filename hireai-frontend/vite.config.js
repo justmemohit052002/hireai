@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
-const backendTarget = 'http://localhost:8080'
+const backendTarget = 'http://127.0.0.1:8080'
 
 const proxyConfig = {
   target: backendTarget,
@@ -33,6 +33,7 @@ export default defineConfig({
       '/candidate': proxyConfig,
       '/applications': proxyConfig,
       '/chat': proxyConfig,
+      '/notifications': proxyConfig,
       '/uploads': proxyConfig,
       '/ws/chat': {
         target: backendTarget,

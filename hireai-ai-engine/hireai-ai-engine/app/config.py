@@ -29,6 +29,11 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_FILE_PATH = os.getenv("LOG_FILE_PATH", "logs/app.log")
 LLM_CALL_LOG_PATH = os.getenv("LLM_CALL_LOG_PATH", "logs/llm_call_log.jsonl")
 
+# ---- Error handling & debugging ----
+# When false (default), API clients receive safe generic error messages without stack traces.
+# Full error details and stack traces are always logged server-side for debugging.
+SHOW_ERROR_DETAILS = os.getenv("SHOW_ERROR_DETAILS", "false").lower() in ("true", "1", "yes")
+
 # ---- CORS ----
 # During team testing, frontend may call this service directly (not just
 # through backend), so we allow common local dev ports. Tighten this list

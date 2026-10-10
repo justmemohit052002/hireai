@@ -218,10 +218,10 @@ export const SignupPage = () => {
 
   return (
     <div className="w-full my-auto">
-      <Card glass className="w-full max-w-md mx-auto p-6 sm:p-8 space-y-6 shadow-2xl rounded-[28px] border border-white/20 dark:border-white/10">
-        <div className="text-center space-y-1.5">
-          <Logo size="lg" className="justify-center mb-1.5" />
-          <h2 className="text-2xl font-bold font-heading text-foreground">
+      <Card glass className="w-full max-w-md mx-auto p-5 sm:p-6 space-y-4 sm:space-y-4.5 shadow-2xl rounded-[24px] border border-white/20 dark:border-white/10">
+        <div className="text-center space-y-1">
+          <Logo size="lg" className="justify-center mb-1" />
+          <h2 className="text-xl sm:text-2xl font-bold font-heading text-foreground">
             {step === 3 ? 'Verify Your Email' : 'Create Your Account'}
           </h2>
           <p className="text-xs text-muted-foreground">
@@ -240,7 +240,7 @@ export const SignupPage = () => {
 
         {/* Success Notice */}
         {resendSuccess && (
-          <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-medium flex items-start gap-2.5">
+          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-medium flex items-start gap-2.5">
             <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{resendSuccess}</span>
           </div>
@@ -248,43 +248,43 @@ export const SignupPage = () => {
 
         {/* Error Notice */}
         {errorMsg && (
-          <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-medium flex items-start gap-2.5">
+          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-medium flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {step < 3 ? (
-          <form onSubmit={handleNext} className="space-y-4">
+          <form onSubmit={handleNext} className="space-y-3.5">
             {step === 1 ? (
               <>
                 {/* Role Selection */}
                 <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
                   Select Account Type
                 </label>
-                <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="grid grid-cols-2 gap-3 mb-3">
                   <button
                     type="button"
                     onClick={() => setRole('candidate')}
-                    className={`p-4 rounded-2xl border text-center transition-all flex flex-col items-center gap-2 ${
+                    className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 ${
                       role === 'candidate'
                         ? 'bg-[#C63FC5]/10 border-[#C63FC5] text-foreground font-bold shadow-md'
                         : 'bg-surface-2 border-border text-muted-foreground'
                     }`}
                   >
-                    <User className="w-6 h-6 text-[#C63FC5]" />
+                    <User className="w-5 h-5 text-[#C63FC5]" />
                     <span className="text-xs">Job Seeker</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setRole('recruiter')}
-                    className={`p-4 rounded-2xl border text-center transition-all flex flex-col items-center gap-2 ${
+                    className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 ${
                       role === 'recruiter'
-                        ? 'bg-brand-navy/10 border-[#22214B] dark:border-[#F56681] text-foreground font-bold shadow-md'
+                        ? 'bg-[#C63FC5]/10 border-[#C63FC5] text-foreground font-bold shadow-md'
                         : 'bg-surface-2 border-border text-muted-foreground'
                     }`}
                   >
-                    <Building2 className="w-6 h-6 text-[#22214B] dark:text-[#F56681]" />
+                    <Building2 className="w-5 h-5 text-[#C63FC5]" />
                     <span className="text-xs">Recruiter</span>
                   </button>
                 </div>

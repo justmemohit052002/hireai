@@ -55,25 +55,54 @@ public class OAuthService {
         }
 
         try {
-            HttpRequest httpRequest;
-            if (token.startsWith("ya29.") || !token.contains(".")) {
+            boolean isJwtCandidate = token.chars().filter(ch -> ch == '.').count() == 2 && !token.startsWith("ya29.");
+            HttpResponse<String> response;
+
+            if (isJwtCandidate) {
+                // Try Google ID Token / JWT flow first
+                HttpRequest idTokenReq = HttpRequest.newBuilder()
+                        .uri(URI.create("https://oauth2.googleapis.com/tokeninfo?id_token=" + token))
+                        .timeout(Duration.ofSeconds(6))
+                        .GET()
+                        .build();
+                response = httpClient.send(idTokenReq, HttpResponse.BodyHandlers.ofString());
+
+                // Fallback to userinfo if tokeninfo failed
+                if (response.statusCode() != 200) {
+                    HttpRequest userinfoReq = HttpRequest.newBuilder()
+                            .uri(URI.create("https://www.googleapis.com/oauth2/v3/userinfo"))
+                            .header("Authorization", "Bearer " + token)
+                            .timeout(Duration.ofSeconds(6))
+                            .GET()
+                            .build();
+                    HttpResponse<String> fallbackResponse = httpClient.send(userinfoReq, HttpResponse.BodyHandlers.ofString());
+                    if (fallbackResponse.statusCode() == 200) {
+                        response = fallbackResponse;
+                    }
+                }
+            } else {
                 // Google Access Token flow (via userinfo endpoint)
-                httpRequest = HttpRequest.newBuilder()
+                HttpRequest userinfoReq = HttpRequest.newBuilder()
                         .uri(URI.create("https://www.googleapis.com/oauth2/v3/userinfo"))
                         .header("Authorization", "Bearer " + token)
                         .timeout(Duration.ofSeconds(6))
                         .GET()
                         .build();
-            } else {
-                // Google ID Token / JWT flow (via tokeninfo endpoint)
-                httpRequest = HttpRequest.newBuilder()
-                        .uri(URI.create("https://oauth2.googleapis.com/tokeninfo?id_token=" + token))
-                        .timeout(Duration.ofSeconds(6))
-                        .GET()
-                        .build();
-            }
+                response = httpClient.send(userinfoReq, HttpResponse.BodyHandlers.ofString());
 
-            HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+                // Fallback to tokeninfo if userinfo failed on a dotted token
+                if (response.statusCode() != 200 && token.contains(".")) {
+                    HttpRequest idTokenReq = HttpRequest.newBuilder()
+                            .uri(URI.create("https://oauth2.googleapis.com/tokeninfo?id_token=" + token))
+                            .timeout(Duration.ofSeconds(6))
+                            .GET()
+                            .build();
+                    HttpResponse<String> fallbackResponse = httpClient.send(idTokenReq, HttpResponse.BodyHandlers.ofString());
+                    if (fallbackResponse.statusCode() == 200) {
+                        response = fallbackResponse;
+                    }
+                }
+            }
 
             if (response.statusCode() == 200) {
                 JsonNode json = objectMapper.readTree(response.body());
