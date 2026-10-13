@@ -39,6 +39,7 @@ public class DataInitializer implements CommandLineRunner {
     private final DirectChatParticipantRepository participantRepository;
     private final PasswordEncoder passwordEncoder;
     private final Environment environment;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @Value("${hireai.admin.seed.enabled:false}")
     private boolean adminSeedEnabled;
@@ -52,6 +53,14 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
+        // 0. Ensure PostgreSQL schema matches Candidate entity (relax legacy NOT NULL & UNIQUE constraints on candidates.phone)
+        try {
+            jdbcTemplate.execute("ALTER TABLE candidates ALTER COLUMN phone DROP NOT NULL");
+            jdbcTemplate.execute("ALTER TABLE candidates DROP CONSTRAINT IF EXISTS uk5ilb7049i3j8efmvh4w7adqxk");
+        } catch (Exception ex) {
+            log.debug("[DataInitializer] Candidate phone schema alignment notice: {}", ex.getMessage());
+        }
+
         // 1. Initialize Essential Roles
         Role adminRole = createRoleIfNotExists(RoleType.ROLE_ADMIN, "System Administrator");
         Role recruiterRole = createRoleIfNotExists(RoleType.ROLE_RECRUITER, "Recruiter");

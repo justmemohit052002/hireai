@@ -424,11 +424,22 @@ public class GlobalExceptionHandler {
 
 		log.error("Data integrity violation on {} [{}]: ", request.getMethod(), request.getRequestURI(), ex);
 
+		String detailMessage = "Database constraint violation: duplicate record or unique field conflict";
+		Throwable root = ex.getRootCause();
+		if (root != null && root.getMessage() != null) {
+			String msg = root.getMessage().toLowerCase();
+			if (msg.contains("unique") || msg.contains("duplicate key")) {
+				detailMessage = "An account or profile with this email or identifier already exists.";
+			} else if (msg.contains("not-null") || msg.contains("violates not-null constraint")) {
+				detailMessage = "Required profile field is missing. Please complete all required information.";
+			}
+		}
+
 		ErrorResponse response = new ErrorResponse(
 				false,
 				HttpStatus.CONFLICT.value(),
 				HttpStatus.CONFLICT.getReasonPhrase(),
-				"Database constraint violation: duplicate record or unique field conflict",
+				detailMessage,
 				request.getRequestURI());
 
 		return ResponseEntity
