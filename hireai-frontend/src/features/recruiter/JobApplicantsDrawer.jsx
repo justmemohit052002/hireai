@@ -278,7 +278,7 @@ export const JobApplicantsDrawer = ({
                 </Button>
                 <button
                   onClick={onClose}
-                  className="rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -303,7 +303,7 @@ export const JobApplicantsDrawer = ({
                   {applicants.filter((a) => (a.atsMatchScore || 0) >= 70).length}
                 </div>
               </div>
-              <div className="p-3 rounded-xl bg-[#F56681]/10 border border-[#F56681]/20 text-center">
+              <div className="p-3 rounded-xl bg-brand-blue/10 border border-brand-blue/20 text-center">
                 <div className="text-[10px] uppercase font-bold tracking-wider text-brand-blue">
                   Avg ATS Score
                 </div>

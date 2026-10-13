@@ -266,7 +266,7 @@ export const CreateJobPage = () => {
 
       <form onSubmit={handlePublish} className="space-y-6">
         <Card glass className="p-6 space-y-5">
-          <div className="flex items-center justify-between pb-3 border-b border-border/50">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pb-3 border-b border-border/50">
             <h3 className="text-base font-bold text-foreground">Job Details</h3>
             <Button
               type="button"
@@ -274,12 +274,12 @@ export const CreateJobPage = () => {
               size="sm"
               onClick={handleGenerateWithAi}
               disabled={isAiGenerating}
-              className="border-[#F56681]/30 hover:bg-brand-blue-light/10 text-foreground"
+              className="border-brand-blue/30 hover:bg-brand-blue-light/10 text-foreground w-full sm:w-auto"
             >
               {isAiGenerating ? (
-                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-[#F56681]" />
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-brand-blue" />
               ) : (
-                <Sparkles className="w-3.5 h-3.5 mr-1.5 text-[#F56681]" />
+                <Sparkles className="w-3.5 h-3.5 mr-1.5 text-brand-blue" />
               )}
               {isAiGenerating ? 'Generating with AI...' : 'Auto-Generate with AI Engine'}
             </Button>
@@ -483,11 +483,11 @@ export const CreateJobPage = () => {
           </div>
         </Card>
 
-        <div className="flex items-center justify-end gap-4 pt-2">
-          <Button type="button" variant="ghost" onClick={() => navigate(ROUTES.RECRUITER_JOBS)}>
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 sm:gap-4 pt-2">
+          <Button type="button" variant="ghost" onClick={() => navigate(ROUTES.RECRUITER_JOBS)} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button type="submit" variant="gradient" size="lg" isLoading={isSubmitting} className="font-bold shadow-xl">
+          <Button type="submit" variant="gradient" size="lg" isLoading={isSubmitting} className="font-bold shadow-xl w-full sm:w-auto">
             {id ? 'Update Job Posting' : 'Publish Job Opening'}
           </Button>
         </div>

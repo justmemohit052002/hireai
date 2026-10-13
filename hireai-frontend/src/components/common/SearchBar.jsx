@@ -24,7 +24,7 @@ export const SearchBar = ({
               onChange('');
               onClear?.();
             }}
-            className="rounded-full p-1 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            className="rounded-md p-1 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="w-3.5 h-3.5" />
           </button>

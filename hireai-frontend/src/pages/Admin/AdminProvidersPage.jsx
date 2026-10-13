@@ -88,10 +88,10 @@ export const AdminProvidersPage = () => {
       </div>
 
       {/* Security Guarantee Notice */}
-      <div className="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-start gap-3 text-xs text-indigo-900 dark:text-indigo-200">
-        <ShieldCheck className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+      <div className="p-4 rounded-2xl bg-brand-blue/10 border border-brand-blue/20 flex items-start gap-3 text-xs text-foreground">
+        <ShieldCheck className="w-5 h-5 text-brand-blue shrink-0 mt-0.5" />
         <div className="space-y-0.5">
-          <span className="font-bold text-indigo-600 dark:text-indigo-400">Strict Zero-Secret Exposure Policy</span>
+          <span className="font-bold text-brand-blue">Strict Zero-Secret Exposure Policy</span>
           <p className="text-muted-foreground leading-relaxed">
             Per architectural guidelines, raw credentials and secret tokens are NEVER stored in or transmitted to the client application. Only reachability indicators and masked prefixes are rendered.
           </p>

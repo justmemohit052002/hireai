@@ -50,7 +50,7 @@ export const RecruiterJobsPage = () => {
                   </h3>
                   {/* Listing status badge */}
                   <span
-                    className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                    className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md ${
                       job.listingStatus === 'open'
                         ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                         : job.listingStatus === 'paused'

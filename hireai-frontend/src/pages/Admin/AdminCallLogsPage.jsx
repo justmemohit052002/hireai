@@ -355,7 +355,7 @@ export const AdminCallLogsPage = () => {
                       </td>
                       <td className="py-3">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold ${
                             isSuccess
                               ? 'bg-emerald-500/10 text-emerald-500'
                               : 'bg-rose-500/10 text-rose-500'

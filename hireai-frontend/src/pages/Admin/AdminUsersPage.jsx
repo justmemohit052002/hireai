@@ -238,7 +238,7 @@ export const AdminUsersPage = () => {
 
       {/* User Table Card */}
       <Card glass className="p-5 sm:p-6 rounded-3xl border border-white/20 dark:border-white/10 shadow-xl space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-border/50">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 pb-3 border-b border-border/50">
           <div className="text-xs text-muted-foreground font-semibold">
             Showing <span className="text-foreground font-bold">{users.length}</span> of{' '}
             <span className="text-foreground font-bold">{totalElements}</span> registered users
@@ -303,7 +303,7 @@ export const AdminUsersPage = () => {
 
                       <td className="py-3">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-bold ${
                             u.enabled
                               ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
                               : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'

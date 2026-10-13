@@ -370,7 +370,7 @@ export const CandidateProfilePage = () => {
     }
     return {
       badgeBg: 'bg-rose-500/15 border-rose-500/30 text-rose-400',
-      progressBar: 'from-rose-500 via-pink-400 to-red-400',
+      progressBar: 'from-rose-500 via-red-400 to-amber-500',
       ratingLabel: 'Needs Completion',
     };
   };
@@ -404,22 +404,22 @@ export const CandidateProfilePage = () => {
       )}
 
       {/* Hero Profile Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl glass border border-border/70 p-6 md:p-8 shadow-md">
+      <div className="relative overflow-hidden rounded-3xl glass border border-border/70 p-4 sm:p-6 md:p-8 shadow-md">
         <div className="absolute top-0 inset-x-0 h-1.5 bg-brand-blue" />
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-5">
-            <div className="relative">
+          <div className="flex items-center gap-4 sm:gap-5">
+            <div className="relative shrink-0">
               <Avatar name={displayName} size="xl" />
               <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center" title="Verified Candidate">
                 <Check className="w-3 h-3 text-white stroke-[3]" />
               </span>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1 min-w-0">
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-2xl sm:text-3xl font-bold font-heading text-foreground">{displayName}</h1>
-                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold font-heading text-foreground truncate">{displayName}</h1>
+                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-primary">
                   {designation || 'Candidate'}
                 </span>
               </div>

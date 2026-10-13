@@ -56,8 +56,8 @@ function getNotificationBadge(type) {
       };
     case 'NEW_APPLICATION':
       return {
-        icon: <UserCheck className="w-3.5 h-3.5 text-indigo-400" />,
-        bg: 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400',
+        icon: <UserCheck className="w-3.5 h-3.5 text-brand-blue" />,
+        bg: 'bg-brand-blue/10 border-brand-blue/20 text-brand-blue',
       };
     case 'AI_MATCH':
       return {
@@ -77,8 +77,8 @@ function getNotificationBadge(type) {
     case 'SYSTEM':
     default:
       return {
-        icon: <Info className="w-3.5 h-3.5 text-blue-400" />,
-        bg: 'bg-blue-500/10 border-blue-500/20 text-blue-400',
+        icon: <Info className="w-3.5 h-3.5 text-brand-blue" />,
+        bg: 'bg-brand-blue/10 border-brand-blue/20 text-brand-blue',
       };
   }
 }
@@ -144,11 +144,11 @@ export const NotificationBell = () => {
           role="status"
           aria-live="polite"
           aria-label="New notification preview"
-          className="fixed top-20 right-4 sm:right-6 z-50 max-w-sm w-full p-4 rounded-2xl glass border border-blue-500/30 bg-surface-1/95 shadow-2xl backdrop-blur-xl animate-in slide-in-from-top-4 fade-in duration-300"
+          className="fixed top-20 right-4 sm:right-6 z-50 max-w-sm w-full p-4 rounded-2xl glass border border-brand-blue/30 bg-surface-1/95 shadow-2xl backdrop-blur-xl animate-in slide-in-from-top-4 fade-in duration-300"
         >
           <div className="flex items-start gap-3">
-            <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 shrink-0">
-              <Sparkles className="w-4 h-4 animate-spin text-blue-400 duration-1000" />
+            <div className="p-2 rounded-xl bg-brand-blue/10 text-brand-blue shrink-0">
+              <Sparkles className="w-4 h-4 animate-spin text-brand-blue duration-1000" />
             </div>
             <div
               className="flex-1 cursor-pointer pr-1"
@@ -163,13 +163,13 @@ export const NotificationBell = () => {
               }}
             >
               <div className="flex items-center gap-1.5 font-bold text-xs text-foreground">
-                <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping inline-block" />
+                <span className="w-2 h-2 rounded-full bg-brand-blue animate-ping inline-block" />
                 <span>{toastNotification.title}</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
                 {toastNotification.message}
               </p>
-              <span className="text-[10px] text-blue-400 font-medium mt-1.5 flex items-center gap-1 hover:underline">
+              <span className="text-[10px] text-brand-blue dark:text-brand-accent font-medium mt-1.5 flex items-center gap-1 hover:underline">
                 View details <ExternalLink className="w-2.5 h-2.5" />
               </span>
             </div>
@@ -190,19 +190,19 @@ export const NotificationBell = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="relative rounded-full hover:bg-surface-2 transition-transform duration-200 active:scale-95 cursor-pointer"
+            className="relative rounded-lg hover:bg-surface-2 transition-transform duration-200 active:scale-95 cursor-pointer"
             aria-label={`Notifications (${unreadCount} unread)`}
           >
             <Bell
               className={cn(
                 'w-5 h-5 text-foreground transition-all duration-300',
-                isWiggling && 'animate-wiggle text-blue-500 scale-110'
+                isWiggling && 'animate-wiggle text-brand-blue scale-110'
               )}
             />
 
             {/* Glowing Unread Badge */}
             {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-[10px] font-extrabold text-white shadow-lg shadow-blue-500/30 ring-2 ring-background animate-pulse">
+              <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-gradient-to-r from-brand-blue to-brand-navy text-[10px] font-extrabold text-white shadow-lg shadow-brand-blue/30 ring-2 ring-background animate-pulse">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
@@ -218,14 +218,14 @@ export const NotificationBell = () => {
           <div className="p-3.5 border-b border-border/50 bg-surface-2/40">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400">
+                <div className="p-1.5 rounded-lg bg-brand-blue/10 text-brand-blue">
                   <Bell className="w-4 h-4" />
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
                     Notifications
                     {unreadCount > 0 && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-brand-blue/10 text-brand-blue border border-brand-blue/20">
                         {unreadCount} new
                       </span>
                     )}
@@ -236,7 +236,7 @@ export const NotificationBell = () => {
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
-                  className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium transition-colors cursor-pointer px-2 py-1 rounded-lg hover:bg-blue-500/10"
+                  className="text-xs text-brand-blue hover:text-brand-accent flex items-center gap-1 font-medium transition-colors cursor-pointer px-2 py-1 rounded-lg hover:bg-brand-blue/10"
                 >
                   <CheckCheck className="w-3.5 h-3.5" /> Mark all read
                 </button>
@@ -251,7 +251,7 @@ export const NotificationBell = () => {
                 className={cn(
                   'flex-1 py-1 px-3 rounded-lg font-semibold transition-all duration-150 cursor-pointer text-center',
                   activeTab === 'all'
-                    ? 'bg-blue-500 text-white shadow-sm font-bold'
+                    ? 'bg-brand-blue text-white shadow-sm font-bold'
                     : 'text-muted-foreground hover:text-foreground'
                 )}
               >
@@ -263,7 +263,7 @@ export const NotificationBell = () => {
                 className={cn(
                   'flex-1 py-1 px-3 rounded-lg font-semibold transition-all duration-150 cursor-pointer text-center',
                   activeTab === 'unread'
-                    ? 'bg-blue-500 text-white shadow-sm font-bold'
+                    ? 'bg-brand-blue text-white shadow-sm font-bold'
                     : 'text-muted-foreground hover:text-foreground'
                 )}
               >
@@ -276,12 +276,12 @@ export const NotificationBell = () => {
           <div className="max-h-80 overflow-y-auto divide-y divide-border/30 scrollbar-thin">
             {isLoading && notifications.length === 0 ? (
               <div className="flex items-center justify-center p-8 text-xs text-muted-foreground gap-2">
-                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-brand-blue border-t-transparent rounded-full animate-spin" />
                 Loading notifications...
               </div>
             ) : filteredNotifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-8 text-center">
-                <div className="p-3 rounded-full bg-surface-2 text-muted-foreground mb-2">
+                <div className="p-3 rounded-xl bg-surface-2 text-muted-foreground mb-2">
                   <Check className="w-5 h-5 text-emerald-400" />
                 </div>
                 <p className="font-semibold text-xs text-foreground">You're all caught up!</p>
@@ -301,7 +301,7 @@ export const NotificationBell = () => {
                     onClick={(e) => handleNotificationClick(n, e)}
                     className={cn(
                       'group relative flex items-start gap-3 p-3.5 cursor-pointer transition-colors duration-150 focus:bg-surface-2/80 hover:bg-surface-2/60',
-                      !n.read && 'bg-blue-500/5'
+                      !n.read && 'bg-brand-blue/5'
                     )}
                   >
                     {/* Category Icon Badge */}
@@ -319,7 +319,7 @@ export const NotificationBell = () => {
                       <div className="flex items-center justify-between gap-1 mb-0.5">
                         <span className="font-semibold text-xs text-foreground truncate flex items-center gap-1.5">
                           {!n.read && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-brand-blue shrink-0" />
                           )}
                           {n.title}
                         </span>
@@ -331,7 +331,7 @@ export const NotificationBell = () => {
                         {n.message}
                       </p>
                       {n.link && (
-                        <span className="inline-flex items-center gap-1 text-[10px] text-blue-400 font-medium mt-1 group-hover:underline">
+                        <span className="inline-flex items-center gap-1 text-[10px] text-brand-blue dark:text-brand-accent font-medium mt-1 group-hover:underline">
                           Open <ExternalLink className="w-2.5 h-2.5" />
                         </span>
                       )}

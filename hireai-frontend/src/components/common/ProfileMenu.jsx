@@ -34,7 +34,7 @@ export const ProfileMenu = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-2.5 rounded-full p-1 hover:bg-muted/60 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#F56681]">
+        <button className="flex items-center gap-2 rounded-xl p-1 hover:bg-muted/60 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-blue cursor-pointer">
           <Avatar name={displayName} src={user.avatarUrl} size="md" />
           <div className="hidden md:flex flex-col text-left">
             <span className="text-xs font-bold text-foreground leading-tight">{displayName}</span>

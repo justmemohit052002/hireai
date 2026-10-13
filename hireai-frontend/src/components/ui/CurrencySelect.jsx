@@ -141,7 +141,7 @@ export const CurrencySelect = ({
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
         className={cn(
-          'flex h-11 w-full items-center justify-between rounded-xl border border-border bg-surface-2/80 dark:bg-surface-2 text-foreground px-3.5 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#F56681]/40 focus:border-[#F56681] disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 shadow-xs cursor-pointer',
+          'flex h-11 w-full items-center justify-between rounded-xl border border-border bg-surface-2/80 dark:bg-surface-2 text-foreground px-3.5 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 shadow-xs cursor-pointer',
           error && 'border-red-500 focus:ring-red-500',
           className
         )}

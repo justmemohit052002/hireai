@@ -7,7 +7,7 @@ export const Textarea = React.forwardRef(
       <div className="w-full">
         <textarea
           className={cn(
-            'flex min-h-[100px] w-full rounded-xl border border-border bg-surface-2/80 dark:bg-surface-2 text-foreground px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F56681]/40 focus-visible:border-[#F56681] disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 shadow-xs resize-y',
+            'flex min-h-[100px] w-full rounded-xl border border-border bg-surface-2/80 dark:bg-surface-2 text-foreground px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/30 focus-visible:border-brand-blue disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 shadow-xs resize-y',
             error && 'border-red-500 focus-visible:ring-red-500',
             className
           )}

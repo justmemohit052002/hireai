@@ -13,13 +13,13 @@ export const JobCardSkeleton = () => {
             <Skeleton className="h-4 w-32" />
           </div>
         </div>
-        <Skeleton className="h-6 w-20 rounded-full" />
+        <Skeleton className="h-6 w-20 rounded-md" />
       </div>
       <Skeleton className="h-12 w-full" />
       <div className="flex gap-2 pt-2">
-        <Skeleton className="h-6 w-16 rounded-full" />
-        <Skeleton className="h-6 w-20 rounded-full" />
-        <Skeleton className="h-6 w-24 rounded-full" />
+        <Skeleton className="h-6 w-16 rounded-md" />
+        <Skeleton className="h-6 w-20 rounded-md" />
+        <Skeleton className="h-6 w-24 rounded-md" />
       </div>
     </Card>
   );

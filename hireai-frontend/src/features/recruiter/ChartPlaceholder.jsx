@@ -8,12 +8,12 @@ export const ChartPlaceholder = () => {
 
   return (
     <Card glass className="p-6 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="text-lg font-bold font-heading text-foreground">Candidate Pipeline Dynamics</h3>
           <p className="text-xs text-muted-foreground">AI Sourced vs Applied Candidates over 2026</p>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20 text-xs font-bold">
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-brand-blue/10 text-brand-blue border border-brand-blue/20 text-xs font-bold w-fit">
           <Sparkles className="w-3.5 h-3.5" />
           <span>Real-time Analytics</span>
         </div>

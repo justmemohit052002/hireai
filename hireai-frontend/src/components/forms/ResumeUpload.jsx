@@ -296,7 +296,7 @@ export const ResumeUpload = ({
         <div className="flex flex-col gap-3 p-4 rounded-2xl bg-surface-2 border border-border/70 shadow-sm transition-all">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3.5 min-w-0">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-blue-500/30 text-blue-400 flex items-center justify-center shrink-0">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-brand-blue/20 to-brand-navy/20 border border-brand-blue/30 text-brand-blue flex items-center justify-center shrink-0">
                 {isUploading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
