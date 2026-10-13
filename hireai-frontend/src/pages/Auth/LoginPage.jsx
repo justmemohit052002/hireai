@@ -46,9 +46,18 @@ export const LoginPage = () => {
       ) {
         setIsUnverified(true);
         setErrorMsg('Your account email is not verified yet. Please enter the 6-digit OTP code to complete activation.');
+      } else if (err.status === 404) {
+        setIsUnverified(false);
+        setErrorMsg(msg || 'User not found. Please sign up first.');
+      } else if (err.status === 401) {
+        setIsUnverified(false);
+        setErrorMsg(msg || 'Invalid email or password. Please try again.');
+      } else if (err.status === 429) {
+        setIsUnverified(false);
+        setErrorMsg(msg || 'Too many failed login attempts. Please try again later.');
       } else {
         setIsUnverified(false);
-        setErrorMsg(err.message || 'Invalid email or password. Please try again.');
+        setErrorMsg(msg || 'An unexpected server error occurred. Please try again later.');
       }
     } finally {
       setIsLoading(false);
@@ -136,7 +145,7 @@ export const LoginPage = () => {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••••"
+              placeholder="Enter your password"
               icon={<Lock className="w-4 h-4" />}
             />
           </div>

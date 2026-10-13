@@ -160,12 +160,15 @@ export async function request(endpoint, options = {}) {
 
     if (!response.ok) {
       const showDetails = import.meta.env.VITE_SHOW_ERROR_DETAILS === 'true';
+      const backendMsg = data && (data.message || data.error || (data.errors && Object.values(data.errors).join(', ')));
       let errorMsg =
-        (data && (data.message || data.error || (data.errors && Object.values(data.errors).join(', ')))) ||
-        `Request failed with status ${response.status}`;
+        backendMsg ||
+        (response.status >= 500
+          ? 'An unexpected server error occurred. Please try again later.'
+          : `Request failed with status ${response.status}`);
 
-      // Prevent exposure of internal server stack traces or raw diagnostics to users
-      if (!showDetails && response.status >= 500) {
+      // Sanitize unhandled 500 server errors when no domain message was provided
+      if (!showDetails && response.status === 500 && !backendMsg) {
         errorMsg = 'An unexpected server error occurred. Please try again later.';
       }
 

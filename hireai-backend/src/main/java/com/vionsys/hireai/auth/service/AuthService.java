@@ -387,7 +387,7 @@ public class AuthService {
     @Transactional
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail().trim().toLowerCase())
-                .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
+                .orElseThrow(() -> new UserNotFoundException("User not found. Please sign up first."));
 
         // Check email verification status before authenticating
         if (!Boolean.TRUE.equals(user.getEnabled())) {
