@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import com.vionsys.hireai.application.dto.JobApplicationResponse;
 import com.vionsys.hireai.application.enums.ApplicationStatus;
+import com.vionsys.hireai.exception.EmailDeliveryException;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -24,6 +25,7 @@ public class EmailServiceImpl implements EmailService {
 
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
     private final EmailProperties emailProperties;
+    private final org.springframework.core.env.Environment environment;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a");
 
@@ -136,7 +138,11 @@ public class EmailServiceImpl implements EmailService {
                         : ""
         );
 
-        sendHtmlEmail(candidateEmail, subject, htmlContent);
+        try {
+            sendHtmlEmail(candidateEmail, subject, htmlContent);
+        } catch (EmailDeliveryException ex) {
+            log.warn("Non-critical application receipt email failed for {}: {}", maskEmail(candidateEmail), ex.getMessage());
+        }
     }
 
     // =========================================================
@@ -234,7 +240,11 @@ public class EmailServiceImpl implements EmailService {
                 missingSkills
         );
 
-        sendHtmlEmail(recruiterEmail, subject, htmlContent);
+        try {
+            sendHtmlEmail(recruiterEmail, subject, htmlContent);
+        } catch (EmailDeliveryException ex) {
+            log.warn("Non-critical recruiter alert email failed for {}: {}", maskEmail(recruiterEmail), ex.getMessage());
+        }
     }
 
     // =========================================================
@@ -351,7 +361,11 @@ public class EmailServiceImpl implements EmailService {
                 companyName
         );
 
-        sendHtmlEmail(candidateEmail, subject, htmlContent);
+        try {
+            sendHtmlEmail(candidateEmail, subject, htmlContent);
+        } catch (EmailDeliveryException ex) {
+            log.warn("Non-critical status update email failed for {}: {}", maskEmail(candidateEmail), ex.getMessage());
+        }
     }
 
     // =========================================================
@@ -419,7 +433,11 @@ public class EmailServiceImpl implements EmailService {
             </html>
             """, name);
 
-        sendHtmlEmail(user.getEmail(), subject, htmlContent);
+        try {
+            sendHtmlEmail(user.getEmail(), subject, htmlContent);
+        } catch (EmailDeliveryException ex) {
+            log.warn("Non-critical candidate welcome email failed for {}: {}", maskEmail(user.getEmail()), ex.getMessage());
+        }
     }
 
     // =========================================================
@@ -444,7 +462,7 @@ public class EmailServiceImpl implements EmailService {
               <style>
                 body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f7fa; margin: 0; padding: 20px; color: #1e293b; }
                 .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-                .header { background: linear-gradient(135deg, #4f46e5, #4338ca); padding: 30px; text-align: center; color: #ffffff; }
+                .header { background: linear-gradient(135deg, #112358, #004499); padding: 30px; text-align: center; color: #ffffff; }
                 .header h1 { margin: 0; font-size: 24px; font-weight: 700; }
                 .content { padding: 30px; line-height: 1.6; }
                 .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin: 12px 0; }
@@ -476,7 +494,11 @@ public class EmailServiceImpl implements EmailService {
             </html>
             """, name);
 
-        sendHtmlEmail(user.getEmail(), subject, htmlContent);
+        try {
+            sendHtmlEmail(user.getEmail(), subject, htmlContent);
+        } catch (EmailDeliveryException ex) {
+            log.warn("Non-critical recruiter welcome email failed for {}: {}", maskEmail(user.getEmail()), ex.getMessage());
+        }
     }
 
     // =========================================================
@@ -535,21 +557,36 @@ public class EmailServiceImpl implements EmailService {
             </html>
             """, name, user.getEmail(), timeStr);
 
-        sendHtmlEmail(user.getEmail(), subject, htmlContent);
+        try {
+            sendHtmlEmail(user.getEmail(), subject, htmlContent);
+        } catch (EmailDeliveryException ex) {
+            log.warn("Non-critical login alert email failed for {}: {}", maskEmail(user.getEmail()), ex.getMessage());
+        }
     }
 
     // =========================================================
     // 7. USER: PASSWORD RESET TOKEN EMAIL
     // =========================================================
 
-    @Async
     @Override
     public void sendPasswordResetEmail(com.vionsys.hireai.user.entity.User user, String token, java.time.LocalDateTime expiryDate) {
         if (!emailProperties.isEnabled() || user == null || user.getEmail() == null) {
             return;
         }
 
-        String name = user.getFirstName() + " " + user.getLastName();
+        if (!isSmtpConfigured()) {
+            if (environment.acceptsProfiles(org.springframework.core.env.Profiles.of("dev", "test", "default"))) {
+                log.info("[SIMULATED EMAIL DISPATCH] (Dev Profile Active - SMTP Unconfigured) Password Reset Token for {}: {}",
+                        maskEmail(user.getEmail()), token);
+            } else {
+                log.info("[SIMULATED EMAIL DISPATCH] (SMTP Unconfigured) Password Reset Token dispatched for {}",
+                        maskEmail(user.getEmail()));
+            }
+            return;
+        }
+
+        String name = (user.getFirstName() != null ? user.getFirstName() : "User")
+                + (user.getLastName() != null ? " " + user.getLastName() : "");
         String expiryStr = expiryDate != null ? expiryDate.format(DATE_FORMATTER) : "in 15 minutes";
         String subject = "Reset Your HireAI Account Password";
 
@@ -559,38 +596,38 @@ public class EmailServiceImpl implements EmailService {
             <head>
               <meta charset="utf-8">
               <style>
-                body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f7fa; margin: 0; padding: 20px; color: #1e293b; }
-                .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-                .header { background: #dc2626; padding: 25px; text-align: center; color: #ffffff; }
+                body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px; color: #1e293b; }
+                .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+                .header { background: linear-gradient(135deg, #112358, #004499); padding: 25px; text-align: center; color: #ffffff; }
                 .content { padding: 30px; }
-                .token-box { background: #fef2f2; border: 2px dashed #f87171; border-radius: 8px; padding: 18px; text-align: center; margin: 25px 0; }
-                .token-code { font-family: monospace; font-size: 16px; font-weight: bold; color: #991b1b; word-break: break-all; }
+                .token-box { background: #f8fafc; border: 2px dashed #0192C6; border-radius: 8px; padding: 18px; text-align: center; margin: 25px 0; }
+                .token-code { font-family: monospace; font-size: 16px; font-weight: bold; color: #004499; word-break: break-all; }
                 .footer { background: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
               </style>
             </head>
             <body>
               <div class="container">
                 <div class="header">
-                  <h2 style="margin:0;">Password Reset Request</h2>
+                  <h2 style="margin:0; color:#ffffff;">Password Reset Request</h2>
                 </div>
                 <div class="content">
                   <p>Hello <strong>%s</strong>,</p>
                   <p>We received a request to reset the password for your HireAI account. Use the secure token below to complete your password reset:</p>
 
                   <div class="token-box">
-                    <p style="margin:0 0 10px 0; font-size: 13px; color: #7f1d1d;"><strong>Your Secure Password Reset Token:</strong></p>
+                    <p style="margin:0 0 10px 0; font-size: 13px; color: #64748b;"><strong>Your Secure Password Reset Token:</strong></p>
                     <div class="token-code">%s</div>
                   </div>
 
                   <p style="font-size: 13px; color: #64748b;">
-                    ⏰ <strong>Note:</strong> This token will expire on <strong>%s</strong>.
+                    <strong>Note:</strong> This token will expire on <strong>%s</strong>.
                   </p>
                   <p style="font-size: 13px; color: #94a3b8;">
                     If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.
                   </p>
                 </div>
                 <div class="footer">
-                  © 2026 HireAI Platform • Security Team
+                  (c) 2026 HireAI Platform - Security Team
                 </div>
               </div>
             </body>
@@ -604,10 +641,20 @@ public class EmailServiceImpl implements EmailService {
     // 8. USER: 6-DIGIT EMAIL VERIFICATION OTP EMAIL
     // =========================================================
 
-    @Async
     @Override
     public void sendEmailVerificationOtp(com.vionsys.hireai.user.entity.User user, String otpCode, int expiryMinutes) {
         if (!emailProperties.isEnabled() || user == null || user.getEmail() == null) {
+            return;
+        }
+
+        if (!isSmtpConfigured()) {
+            if (environment.acceptsProfiles(org.springframework.core.env.Profiles.of("dev", "test", "default"))) {
+                log.info("[SIMULATED EMAIL DISPATCH] (Dev Profile Active - SMTP Unconfigured) Verification OTP for {}: {}",
+                        maskEmail(user.getEmail()), otpCode);
+            } else {
+                log.info("[SIMULATED EMAIL DISPATCH] (SMTP Unconfigured) Verification OTP dispatched for {}",
+                        maskEmail(user.getEmail()));
+            }
             return;
         }
 
@@ -623,14 +670,14 @@ public class EmailServiceImpl implements EmailService {
               <style>
                 body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #0f172a; margin: 0; padding: 20px; color: #f8fafc; }
                 .container { max-width: 580px; margin: 0 auto; background: #1e293b; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.4); border: 1px solid #334155; }
-                .header { background: linear-gradient(135deg, #4f46e5 0%%%%, #7c3aed 100%%%%); padding: 32px 24px; text-align: center; color: #ffffff; }
+                .header { background: linear-gradient(135deg, #112358 0%%%%, #004499 100%%%%); padding: 32px 24px; text-align: center; color: #ffffff; }
                 .header h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
                 .header p { margin: 6px 0 0; font-size: 14px; opacity: 0.9; }
                 .content { padding: 32px 28px; }
                 .greeting { font-size: 16px; line-height: 1.6; color: #cbd5e1; margin-bottom: 20px; }
-                .otp-card { background: #0f172a; border: 2px dashed #6366f1; border-radius: 12px; padding: 24px; text-align: center; margin: 28px 0; }
-                .otp-label { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; color: #a5b4fc; margin-bottom: 12px; }
-                .otp-number { font-family: 'Courier New', monospace; font-size: 38px; font-weight: 800; letter-spacing: 10px; color: #ffffff; text-shadow: 0 0 12px rgba(99, 102, 241, 0.6); }
+                .otp-card { background: #0f172a; border: 2px dashed #0192C6; border-radius: 12px; padding: 24px; text-align: center; margin: 28px 0; }
+                .otp-label { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; color: #0192C6; margin-bottom: 12px; }
+                .otp-number { font-family: 'Courier New', monospace; font-size: 38px; font-weight: 800; letter-spacing: 10px; color: #ffffff; text-shadow: 0 0 12px rgba(1, 146, 198, 0.5); }
                 .info-text { font-size: 13px; color: #94a3b8; line-height: 1.6; margin-top: 20px; }
                 .security-note { background: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; font-size: 12px; color: #fcd34d; margin-top: 24px; }
                 .footer { background: #0b0f19; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #1e293b; }
@@ -652,15 +699,15 @@ public class EmailServiceImpl implements EmailService {
                   </div>
 
                   <p class="info-text">
-                    ⏱️ This verification code is valid for <strong>%d minutes</strong>.
+                    This verification code is valid for <strong>%d minutes</strong>.
                   </p>
 
                   <div class="security-note">
-                    🔒 <strong>Security Tip:</strong> Never share this code with anyone. HireAI staff will never ask for your verification code.
+                    <strong>Security Tip:</strong> Never share this code with anyone. HireAI staff will never ask for your verification code.
                   </div>
                 </div>
                 <div class="footer">
-                  © 2026 HireAI Intelligent Recruitment Platform • All rights reserved.
+                  (c) 2026 HireAI Intelligent Recruitment Platform - All rights reserved.
                 </div>
               </div>
             </body>
@@ -671,27 +718,31 @@ public class EmailServiceImpl implements EmailService {
     }
 
     // =========================================================
-    // 4. CORE ASYNCHRONOUS HTML EMAIL SENDER
+    // CORE HTML EMAIL SENDER WITH LOG HYGIENE & STRICT ERROR PROPAGATION
     // =========================================================
 
-    @Async
     @Override
     public void sendHtmlEmail(String toEmail, String subject, String htmlContent) {
         if (!emailProperties.isEnabled()) {
-            log.info("Email service disabled via properties. Skipping email to {}", toEmail);
+            log.info("Email service disabled via properties. Skipping email to {}", maskEmail(toEmail));
             return;
         }
 
-        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
-        if (mailSender == null) {
-            log.info("[MOCK EMAIL DISPATCH] (No SMTP configured - simulation mode)\n"
+        if (!isSmtpConfigured()) {
+            log.info("[SIMULATED EMAIL DISPATCH] (SMTP unconfigured or hireai.mail.enabled=false)\n"
                             + "==================================================\n"
                             + "TO: {}\n"
                             + "FROM: {} <{}>\n"
                             + "SUBJECT: {}\n"
                             + "==================================================",
-                    toEmail, emailProperties.getSenderName(), emailProperties.getFrom(), subject);
+                    maskEmail(toEmail), emailProperties.getSenderName(), emailProperties.getFrom(), subject);
             return;
+        }
+
+        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+        if (mailSender == null) {
+            log.error("JavaMailSender bean unavailable despite SMTP configuration");
+            throw new EmailDeliveryException("We could not send the verification email. Please try Resend.");
         }
 
         try {
@@ -702,25 +753,57 @@ public class EmailServiceImpl implements EmailService {
             helper.setTo(toEmail);
             helper.setSubject(subject);
 
-            // Generate a clean plain-text fallback for multipart/alternative (significantly reduces spam score)
             String plainText = htmlToPlainText(htmlContent);
             helper.setText(plainText, htmlContent);
 
-            // Add standard transactional headers to inform spam filters this is an automated system email
             message.setHeader("Auto-Submitted", "auto-generated");
             message.setHeader("X-Auto-Response-Suppress", "All");
             message.setHeader("X-Mailer", "HireAI-Notification-Service/1.0");
 
             mailSender.send(message);
-            log.info("Email successfully dispatched to {}", toEmail);
+            log.info("Email successfully dispatched to {}", maskEmail(toEmail));
 
         } catch (MessagingException | UnsupportedEncodingException ex) {
-            log.error("Failed to send email to {}: {}. Logging notification locally.", toEmail, ex.getMessage());
-            log.info("[FALLBACK EMAIL LOG]\nTO: {}\nSUBJECT: {}\nCONTENT SNIPPET: {}",
-                    toEmail, subject, htmlContent.substring(0, Math.min(200, htmlContent.length())));
+            log.error("Failed to construct email message for {}: {}", maskEmail(toEmail), ex.getMessage());
+            throw new EmailDeliveryException("We could not send the verification email. Please try Resend.", ex);
+        } catch (org.springframework.mail.MailException ex) {
+            log.error("SMTP transport error while dispatching to {}: {}", maskEmail(toEmail), ex.getMessage());
+            throw new EmailDeliveryException("We could not send the verification email. Please try Resend.", ex);
         } catch (Exception ex) {
-            log.warn("SMTP host unreachable ({}). Simulated email dispatch for {}", ex.getMessage(), toEmail);
+            log.error("Unexpected error dispatching email to {}: {}", maskEmail(toEmail), ex.getMessage());
+            throw new EmailDeliveryException("We could not send the verification email. Please try Resend.", ex);
         }
+    }
+
+    @Override
+    public boolean isSmtpConfigured() {
+        if (!emailProperties.isEnabled()) {
+            return false;
+        }
+        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+        if (mailSender == null) {
+            return false;
+        }
+        if (mailSender instanceof org.springframework.mail.javamail.JavaMailSenderImpl impl) {
+            return impl.getPassword() != null && !impl.getPassword().isBlank();
+        }
+        return true;
+    }
+
+    public static String maskEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return "***";
+        }
+        int atIndex = email.indexOf('@');
+        if (atIndex <= 1) {
+            return "***" + (atIndex >= 0 ? email.substring(atIndex) : "");
+        }
+        String name = email.substring(0, atIndex);
+        String domain = email.substring(atIndex);
+        if (name.length() <= 2) {
+            return name.charAt(0) + "*" + domain;
+        }
+        return name.charAt(0) + "***" + name.charAt(name.length() - 1) + domain;
     }
 
     private String htmlToPlainText(String html) {

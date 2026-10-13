@@ -65,4 +65,9 @@ public interface AdminService {
      * Retrieve paginated administrative user action audit log
      */
     Page<AdminAuditLogResponse> getAuditLogs(Pageable pageable);
+
+    /**
+     * Diagnostic: Send a test email to verify outbound SMTP reachability and credentials
+     */
+    java.util.Map<String, Object> testEmailDelivery(String recipientEmail);
 }

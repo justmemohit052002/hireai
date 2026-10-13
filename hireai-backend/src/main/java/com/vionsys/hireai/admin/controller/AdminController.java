@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,6 +53,15 @@ public class AdminController {
     public ResponseEntity<ApiResponse<AdminHealthResponse>> getHealthSummary() {
         AdminHealthResponse health = adminService.getHealthSummary();
         return ResponseEntity.ok(ApiResponse.success(health, "System health retrieved successfully"));
+    }
+
+    @Operation(summary = "Test Outbound Email Notification Delivery", description = "Admin diagnostic endpoint to test SMTP dispatch and verify delivery reachability")
+    @PostMapping("/email/test")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> testEmailDelivery(
+            @Parameter(description = "Recipient email address for test message", example = "admin@vionsys.com")
+            @RequestParam String recipientEmail) {
+        java.util.Map<String, Object> diagnostic = adminService.testEmailDelivery(recipientEmail);
+        return ResponseEntity.ok(ApiResponse.success(diagnostic, "Email delivery diagnostic completed"));
     }
 
     @Operation(summary = "Get LLM Usage & Quota Statistics", description = "Fetches call volumes, provider breakdown, average latencies, and quota usage from AI call logs with optional date range filter")

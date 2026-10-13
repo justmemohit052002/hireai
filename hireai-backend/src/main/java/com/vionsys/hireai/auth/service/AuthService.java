@@ -58,6 +58,7 @@ import com.vionsys.hireai.auth.dto.VerifyEmailOtpRequest;
 import com.vionsys.hireai.auth.entity.EmailVerificationOtp;
 import com.vionsys.hireai.auth.repository.EmailVerificationOtpRepository;
 import com.vionsys.hireai.auth.util.EmailDomainValidator;
+import com.vionsys.hireai.email.EmailService;
 import com.vionsys.hireai.exception.AccountNotVerifiedException;
 import com.vionsys.hireai.exception.InvalidOtpException;
 import lombok.RequiredArgsConstructor;
@@ -79,7 +80,7 @@ public class AuthService {
     private final RecruiterProfileRepository recruiterProfileRepository;
     private final CandidateRepository candidateRepository;
     private final CandidateIdGenerator candidateIdGenerator;
-    private final com.vionsys.hireai.email.EmailService emailService;
+    private final EmailService emailService;
     private final com.vionsys.hireai.security.ratelimit.AccountBackoffManager accountBackoffManager;
     private final EmailVerificationOtpRepository emailVerificationOtpRepository;
     private final OAuthService oauthService;
@@ -156,12 +157,12 @@ public class AuthService {
                 .build();
         emailVerificationOtpRepository.save(otpEntity);
 
-        try {
-            emailService.sendEmailVerificationOtp(user, otpCode, 10);
-            log.info("Sent 6-digit verification OTP to recruiter: {}", user.getEmail());
-        } catch (Exception ex) {
-            log.warn("Failed to send verification OTP to recruiter email: {}", ex.getMessage());
-        }
+        final User finalRecruiter = user;
+        final String finalRecruiterOtp = otpCode;
+        executeAfterCommit(() -> {
+            emailService.sendEmailVerificationOtp(finalRecruiter, finalRecruiterOtp, 10);
+            log.info("Sent 6-digit verification OTP to recruiter: {}", EmailService.maskEmail(finalRecruiter.getEmail()));
+        });
 
         return AuthResponse.builder()
                 .userId(user.getId())
@@ -236,12 +237,12 @@ public class AuthService {
                 .build();
         emailVerificationOtpRepository.save(otpEntity);
 
-        try {
-            emailService.sendEmailVerificationOtp(user, otpCode, 10);
-            log.info("Sent 6-digit verification OTP to candidate: {}", user.getEmail());
-        } catch (Exception ex) {
-            log.warn("Failed to send verification OTP to candidate email: {}", ex.getMessage());
-        }
+        final User finalCandidate = user;
+        final String finalCandidateOtp = otpCode;
+        executeAfterCommit(() -> {
+            emailService.sendEmailVerificationOtp(finalCandidate, finalCandidateOtp, 10);
+            log.info("Sent 6-digit verification OTP to candidate: {}", EmailService.maskEmail(finalCandidate.getEmail()));
+        });
 
         return AuthResponse.builder()
                 .userId(user.getId())
@@ -316,15 +317,18 @@ public class AuthService {
         }
 
         // Send welcome email asynchronously
-        try {
-            if (user.getRole().getName() == RoleType.ROLE_RECRUITER) {
-                emailService.sendWelcomeRecruiterEmail(user);
-            } else {
-                emailService.sendWelcomeCandidateEmail(user);
+        final User finalVerifiedUser = user;
+        executeAfterCommit(() -> {
+            try {
+                if (finalVerifiedUser.getRole() != null && finalVerifiedUser.getRole().getName() == RoleType.ROLE_RECRUITER) {
+                    emailService.sendWelcomeRecruiterEmail(finalVerifiedUser);
+                } else {
+                    emailService.sendWelcomeCandidateEmail(finalVerifiedUser);
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to send welcome email after OTP verification: {}", ex.getMessage());
             }
-        } catch (Exception ex) {
-            log.warn("Failed to send welcome email after OTP verification: {}", ex.getMessage());
-        }
+        });
 
         CustomUserDetails userDetails = CustomUserDetails.fromUser(user);
         String accessToken = jwtService.generateAccessToken(userDetails);
@@ -378,12 +382,12 @@ public class AuthService {
                 .build();
         emailVerificationOtpRepository.save(newOtp);
 
-        try {
-            emailService.sendEmailVerificationOtp(user, newOtpCode, 10);
-            log.info("Resent 6-digit verification OTP to: {}", user.getEmail());
-        } catch (Exception ex) {
-            log.warn("Failed to resend verification OTP to {}: {}", user.getEmail(), ex.getMessage());
-        }
+        final User finalResendUser = user;
+        final String finalResendOtp = newOtpCode;
+        executeAfterCommit(() -> {
+            emailService.sendEmailVerificationOtp(finalResendUser, finalResendOtp, 10);
+            log.info("Resent 6-digit verification OTP to: {}", EmailService.maskEmail(finalResendUser.getEmail()));
+        });
     }
 
     @Transactional(noRollbackFor = {
@@ -844,12 +848,13 @@ public class AuthService {
 
         passwordResetTokenRepository.save(resetToken);
 
-        // Send password reset email asynchronously
-        try {
-            emailService.sendPasswordResetEmail(user, token, expiresAt);
-        } catch (Exception ex) {
-            log.warn("Failed to send password reset email: {}", ex.getMessage());
-        }
+        final User finalForgotUser = user;
+        final String finalForgotToken = token;
+        final LocalDateTime finalForgotExpiresAt = expiresAt;
+        executeAfterCommit(() -> {
+            emailService.sendPasswordResetEmail(finalForgotUser, finalForgotToken, finalForgotExpiresAt);
+            log.info("Dispatched password reset token to: {}", EmailService.maskEmail(finalForgotUser.getEmail()));
+        });
 
         return ForgotPasswordResponse.builder()
                 .success(true)

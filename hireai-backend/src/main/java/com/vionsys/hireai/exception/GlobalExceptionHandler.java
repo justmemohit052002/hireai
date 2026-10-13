@@ -581,6 +581,49 @@ public class GlobalExceptionHandler {
 	// GENERIC FALLBACK EXCEPTION
 	// =========================================================
 
+	@ExceptionHandler(EmailDeliveryException.class)
+	public ResponseEntity<ErrorResponse> handleEmailDeliveryException(
+			EmailDeliveryException ex,
+			HttpServletRequest request) {
+
+		log.error("Email delivery failed on {} [{}]: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.BAD_GATEWAY.value(),
+				"Email Delivery Failure",
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.BAD_GATEWAY)
+				.body(response);
+	}
+
+	@ExceptionHandler(org.springframework.transaction.TransactionSystemException.class)
+	public ResponseEntity<ErrorResponse> handleTransactionSystemException(
+			org.springframework.transaction.TransactionSystemException ex,
+			HttpServletRequest request) {
+
+		Throwable root = ex.getRootCause();
+		if (root instanceof EmailDeliveryException emailEx) {
+			return handleEmailDeliveryException(emailEx, request);
+		}
+
+		log.error("Transaction system failure on {} [{}]: {}", request.getMethod(), request.getRequestURI(), ex.getMessage(), ex);
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.INTERNAL_SERVER_ERROR.value(),
+				HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+				"A transaction system error occurred. Please try again.",
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(response);
+	}
+
 	@ExceptionHandler(org.springframework.transaction.UnexpectedRollbackException.class)
 	public ResponseEntity<ErrorResponse> handleUnexpectedRollback(
 			org.springframework.transaction.UnexpectedRollbackException ex,

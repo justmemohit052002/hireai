@@ -55,6 +55,8 @@ public class AdminServiceImpl implements AdminService {
     private final AdminHealthPollerService healthPollerService;
     private final AiEngineClient aiEngineClient;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final com.vionsys.hireai.email.EmailService emailService;
+    private final com.vionsys.hireai.email.EmailProperties emailProperties;
 
     private static final int MAX_PAGE_SIZE = 100;
 
@@ -351,5 +353,38 @@ public class AdminServiceImpl implements AdminService {
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();
+    }
+
+    @Override
+    public java.util.Map<String, Object> testEmailDelivery(String recipientEmail) {
+        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("recipient", com.vionsys.hireai.email.EmailServiceImpl.maskEmail(recipientEmail));
+        boolean configured = emailService.isSmtpConfigured();
+        result.put("smtpConfigured", configured);
+        result.put("senderFrom", emailProperties.getFrom());
+        try {
+            emailService.sendHtmlEmail(
+                    recipientEmail,
+                    "HireAI Outbound SMTP Connectivity Diagnostic",
+                    """
+                    <!DOCTYPE html>
+                    <html>
+                    <body style="font-family: sans-serif; padding: 20px;">
+                      <h2>HireAI SMTP Connectivity Diagnostic</h2>
+                      <p>This automated message confirms that outbound SMTP delivery is fully functional.</p>
+                      <p style="color: #64748b; font-size: 12px;">HireAI Platform Administration</p>
+                    </body>
+                    </html>
+                    """
+            );
+            result.put("status", "SUCCESS");
+            result.put("message", configured
+                    ? "Diagnostic email successfully dispatched via SMTP."
+                    : "Simulated email dispatch executed (SMTP unconfigured or hireai.mail.enabled=false).");
+        } catch (Exception ex) {
+            result.put("status", "FAILED");
+            result.put("error", ex.getMessage());
+        }
+        return result;
     }
 }
