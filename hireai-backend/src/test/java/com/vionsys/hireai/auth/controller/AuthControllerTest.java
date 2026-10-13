@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.BadCredentialsException;
 import com.vionsys.hireai.exception.AccountLockedException;
 import com.vionsys.hireai.exception.AccountNotVerifiedException;
+import com.vionsys.hireai.exception.EmailDeliveryException;
 import com.vionsys.hireai.exception.UserNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -85,6 +86,26 @@ class AuthControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.accessToken").value("mock-access-token"))
                 .andExpect(jsonPath("$.email").value("candidate@example.com"));
+    }
+
+    @Test
+    void testRegisterCandidate_EmailDeliveryFailure_Returns502BadGateway() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setFirstName("Jane");
+        request.setLastName("Doe");
+        request.setEmail("candidate@example.com");
+        request.setPassword("Password123!");
+        request.setPhoneNumber("9876543210");
+
+        when(authService.registerCandidate(any())).thenThrow(
+                new EmailDeliveryException("We could not send the verification email. Please try Resend."));
+
+        mockMvc.perform(post("/auth/register/candidate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.status").value(502))
+                .andExpect(jsonPath("$.message").value("We could not send the verification email. Please try Resend."));
     }
 
     @Test

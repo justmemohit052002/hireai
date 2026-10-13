@@ -944,6 +944,8 @@ public class AuthService {
                 public void afterCommit() {
                     try {
                         task.run();
+                    } catch (com.vionsys.hireai.exception.EmailDeliveryException ex) {
+                        throw ex;
                     } catch (Exception ex) {
                         log.warn("Post-commit background task execution error: {}", ex.getMessage());
                     }
@@ -952,6 +954,8 @@ public class AuthService {
         } else {
             try {
                 task.run();
+            } catch (com.vionsys.hireai.exception.EmailDeliveryException ex) {
+                throw ex;
             } catch (Exception ex) {
                 log.warn("Background task execution error: {}", ex.getMessage());
             }

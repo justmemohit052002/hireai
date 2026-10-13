@@ -605,9 +605,12 @@ public class GlobalExceptionHandler {
 			org.springframework.transaction.TransactionSystemException ex,
 			HttpServletRequest request) {
 
-		Throwable root = ex.getRootCause();
-		if (root instanceof EmailDeliveryException emailEx) {
-			return handleEmailDeliveryException(emailEx, request);
+		Throwable cause = ex;
+		while (cause != null) {
+			if (cause instanceof EmailDeliveryException emailEx) {
+				return handleEmailDeliveryException(emailEx, request);
+			}
+			cause = cause.getCause();
 		}
 
 		log.error("Transaction system failure on {} [{}]: {}", request.getMethod(), request.getRequestURI(), ex.getMessage(), ex);
