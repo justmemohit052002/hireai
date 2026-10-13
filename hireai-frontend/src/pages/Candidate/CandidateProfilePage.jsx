@@ -411,8 +411,8 @@ export const CandidateProfilePage = () => {
           <div className="flex items-center gap-5">
             <div className="relative">
               <Avatar name={displayName} size="xl" />
-              <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center text-[10px] text-foreground font-bold" title="Verified Candidate">
-                ✓
+              <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center" title="Verified Candidate">
+                <Check className="w-3 h-3 text-white stroke-[3]" />
               </span>
             </div>
 
@@ -517,7 +517,7 @@ export const CandidateProfilePage = () => {
             ) : (
               <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>🎉 All-Star Profile! 100% complete and fully optimized for top recruiter discovery & ATS rankings.</span>
+                <span>All-Star Profile: 100% complete and fully optimized for top recruiter discovery and ATS rankings.</span>
               </div>
             )}
           </div>

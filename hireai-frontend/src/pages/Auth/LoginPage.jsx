@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Logo } from '@/components/common/Logo';
+import { Logo } from '@/components/brand/Logo';
 import { OAuthButtons } from '@/components/auth/OAuthButtons';
 import { ROUTES } from '@/constants';
 
@@ -59,7 +59,7 @@ export const LoginPage = () => {
     <div className="w-full my-auto">
       <Card glass className="w-full max-w-md mx-auto p-5 sm:p-6 space-y-4 sm:space-y-4.5 shadow-2xl rounded-[24px] border border-white/20 dark:border-white/10">
         <div className="text-center space-y-1">
-          <Logo size="lg" className="justify-center mb-1" />
+          <Logo variant="full" size="lg" showPro className="justify-center mb-1" />
           <h2 className="text-xl sm:text-2xl font-bold font-heading text-foreground">Welcome Back</h2>
           <p className="text-xs text-muted-foreground">Sign in to your HireAI account</p>
         </div>

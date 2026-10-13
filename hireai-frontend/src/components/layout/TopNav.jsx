@@ -4,7 +4,7 @@ import { Menu, X, MessageSquare, Briefcase, FileText, LayoutDashboard, Trophy } 
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { NotificationBell } from '@/components/common/NotificationBell';
 import { ProfileMenu } from '@/components/common/ProfileMenu';
-import { Logo } from '@/components/common/Logo';
+import { Logo } from '@/components/brand/Logo';
 import { CANDIDATE_NAV_ITEMS, RECRUITER_NAV_ITEMS, ROUTES } from '@/constants';
 import { useChat } from '@/context/ChatContext';
 import { cn } from '@/utils';
@@ -37,7 +37,7 @@ export const TopNav = ({ title, role }) => {
       <nav className="pointer-events-auto flex items-center justify-between w-full max-w-6xl h-14 sm:h-16 px-4 sm:px-6 rounded-full glass border border-border shadow-2xl backdrop-blur-xl">
         {/* Brand Logo - Matches Landing Navbar */}
         <Link to={homeRoute} className="flex items-center gap-2 shrink-0">
-          <Logo size="md" />
+          <Logo variant="full" size="md" showPro />
         </Link>
 
         {/* Center Navigation Links (Desktop) */}

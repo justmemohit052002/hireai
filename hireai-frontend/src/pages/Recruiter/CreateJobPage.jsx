@@ -436,14 +436,14 @@ export const CreateJobPage = () => {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Required Skills <span className="text-muted-foreground/60 font-normal lowercase">(Optional — AI auto-generates if blank)</span>
+                Required Skills <span className="text-muted-foreground/60 font-normal lowercase">(Optional: AI auto-generates if blank)</span>
               </label>
               <span className="text-[11px] text-muted-foreground/70 hidden sm:inline">Comma-separated for ATS Matching</span>
             </div>
             <Input
               value={skills}
               onChange={(e) => setSkills(e.target.value)}
-              placeholder="e.g. React, Node.js, Spring Boot, Java, PostgreSQL (Optional — leave blank to auto-generate based on job role)"
+              placeholder="e.g. React, Node.js, Spring Boot, Java, PostgreSQL (Optional: leave blank to auto-generate based on job role)"
             />
           </div>
 

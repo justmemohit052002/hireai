@@ -32,7 +32,7 @@ const STAGES = [
   { value: 'APPLIED', label: 'Applied', color: 'bg-blue-500/15 text-blue-500 border-blue-500/30' },
   { value: 'SCREENING', label: 'Screening', color: 'bg-amber-500/15 text-amber-500 border-amber-500/30' },
   { value: 'SHORTLISTED', label: 'Shortlisted', color: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30' },
-  { value: 'INTERVIEW_SCHEDULED', label: 'Interview', color: 'bg-purple-500/15 text-purple-500 border-purple-500/30' },
+  { value: 'INTERVIEW_SCHEDULED', label: 'Interview', color: 'bg-brand-blue/15 text-brand-blue border-brand-blue/30' },
   { value: 'OFFERED', label: 'Offered', color: 'bg-cyan-500/15 text-cyan-500 border-cyan-500/30' },
   { value: 'REJECTED', label: 'Rejected', color: 'bg-red-500/15 text-red-500 border-red-500/30' },
 ];
@@ -421,11 +421,11 @@ export const JobApplicantsDrawer = ({
                               : 'bg-rose-500/15 border-rose-500/30 text-rose-400'
                           }`}
                         >
-                          <Sparkles className="w-4 h-4" />
+                          <CheckCircle2 className="w-4 h-4" />
                           <span>{matchScore}% ATS Match</span>
                         </div>
                         <span className="text-[10px] font-semibold text-muted-foreground">
-                          {isShortlisted ? '✓ Shortlist Threshold Met' : '✗ Below 70% Cutoff'}
+                          {isShortlisted ? 'Shortlist Threshold Met' : 'Below 70% Cutoff'}
                         </span>
                       </div>
                     </div>

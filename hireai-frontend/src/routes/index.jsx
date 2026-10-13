@@ -13,6 +13,8 @@ import { Skeleton } from '@/components/ui/Skeleton';
 const LandingPage = lazy(() => import('@/pages/Landing/LandingPage').then((m) => ({ default: m.LandingPage })));
 const LoginPage = lazy(() => import('@/pages/Auth/LoginPage').then((m) => ({ default: m.LoginPage })));
 const SignupPage = lazy(() => import('@/pages/Auth/SignupPage').then((m) => ({ default: m.SignupPage })));
+const PrivacyPolicyPage = lazy(() => import('@/pages/Legal/PrivacyPolicyPage').then((m) => ({ default: m.PrivacyPolicyPage })));
+const TermsConditionsPage = lazy(() => import('@/pages/Legal/TermsConditionsPage').then((m) => ({ default: m.TermsConditionsPage })));
 
 // Candidate pages
 const CandidateJobsPage = lazy(() => import('@/pages/Candidate/CandidateJobsPage').then((m) => ({ default: m.CandidateJobsPage })));
@@ -55,6 +57,22 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<SuspenseFallback />}>
             <LandingPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: ROUTES.PRIVACY,
+        element: (
+          <Suspense fallback={<SuspenseFallback />}>
+            <PrivacyPolicyPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: ROUTES.TERMS,
+        element: (
+          <Suspense fallback={<SuspenseFallback />}>
+            <TermsConditionsPage />
           </Suspense>
         ),
       },

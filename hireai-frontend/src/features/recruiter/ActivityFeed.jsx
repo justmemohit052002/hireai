@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserCheck, FilePlus, MessageSquare, Award, Sparkles } from 'lucide-react';
+import { UserCheck, FilePlus, MessageSquare, Award, CheckCircle2 } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
 
@@ -18,7 +18,7 @@ const MOCK_ACTIVITIES = [
     action: 'scored Priya Sharma 96% match for',
     target: 'ML Engineer',
     time: '22m ago',
-    icon: <Sparkles className="w-4 h-4 text-purple-500" />,
+    icon: <CheckCircle2 className="w-4 h-4 text-brand-blue" />,
   },
   {
     id: 'a3',

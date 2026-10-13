@@ -27,7 +27,7 @@ export const CandidateSettingsPage = () => {
         <div className="flex items-center justify-between py-3 border-b border-border/40">
           <div className="space-y-0.5">
             <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <Bell className="w-4 h-4 text-purple-500" /> Email Notifications
+              <Bell className="w-4 h-4 text-brand-blue" /> Email Notifications
             </h4>
             <p className="text-xs text-muted-foreground">Receive real-time AI match updates and application status alerts</p>
           </div>

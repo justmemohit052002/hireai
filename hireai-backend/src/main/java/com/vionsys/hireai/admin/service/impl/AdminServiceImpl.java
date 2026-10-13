@@ -1,25 +1,37 @@
 package com.vionsys.hireai.admin.service.impl;
 
-import java.time.Instant;
-import java.util.HashMap;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.vionsys.hireai.admin.dto.AdminAuditLogResponse;
+import com.vionsys.hireai.admin.dto.AdminCallLogEntry;
+import com.vionsys.hireai.admin.dto.AdminCallLogsResponse;
+import com.vionsys.hireai.admin.dto.AdminHealthResponse;
+import com.vionsys.hireai.admin.dto.AdminStatsResponse;
 import com.vionsys.hireai.admin.dto.AdminUserResponse;
+import com.vionsys.hireai.admin.dto.ModuleStatDto;
+import com.vionsys.hireai.admin.dto.ProviderDetailsDto;
+import com.vionsys.hireai.admin.dto.ProviderStatDto;
+import com.vionsys.hireai.admin.dto.ProvidersConfigDto;
+import com.vionsys.hireai.admin.dto.QuotaUsageDto;
 import com.vionsys.hireai.admin.dto.UpdateUserRoleRequest;
 import com.vionsys.hireai.admin.dto.UpdateUserStatusRequest;
+import com.vionsys.hireai.admin.entity.AdminAuditLog;
+import com.vionsys.hireai.admin.repository.AdminAuditLogRepository;
+import com.vionsys.hireai.admin.service.AdminHealthPollerService;
 import com.vionsys.hireai.admin.service.AdminService;
 import com.vionsys.hireai.ai.client.AiEngineClient;
 import com.vionsys.hireai.common.enums.RoleType;
+import com.vionsys.hireai.exception.AdminConflictException;
 import com.vionsys.hireai.exception.RoleNotFoundException;
 import com.vionsys.hireai.exception.UserNotFoundException;
 import com.vionsys.hireai.role.entity.Role;
@@ -37,19 +49,22 @@ public class AdminServiceImpl implements AdminService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final AdminAuditLogRepository auditLogRepository;
+    private final AdminHealthPollerService healthPollerService;
     private final AiEngineClient aiEngineClient;
 
-    // In-memory cache for health summary (TTL: 30 seconds)
-    private volatile Map<String, Object> cachedHealthSummary;
-    private volatile Instant lastHealthCheckTime = Instant.EPOCH;
-    private static final long HEALTH_CACHE_TTL_SECONDS = 30;
+    private static final int MAX_PAGE_SIZE = 100;
 
     @Transactional(readOnly = true)
     @Override
     public Page<AdminUserResponse> getUsers(String search, RoleType role, Boolean enabled, Pageable pageable) {
         String querySearch = (search != null && !search.isBlank()) ? "%" + search.trim().toLowerCase() + "%" : null;
         
-        Page<User> usersPage = userRepository.searchUsers(querySearch, role, enabled, pageable);
+        int pageSize = Math.min(Math.max(pageable.getPageSize(), 1), MAX_PAGE_SIZE);
+        int pageNumber = Math.max(pageable.getPageNumber(), 0);
+        Pageable clampedPageable = PageRequest.of(pageNumber, pageSize, pageable.getSort());
+
+        Page<User> usersPage = userRepository.searchUsers(querySearch, role, enabled, clampedPageable);
         return usersPage.map(this::toAdminUserResponse);
     }
 
@@ -59,18 +74,47 @@ public class AdminServiceImpl implements AdminService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
 
-        // Prevent admin from accidentally demoting themselves
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String actorEmail = auth != null ? auth.getName() : "system";
+        UUID actorUserId = resolveActorUserId(actorEmail);
+
+        // 1. Prevent admin from demoting themselves
         if (auth != null && auth.getName().equalsIgnoreCase(user.getEmail()) && request.getRole() != RoleType.ROLE_ADMIN) {
-            throw new IllegalArgumentException("Admins cannot revoke their own administrator privileges.");
+            throw new AdminConflictException("Admins cannot revoke their own administrator privileges.");
+        }
+
+        // 2. Protect last active, unlocked admin from demotion
+        if (user.getRole() != null && user.getRole().getName() == RoleType.ROLE_ADMIN
+                && Boolean.TRUE.equals(user.getEnabled())
+                && Boolean.TRUE.equals(user.getAccountNonLocked())
+                && request.getRole() != RoleType.ROLE_ADMIN) {
+            if (userRepository.countActiveUnlockedAdmins() <= 1) {
+                throw new AdminConflictException("Cannot modify role of the last active administrator account.");
+            }
         }
 
         Role newRole = roleRepository.findByName(request.getRole())
                 .orElseThrow(() -> new RoleNotFoundException("Role not found: " + request.getRole()));
 
+        String oldRoleName = user.getRole() != null ? user.getRole().getName().name() : "NONE";
+        String newRoleName = newRole.getName().name();
+
         user.setRole(newRole);
         User saved = userRepository.save(user);
-        log.info("Admin updated user {} ({}) role to {}", saved.getId(), saved.getEmail(), newRole.getName());
+
+        // Record audit log inside transaction
+        AdminAuditLog auditLog = AdminAuditLog.builder()
+                .actorUserId(actorUserId)
+                .actorEmail(actorEmail)
+                .action("UPDATE_ROLE")
+                .targetUserId(user.getId())
+                .oldValue("role=" + oldRoleName)
+                .newValue("role=" + newRoleName)
+                .createdAt(LocalDateTime.now())
+                .build();
+        auditLogRepository.save(auditLog);
+
+        log.info("Admin [{}] updated user {} ({}) role from {} to {}", actorEmail, saved.getId(), saved.getEmail(), oldRoleName, newRoleName);
         return toAdminUserResponse(saved);
     }
 
@@ -80,11 +124,34 @@ public class AdminServiceImpl implements AdminService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
 
-        // Prevent admin from deactivating themselves
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getName().equalsIgnoreCase(user.getEmail()) && Boolean.FALSE.equals(request.getEnabled())) {
-            throw new IllegalArgumentException("Admins cannot deactivate their own user account.");
+        String actorEmail = auth != null ? auth.getName() : "system";
+        UUID actorUserId = resolveActorUserId(actorEmail);
+
+        // 1. Prevent admin from deactivating or locking themselves
+        if (auth != null && auth.getName().equalsIgnoreCase(user.getEmail())) {
+            if (Boolean.FALSE.equals(request.getEnabled())) {
+                throw new AdminConflictException("Admins cannot deactivate their own user account.");
+            }
+            if (Boolean.FALSE.equals(request.getAccountNonLocked())) {
+                throw new AdminConflictException("Admins cannot lock their own user account.");
+            }
         }
+
+        // 2. Protect last active, unlocked admin from deactivation or locking
+        if (user.getRole() != null && user.getRole().getName() == RoleType.ROLE_ADMIN
+                && Boolean.TRUE.equals(user.getEnabled())
+                && Boolean.TRUE.equals(user.getAccountNonLocked())) {
+            boolean deactivating = Boolean.FALSE.equals(request.getEnabled());
+            boolean locking = Boolean.FALSE.equals(request.getAccountNonLocked());
+            if (deactivating || locking) {
+                if (userRepository.countActiveUnlockedAdmins() <= 1) {
+                    throw new AdminConflictException("Cannot deactivate or lock the last active administrator account.");
+                }
+            }
+        }
+
+        String oldStatus = String.format("enabled=%s, accountNonLocked=%s", user.getEnabled(), user.getAccountNonLocked());
 
         if (request.getEnabled() != null) {
             user.setEnabled(request.getEnabled());
@@ -98,100 +165,123 @@ public class AdminServiceImpl implements AdminService {
         }
 
         User saved = userRepository.save(user);
-        log.info("Admin updated user {} ({}) status: enabled={}, nonLocked={}",
-                saved.getId(), saved.getEmail(), saved.getEnabled(), saved.getAccountNonLocked());
+        String newStatus = String.format("enabled=%s, accountNonLocked=%s", saved.getEnabled(), saved.getAccountNonLocked());
+
+        // Record audit log inside transaction
+        AdminAuditLog auditLog = AdminAuditLog.builder()
+                .actorUserId(actorUserId)
+                .actorEmail(actorEmail)
+                .action("UPDATE_STATUS")
+                .targetUserId(user.getId())
+                .oldValue(oldStatus)
+                .newValue(newStatus)
+                .createdAt(LocalDateTime.now())
+                .build();
+        auditLogRepository.save(auditLog);
+
+        log.info("Admin [{}] updated user {} ({}) status: {}", actorEmail, saved.getId(), saved.getEmail(), newStatus);
         return toAdminUserResponse(saved);
     }
 
     @Override
-    public Map<String, Object> getHealthSummary() {
-        Instant now = Instant.now();
-        if (cachedHealthSummary != null && lastHealthCheckTime.plusSeconds(HEALTH_CACHE_TTL_SECONDS).isAfter(now)) {
-            return cachedHealthSummary;
+    public AdminHealthResponse getHealthSummary() {
+        return healthPollerService.getCachedHealthSnapshot();
+    }
+
+    @Override
+    public AdminStatsResponse getLlmStats(String range) {
+        return aiEngineClient.getAdminStats(range).orElseGet(() -> AdminStatsResponse.builder()
+                .totalCalls(0L)
+                .todayCalls(0L)
+                .weekCalls(0L)
+                .failedCalls(0L)
+                .successRate(100.0)
+                .avgLatencySeconds(0.0)
+                .unknownTimeCount(0L)
+                .quota(QuotaUsageDto.builder()
+                        .provider("gemini")
+                        .tier("Free Tier")
+                        .dailyLimit(250)
+                        .usedToday(0L)
+                        .remainingToday(250L)
+                        .percentageUsed(0.0)
+                        .timezone("Asia/Kolkata")
+                        .build())
+                .providerDistribution(List.of())
+                .moduleBreakdown(List.of())
+                .build());
+    }
+
+    @Override
+    public AdminCallLogsResponse getCallLogs(
+            String query, String taskType, String status, String provider,
+            String from, String to, String correlationId, String candidateRef,
+            int page, int size) {
+
+        int clampedSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+        int clampedPage = Math.max(page, 1);
+
+        return aiEngineClient.getAdminLogs(
+                query, taskType, status, provider, from, to, correlationId, candidateRef, clampedPage, clampedSize)
+                .orElseGet(() -> AdminCallLogsResponse.builder()
+                        .items(List.of())
+                        .totalElements(0L)
+                        .page(clampedPage)
+                        .size(clampedSize)
+                        .totalPages(0)
+                        .build());
+    }
+
+    @Override
+    public AdminCallLogEntry getCallLogById(String logId) {
+        return aiEngineClient.getAdminLogById(logId)
+                .orElseThrow(() -> new UserNotFoundException("AI call log not found with id: " + logId));
+    }
+
+    @Override
+    public ProvidersConfigDto getProvidersStatus() {
+        AdminHealthResponse health = getHealthSummary();
+        if (health != null && health.getProviders() != null) {
+            return health.getProviders();
         }
 
-        Map<String, Object> freshHealth = aiEngineClient.getAdminHealthSummary().orElseGet(() -> {
-            Map<String, Object> fallback = new HashMap<>();
-            fallback.put("service", "HireAI AI Engine");
-            fallback.put("overallStatus", "OFFLINE");
-            fallback.put("checkedAt", Instant.now().toString());
-            fallback.put("error", "AI Engine service is unreachable at " + aiEngineClient.getProperties().getBaseUrl());
-            fallback.put("modules", List.of(
-                    Map.of("id", "jd_generator", "name", "Job Description Generator", "status", "OFFLINE"),
-                    Map.of("id", "resume_parser", "name", "Resume Parser", "status", "OFFLINE"),
-                    Map.of("id", "match_engine", "name", "Match Engine", "status", "OFFLINE"),
-                    Map.of("id", "chatbot", "name", "Pre-Screening Chatbot", "status", "OFFLINE"),
-                    Map.of("id", "interview_ai", "name", "Interview AI", "status", "OFFLINE"),
-                    Map.of("id", "decision_engine", "name", "Decision Engine", "status", "OFFLINE")
-            ));
-            return fallback;
-        });
-
-        // Add backend platform health info
-        Map<String, Object> enriched = new HashMap<>(freshHealth);
-        enriched.put("backendStatus", "HEALTHY");
-        enriched.put("databaseStatus", "CONNECTED");
-        enriched.put("activeUsersCount", userRepository.countActiveUsers());
-        enriched.put("totalUsersCount", userRepository.countTotalUsers());
-
-        cachedHealthSummary = enriched;
-        lastHealthCheckTime = now;
-        return enriched;
+        return ProvidersConfigDto.builder()
+                .activeProvider("ollama")
+                .activeModel("llama3.2:3b")
+                .ollama(ProviderDetailsDto.builder().name("Ollama (Local)").isConfigured(true).reachable(false).build())
+                .gemini(ProviderDetailsDto.builder().name("Google Gemini").isConfigured(false).keyMasked("Not Configured").build())
+                .groq(ProviderDetailsDto.builder().name("Groq API").isConfigured(false).keyMasked("Not Configured").build())
+                .build();
     }
 
+    @Transactional(readOnly = true)
     @Override
-    public Map<String, Object> getLlmStats() {
-        return aiEngineClient.getAdminStats().orElseGet(() -> {
-            Map<String, Object> emptyStats = new HashMap<>();
-            emptyStats.put("totalCalls", 0);
-            emptyStats.put("todayCalls", 0);
-            emptyStats.put("weekCalls", 0);
-            emptyStats.put("failedCalls", 0);
-            emptyStats.put("successRate", 100.0);
-            emptyStats.put("avgLatencySeconds", 0.0);
-            emptyStats.put("quota", Map.of(
-                    "provider", "gemini",
-                    "tier", "Free Tier",
-                    "dailyLimit", 250,
-                    "usedToday", 0,
-                    "remainingToday", 250,
-                    "percentageUsed", 0.0
-            ));
-            emptyStats.put("providerDistribution", List.of());
-            emptyStats.put("moduleBreakdown", List.of());
-            return emptyStats;
-        });
+    public Page<AdminAuditLogResponse> getAuditLogs(Pageable pageable) {
+        int pageSize = Math.min(Math.max(pageable.getPageSize(), 1), MAX_PAGE_SIZE);
+        int pageNumber = Math.max(pageable.getPageNumber(), 0);
+        Pageable clampedPageable = PageRequest.of(pageNumber, pageSize);
+
+        Page<AdminAuditLog> auditPage = auditLogRepository.findAllByOrderByCreatedAtDesc(clampedPageable);
+        return auditPage.map(this::toAdminAuditLogResponse);
     }
 
-    @Override
-    public Map<String, Object> getCallLogs(String query, String taskType, String status, String provider, int page, int size) {
-        return aiEngineClient.getAdminLogs(query, taskType, status, provider, page, size).orElseGet(() -> {
-            Map<String, Object> emptyLogs = new HashMap<>();
-            emptyLogs.put("items", List.of());
-            emptyLogs.put("totalElements", 0);
-            emptyLogs.put("page", page);
-            emptyLogs.put("size", size);
-            emptyLogs.put("totalPages", 0);
-            return emptyLogs;
-        });
+    private UUID resolveActorUserId(String email) {
+        if (email == null || email.isBlank()) return null;
+        return userRepository.findByEmail(email).map(User::getId).orElse(null);
     }
 
-    @Override
-    public Map<String, Object> getProvidersStatus() {
-        Map<String, Object> health = getHealthSummary();
-        @SuppressWarnings("unchecked")
-        Map<String, Object> providers = (Map<String, Object>) health.get("providers");
-        if (providers != null) {
-            return providers;
-        }
-
-        return Map.of(
-                "activeProvider", "ollama",
-                "activeModel", "llama3.2:3b",
-                "ollama", Map.of("name", "Ollama (Local)", "isConfigured", true, "reachable", false),
-                "gemini", Map.of("name", "Google Gemini", "isConfigured", false, "keyMasked", "Not Configured"),
-                "groq", Map.of("name", "Groq API", "isConfigured", false, "keyMasked", "Not Configured")
-        );
+    private AdminAuditLogResponse toAdminAuditLogResponse(AdminAuditLog log) {
+        if (log == null) return null;
+        return AdminAuditLogResponse.builder()
+                .id(log.getId())
+                .actorUserId(log.getActorUserId())
+                .actorEmail(log.getActorEmail())
+                .action(log.getAction())
+                .targetUserId(log.getTargetUserId())
+                .oldValue(log.getOldValue())
+                .newValue(log.getNewValue())
+                .createdAt(log.getCreatedAt())
+                .build();
     }
 
     private AdminUserResponse toAdminUserResponse(User user) {

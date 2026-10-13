@@ -260,11 +260,140 @@ of a response, rather than assuming success.
 
 ---
 
+## 7. Internal Administration & Health Endpoints (Additive)
+
+Administrative endpoints provide operational telemetry, LLM token quotas, call logging, and module health monitoring.
+
+**Security:** All `/api/v1/admin/*` endpoints require the shared internal secret header:
+```http
+X-Internal-Key: <INTERNAL_API_KEY>
+```
+Requests without this header or with an invalid key receive HTTP 401 Unauthorized.
+
+**Correlation Tracking:** All engine endpoints accept optional correlation headers:
+- `X-Request-Id`: Unique UUID of the API request / backend transaction.
+- `X-Candidate-Ref`: Opaque UUID reference of the candidate or application.
+
+---
+
+### 7.1 Health & Module Telemetry
+**`GET /api/v1/admin/health-summary`**
+- Returns the operational status of all 6 AI modules, model configuration, and key presence.
+
+Response:
+```json
+{
+  "service": "HireAI AI Engine",
+  "overallStatus": "HEALTHY",
+  "checkedAt": "2026-10-10T12:00:00Z",
+  "modules": [
+    {
+      "id": "jd_generator",
+      "name": "Job Description Generator",
+      "taskType": "jd_generation",
+      "status": "HEALTHY",
+      "lastSuccessAt": "2026-10-10T11:58:20Z",
+      "lastFailureAt": null,
+      "recentFailureCount": 0
+    }
+  ],
+  "providers": {
+    "activeProvider": "ollama",
+    "activeModel": "llama3.2:3b",
+    "ollama": { "name": "Ollama (Local)", "isConfigured": true, "reachable": true },
+    "gemini": { "name": "Google Gemini", "isConfigured": true, "keyMasked": "...a91f" },
+    "groq": { "name": "Groq API", "isConfigured": false, "keyMasked": "Not Configured" }
+  },
+  "environment": {
+    "appEnv": "development",
+    "engineHost": "localhost",
+    "enginePort": 8000
+  }
+}
+```
+
+---
+
+### 7.2 LLM Usage & Quota Statistics
+**`GET /api/v1/admin/stats?range={today|week|all}`**
+- `range` (optional, default `all`): Filter telemetry scope by `today`, `week`, or `all`.
+
+Response:
+```json
+{
+  "totalCalls": 45,
+  "todayCalls": 10,
+  "weekCalls": 32,
+  "failedCalls": 1,
+  "successRate": 97.8,
+  "avgLatencySeconds": 1.25,
+  "unknownTimeCount": 0,
+  "quota": {
+    "provider": "gemini",
+    "tier": "Free Tier",
+    "dailyLimit": 250,
+    "usedToday": 10,
+    "remainingToday": 240,
+    "percentageUsed": 4.0,
+    "timezone": "Asia/Kolkata"
+  },
+  "providerDistribution": [
+    { "provider": "ollama", "calls": 35, "percentage": 77.8, "avgLatencySeconds": 1.15, "failedCount": 0 },
+    { "provider": "gemini", "calls": 10, "percentage": 22.2, "avgLatencySeconds": 1.60, "failedCount": 1 }
+  ],
+  "moduleBreakdown": [
+    { "id": "jd_generator", "name": "Job Description Generator", "calls": 20, "percentage": 44.4, "avgLatencySeconds": 1.10, "failedCount": 0 }
+  ]
+}
+```
+
+---
+
+### 7.3 Query Call Logs
+**`GET /api/v1/admin/logs`**
+- Query Parameters: `query`, `task_type` / `module`, `status`, `provider`, `from_date`, `to_date`, `correlation_id`, `candidate_ref`, `page` (default 1), `size` (default 20, max 100).
+
+Response:
+```json
+{
+  "items": [
+    {
+      "id": "673f1a23-4567-890a-bcde-f1234567890a",
+      "timestamp": "2026-10-10T11:58:20Z",
+      "taskType": "jd_generation",
+      "provider": "ollama",
+      "model": "llama3.2:3b",
+      "status": "SUCCESS",
+      "latencySeconds": 1.12,
+      "promptTokens": 120,
+      "completionTokens": 65,
+      "totalTokens": 185,
+      "promptPreview": "Generate Job Description for...",
+      "responsePreview": "We are seeking an experienced...",
+      "errorMessage": null,
+      "requestId": "req-9912",
+      "candidateRef": "cand_1029"
+    }
+  ],
+  "totalElements": 1,
+  "page": 1,
+  "size": 20,
+  "totalPages": 1
+}
+```
+
+---
+
+### 7.4 Single Call Log Lookup
+**`GET /api/v1/admin/logs/{log_id}`**
+- Returns the complete single log entry by ID, including sanitized error message.
+
+---
+
 ## What to lock in today's session
 
 1. Do these field names/shapes look right to backend and frontend, or does
    anything need to be added/renamed before code gets written against it?
-2. Confirm the base URL and auth approach (API key header? JWT? none yet
-   for prototype?)
+2. Confirm the base URL and auth approach (Internal Key `X-Internal-Key` for admin microservice communication).
 3. Agree that any future change to this file needs a quick heads-up to both
-   other teams before it's implemented — not discovered during integration
+   other teams before it's implemented — not discovered during integration.

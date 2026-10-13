@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -38,6 +39,12 @@ public class DataInitializer implements CommandLineRunner {
     private final DirectChatParticipantRepository participantRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${hireai.admin.seed.enabled:true}")
+    private boolean adminSeedEnabled;
+
+    @Value("${hireai.admin.seed.password:Password@123}")
+    private String adminSeedPassword;
+
     @Override
     @Transactional
     public void run(String... args) {
@@ -47,18 +54,23 @@ public class DataInitializer implements CommandLineRunner {
         Role candidateRole = createRoleIfNotExists(RoleType.ROLE_CANDIDATE, "Candidate");
 
         // 2. Initialize Seed Users if not present
-        User adminUser = userRepository.findByEmail("admin@vionsys.com").orElseGet(() -> {
-            User u = User.builder()
-                    .firstName("System")
-                    .lastName("Administrator")
-                    .email("admin@vionsys.com")
-                    .password(passwordEncoder.encode("Password@123"))
-                    .role(adminRole)
-                    .enabled(true)
-                    .accountNonLocked(true)
-                    .build();
-            return userRepository.save(u);
-        });
+        if (adminSeedEnabled && adminSeedPassword != null && !adminSeedPassword.isBlank()) {
+            userRepository.findByEmail("admin@vionsys.com").orElseGet(() -> {
+                User u = User.builder()
+                        .firstName("System")
+                        .lastName("Administrator")
+                        .email("admin@vionsys.com")
+                        .password(passwordEncoder.encode(adminSeedPassword))
+                        .role(adminRole)
+                        .enabled(true)
+                        .accountNonLocked(true)
+                        .build();
+                log.info("[DataInitializer] Initialized system administrator account (admin@vionsys.com).");
+                return userRepository.save(u);
+            });
+        } else {
+            log.info("[DataInitializer] Admin user seeding is disabled or password unconfigured.");
+        }
 
         User recruiter = userRepository.findByEmail("jordan.kim@vionsys.com").orElseGet(() -> {
             User u = User.builder()

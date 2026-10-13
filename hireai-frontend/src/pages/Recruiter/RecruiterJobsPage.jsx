@@ -26,7 +26,7 @@ export const RecruiterJobsPage = () => {
         <Button
           variant="gradient"
           onClick={() => navigate(ROUTES.RECRUITER_JOBS_CREATE)}
-          className="font-bold shadow-md shadow-[#C63FC5]/20"
+          className="font-bold shadow-md shadow-brand-navy/20"
         >
           <Plus className="w-4 h-4 mr-1.5" /> Create Position
         </Button>

@@ -21,7 +21,7 @@ export const LandingCTA = () => {
           </h2>
 
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed font-sans max-w-xl mx-auto">
-            Join thousands of engineering managers, technical recruiters, and software developers using HireAI for faster, bias-free candidate placements.
+            Deploy automated resume screening, objective ATS scoring, and synchronized candidate tracking across your technical hiring pipeline.
           </p>
 
           <div className="pt-6 flex flex-col sm:flex-row items-center justify-center gap-3.5">

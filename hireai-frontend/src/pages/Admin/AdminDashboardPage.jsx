@@ -186,7 +186,7 @@ export const AdminDashboardPage = () => {
         <Card glass className="p-5 rounded-2xl border border-white/20 dark:border-white/10 shadow-lg space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Avg Latency</span>
-            <div className="p-2 rounded-xl bg-violet-500/10 text-violet-500">
+            <div className="p-2 rounded-xl bg-brand-blue/10 text-brand-blue">
               <Clock className="w-4 h-4" />
             </div>
           </div>

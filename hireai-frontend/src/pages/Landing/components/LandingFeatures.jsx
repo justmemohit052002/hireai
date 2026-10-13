@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Sparkles, 
+  Cpu, 
   UserCheck, 
   Briefcase, 
   FileCheck, 
@@ -14,9 +14,9 @@ import { ROUTES } from '@/constants';
 export const LandingFeatures = () => {
   const features = [
     {
-      title: 'Neural ATS Match Scoring',
-      desc: 'Deterministic and semantic skill overlap calculations that give recruiters a clear, transparent 0–100% score for every applicant.',
-      icon: Sparkles,
+      title: 'Deterministic ATS Match Scoring',
+      desc: 'Deterministic and semantic skill overlap calculations that give recruiters a clear, transparent 0-100% score for every applicant.',
+      icon: Cpu,
       iconColor: 'text-brand-blue',
       badge: 'Core Engine',
     },
@@ -45,14 +45,14 @@ export const LandingFeatures = () => {
       title: 'Direct In-App Messaging',
       desc: 'Real-time integrated chat allowing direct communication, interview updates, and transparent feedback between recruiters and talent.',
       icon: MessageSquare,
-      iconColor: 'text-[#C63FC5]',
+      iconColor: 'text-brand-blue',
       badge: 'Collaboration',
     },
     {
       title: 'Enterprise Role Security',
       desc: 'Strict Spring Boot security with JWT authentication, rate limiting, and role-based access control for candidates and recruiters.',
       icon: ShieldCheck,
-      iconColor: 'text-indigo-500',
+      iconColor: 'text-brand-navy dark:text-brand-blue-light',
       badge: 'Security',
     },
   ];

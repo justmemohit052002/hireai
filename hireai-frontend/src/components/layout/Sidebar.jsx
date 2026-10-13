@@ -14,7 +14,7 @@ import {
   LogOut,
   Sparkles,
 } from 'lucide-react';
-import { Logo } from '@/components/common/Logo';
+import { Logo } from '@/components/brand/Logo';
 import { useAuth } from '@/context/AuthContext';
 import { useChat } from '@/context/ChatContext';
 import { CANDIDATE_NAV_ITEMS, RECRUITER_NAV_ITEMS, ROUTES } from '@/constants';
@@ -49,7 +49,11 @@ export const Sidebar = ({ role }) => {
     >
       {/* Brand & Collapse */}
       <div className="flex items-center justify-between pb-6 mb-2 border-b border-white/10">
-        <Logo iconOnly={collapsed} size="md" />
+        {collapsed ? (
+          <Logo variant="icon" size="sm" />
+        ) : (
+          <Logo variant="full" size="md" showPro />
+        )}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="rounded-full p-1.5 hover:bg-white/10 text-white/70 hover:text-white transition-colors cursor-pointer"

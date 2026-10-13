@@ -16,6 +16,7 @@ Sync vs async:
     background thread, caller polls /status/{job_id} until done.
 """
 
+from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -103,7 +104,46 @@ def handle_unexpected_error(request: Request, exc: Exception):
     )
 
 
+import secrets
+from fastapi import Depends, Header, status
+from app.config import INTERNAL_API_KEY, APP_ENV
+from app.context import set_request_context, clear_request_context
 from app import admin_service
+
+# ---- Request Correlation Middleware ----
+@app.middleware("http")
+async def correlation_middleware(request: Request, call_next):
+    request_id = request.headers.get("X-Request-Id")
+    candidate_ref = request.headers.get("X-Candidate-Ref")
+    set_request_context(request_id=request_id, candidate_ref=candidate_ref)
+    try:
+        response = await call_next(request)
+        if request_id:
+            response.headers["X-Request-Id"] = request_id
+        return response
+    finally:
+        clear_request_context()
+
+
+# ---- Security Dependency for Admin APIs ----
+def verify_internal_key(x_internal_key: Optional[str] = Header(None, alias="X-Internal-Key")):
+    """
+    Authenticates internal administrative requests via constant-time comparison.
+    Fails closed if the key is missing or unset.
+    """
+    if not INTERNAL_API_KEY:
+        logger.error("INTERNAL_API_KEY is not configured on server. Admin requests are denied.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing internal API key",
+        )
+
+    if not x_internal_key or not secrets.compare_digest(str(x_internal_key), str(INTERNAL_API_KEY)):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing internal API key",
+        )
+
 
 # ---- Health check ----
 @app.get("/health")
@@ -117,34 +157,52 @@ def health_check():
     }
 
 
-# ---- Admin APIs ----
-@app.get("/api/v1/admin/health-summary")
+# ---- Admin APIs (Secured with X-Internal-Key) ----
+@app.get("/api/v1/admin/health-summary", dependencies=[Depends(verify_internal_key)])
 def admin_health_summary():
     return admin_service.get_system_health()
 
 
-@app.get("/api/v1/admin/stats")
-def admin_stats():
-    return admin_service.get_llm_statistics()
+@app.get("/api/v1/admin/stats", dependencies=[Depends(verify_internal_key)])
+def admin_stats(range: str = "all"):
+    return admin_service.get_llm_statistics(range_param=range)
 
 
-@app.get("/api/v1/admin/logs")
+@app.get("/api/v1/admin/logs", dependencies=[Depends(verify_internal_key)])
 def admin_call_logs(
-    query: str = None,
-    task_type: str = None,
-    status: str = None,
-    provider: str = None,
+    query: Optional[str] = None,
+    task_type: Optional[str] = None,
+    module: Optional[str] = None,
+    status: Optional[str] = None,
+    provider: Optional[str] = None,
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None,
+    correlation_id: Optional[str] = None,
+    candidate_ref: Optional[str] = None,
     page: int = 1,
     size: int = 20,
 ):
     return admin_service.query_call_logs(
         query=query,
         task_type=task_type,
+        module=module,
         status=status,
         provider=provider,
+        from_date=from_date,
+        to_date=to_date,
+        correlation_id=correlation_id,
+        candidate_ref=candidate_ref,
         page=page,
         size=size,
     )
+
+
+@app.get("/api/v1/admin/logs/{log_id}", dependencies=[Depends(verify_internal_key)])
+def admin_get_log(log_id: str):
+    entry = admin_service.get_single_log(log_id)
+    if not entry:
+        raise HTTPException(status_code=404, detail=f"Log entry {log_id} not found")
+    return entry
 
 
 @app.get("/")

@@ -153,7 +153,7 @@ export function getApplicationStatusColor(status) {
   const map = {
     applied: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
     screening: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-    interview: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+    interview: 'bg-brand-blue/10 text-brand-blue border-brand-blue/20',
     technical: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20',
     offer: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
     rejected: 'bg-red-500/10 text-red-500 border-red-500/20',

@@ -36,7 +36,7 @@ export const LandingHiring = () => {
         <div className="p-8 sm:p-10 rounded-2xl bg-surface border border-border shadow-sm flex flex-col justify-between space-y-8 text-left hover:border-brand-blue/40 transition-all">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted text-foreground text-xs font-mono font-bold uppercase">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-muted text-foreground text-xs font-mono font-bold uppercase">
                 <Briefcase className="w-3.5 h-3.5 text-brand-blue" />
                 For Recruiters & Engineering Leads
               </span>
@@ -56,7 +56,7 @@ export const LandingHiring = () => {
             {/* Feature List */}
             <div className="space-y-3 pt-2">
               {[
-                { title: 'Deterministic & Semantic ATS Scoring (0–100%)', icon: Sparkles },
+                { title: 'Deterministic & Semantic ATS Scoring (0-100%)', icon: CheckCircle2 },
                 { title: 'Automated Candidate Shortlist Thresholds', icon: UserCheck },
                 { title: 'Integrated In-App Messaging & Interview Notes', icon: CheckCircle2 },
                 { title: 'Multi-Format Resume Parsing (.pdf, .docx in 1.2s)', icon: FileCheck },
@@ -89,7 +89,7 @@ export const LandingHiring = () => {
         <div className="p-8 sm:p-10 rounded-2xl bg-surface border border-border shadow-sm flex flex-col justify-between space-y-8 text-left hover:border-brand-blue/40 transition-all">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted text-foreground text-xs font-mono font-bold uppercase">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-muted text-foreground text-xs font-mono font-bold uppercase">
                 <UserCheck className="w-3.5 h-3.5 text-brand-blue" />
                 For Software Engineers & Candidates
               </span>

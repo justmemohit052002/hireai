@@ -24,9 +24,9 @@ const SLIDES = [
   {
     id: 'ats-matching',
     tabTitle: 'Neural ATS Scoring',
-    tabIcon: Sparkles,
+    tabIcon: FileCheck,
     badge: 'OBJECTIVE MATCH SCORING',
-    title: 'Explainable 0–100% Match Scores Built on Real Code Competencies',
+    title: 'Explainable 0-100% Match Scores Built on Real Code Competencies',
     description:
       'Unlike keyword-stuffing legacy ATS filters, HireAI evaluates candidate repositories, semantic skill overlap, and verified system scale. Recruiters see exactly why an applicant is shortlisted.',
     statValue: '96.4%',
@@ -34,7 +34,7 @@ const SLIDES = [
     candidate: {
       name: 'Mohit Singh Chouhan',
       role: 'Senior Full-Stack Engineer',
-      experience: 'Ex-Vionsys • 5+ Years Exp',
+      experience: 'Ex-Vionsys | 5+ Years Exp',
       score: 96,
       skills: ['React', 'Java', 'Spring Boot', 'PostgreSQL', 'Docker', 'AWS'],
       notes: 'Strong alignment with distributed backend requirements and modern reactive frontend stack.',
@@ -53,7 +53,7 @@ const SLIDES = [
     statLabel: 'Average Screening Time',
     stages: [
       { name: 'Application Received', status: 'completed', time: 'Sep 28, 5:59 PM', icon: FileCheck },
-      { name: 'Neural ATS Screened', status: 'completed', time: 'Sep 28, 6:00 PM', icon: Sparkles },
+      { name: 'Neural ATS Screened', status: 'completed', time: 'Sep 28, 6:00 PM', icon: FileCheck },
       { name: 'Shortlisted for Interview', status: 'active', time: 'Sep 28, 6:00 PM', icon: UserCheck },
       { name: 'Technical Evaluation', status: 'pending', time: 'Upcoming', icon: Award },
     ],
@@ -222,8 +222,8 @@ export const LandingShowcaseCarousel = () => {
                     </div>
                   </div>
 
-                  <span className="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-xs flex items-center gap-1 border border-emerald-500/25">
-                    <Sparkles className="w-3 h-3" />
+                  <span className="px-3 py-1 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-xs flex items-center gap-1 border border-emerald-500/25">
+                    <CheckCircle2 className="w-3 h-3" />
                     {current.candidate.score}% ATS Match
                   </span>
                 </div>
@@ -294,7 +294,7 @@ export const LandingShowcaseCarousel = () => {
                       </div>
 
                       {isCurrent && (
-                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-brand-blue/15 text-brand-blue">
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-brand-blue/15 text-brand-blue">
                           Current Stage
                         </span>
                       )}

@@ -332,6 +332,23 @@ public class GlobalExceptionHandler {
 	// CONFLICT & DUPLICATE RESOURCE EXCEPTIONS
 	// =========================================================
 
+	@ExceptionHandler(AdminConflictException.class)
+	public ResponseEntity<ErrorResponse> handleAdminConflict(
+			AdminConflictException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.CONFLICT.value(),
+				HttpStatus.CONFLICT.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.CONFLICT)
+				.body(response);
+	}
+
 	@ExceptionHandler(UserAlreadyExistsException.class)
 	public ResponseEntity<ErrorResponse> handleUserAlreadyExists(
 			UserAlreadyExistsException ex,

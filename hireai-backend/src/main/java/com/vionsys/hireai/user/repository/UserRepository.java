@@ -55,5 +55,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("SELECT COUNT(u) FROM User u")
     long countTotalUsers();
 
+    @Query("SELECT COUNT(u) FROM User u JOIN u.role r WHERE r.name = com.vionsys.hireai.common.enums.RoleType.ROLE_ADMIN AND u.enabled = true AND u.accountNonLocked = true")
+    long countActiveUnlockedAdmins();
+
     boolean existsByEmail(String email);
 }

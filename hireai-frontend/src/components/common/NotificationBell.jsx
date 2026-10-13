@@ -130,7 +130,7 @@ export const NotificationBell = () => {
     e.stopPropagation();
     setIsSendingTest(true);
     await sendTestNotification(
-      'AI Match Alert ✨',
+      'AI Match Alert',
       'Candidate scored 94% on Senior Full Stack Developer role!'
     );
     setTimeout(() => setIsSendingTest(false), 600);
@@ -372,52 +372,52 @@ export const NotificationBell = () => {
               )}
             </div>
 
-            {/* Quick Scenario Pills */}
+            {/* Quick Scenario Buttons */}
             <div className="flex flex-wrap items-center gap-1.5">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   simulateNotification('AI_MATCH');
                 }}
-                className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition-colors cursor-pointer"
+                className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20 hover:bg-amber-500/20 transition-colors cursor-pointer"
               >
-                ✨ AI Shortlist (88%)
+                AI Shortlist (88%)
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   simulateNotification('INTERVIEW_REMINDER');
                 }}
-                className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 transition-colors cursor-pointer"
+                className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/20 transition-colors cursor-pointer"
               >
-                📅 Interview in 15m
+                Interview in 15m
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   simulateNotification('STATUS_UPDATE');
                 }}
-                className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors cursor-pointer"
+                className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors cursor-pointer"
               >
-                🏆 Offer Released
+                Offer Released
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   simulateNotification('SECURITY_ALERT');
                 }}
-                className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-colors cursor-pointer"
+                className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 transition-colors cursor-pointer"
               >
-                🛡️ Security Alert
+                Security Alert
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   simulateNotification('RESUME_FEEDBACK');
                 }}
-                className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 transition-colors cursor-pointer"
+                className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-brand-blue/10 text-brand-blue border border-brand-blue/20 hover:bg-brand-blue/20 transition-colors cursor-pointer"
               >
-                📝 Resume ATS Score
+                Resume ATS Score
               </button>
             </div>
           </div>

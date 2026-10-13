@@ -25,14 +25,14 @@ export const LandingHero = () => {
       <div className="grid lg:grid-cols-12 gap-10 lg:gap-8 items-center">
         {/* Left Column: Core Value Proposition & CTAs (6 cols on lg) */}
         <div className="lg:col-span-6 space-y-6 text-left">
-          {/* Subtle Category Pill */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface border border-border shadow-xs text-xs font-semibold text-foreground">
+          {/* Subtle Category Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface border border-border shadow-xs text-xs font-semibold text-foreground">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-brand-blue font-bold">HireAI 2.0</span>
             <span className="text-border">|</span>
             <span className="text-muted-foreground flex items-center gap-1">
               <UserCheck className="w-3.5 h-3.5 text-brand-blue" />
-              Intelligent Candidate Hiring & ATS
+              Automated Technical Recruitment Platform
             </span>
           </div>
 
@@ -46,7 +46,7 @@ export const LandingHero = () => {
 
           {/* Crisp, Direct Subtitle */}
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed font-sans max-w-xl">
-            HireAI eliminates recruiter guesswork with automated resume parsing, transparent 0–100% neural ATS scoring, and real-time candidate skill verification.
+            HireAI eliminates recruiter guesswork with automated resume parsing, transparent 0-100% deterministic ATS scoring, and real-time candidate skill verification.
           </p>
 
           {/* Action CTAs */}
@@ -75,32 +75,32 @@ export const LandingHero = () => {
             </Link>
           </div>
 
-          {/* Trust Metric Micro-Grid */}
+          {/* Architecture Pillars Micro-Grid */}
           <div className="pt-6 border-t border-border/80 grid grid-cols-3 gap-4">
             <div>
-              <div className="text-xl sm:text-2xl font-extrabold font-heading text-foreground">
-                96.4%
+              <div className="text-sm sm:text-base font-bold font-heading text-foreground">
+                Deterministic
               </div>
               <div className="text-xs text-muted-foreground font-medium mt-0.5">
-                ATS Match Precision
+                ATS Scoring Matrix
               </div>
             </div>
 
             <div>
-              <div className="text-xl sm:text-2xl font-extrabold font-heading text-foreground">
-                73%
+              <div className="text-sm sm:text-base font-bold font-heading text-foreground">
+                Sub-Second
               </div>
               <div className="text-xs text-muted-foreground font-medium mt-0.5">
-                Faster Sourcing Cycle
+                PDF & DOCX Parsing
               </div>
             </div>
 
             <div>
-              <div className="text-xl sm:text-2xl font-extrabold font-heading text-foreground">
-                45K+
+              <div className="text-sm sm:text-base font-bold font-heading text-foreground">
+                Real-Time
               </div>
               <div className="text-xs text-muted-foreground font-medium mt-0.5">
-                Vetted Candidates
+                Pipeline Progression
               </div>
             </div>
           </div>
@@ -145,19 +145,19 @@ export const LandingHero = () => {
                     <div>
                       <div className="flex items-center gap-2">
                         <h4 className="font-bold text-sm text-foreground">Mohit Singh Chouhan</h4>
-                        <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                           <BadgeCheck className="w-3 h-3" /> Verified
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Senior Full-Stack Engineer • Ex-Vionsys
+                        Senior Full-Stack Engineer | Ex-Vionsys
                       </p>
                     </div>
                   </div>
 
                   <div className="text-right shrink-0">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-blue/15 text-brand-blue dark:text-brand-accent font-mono font-bold text-xs">
-                      <Sparkles className="w-3 h-3" /> 96% Match
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-brand-blue/15 text-brand-blue font-mono font-bold text-xs">
+                      <CheckCircle2 className="w-3 h-3" /> 96% Match
                     </span>
                   </div>
                 </div>
@@ -174,10 +174,10 @@ export const LandingHero = () => {
                   ))}
                 </div>
 
-                {/* Recruiter Quick Action Pill */}
+                {/* Recruiter Action */}
                 <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs">
                   <span className="text-muted-foreground flex items-center gap-1 text-[11px]">
-                    <Clock className="w-3 h-3 text-muted-foreground/70" /> Applied Sep 28 • Under Review
+                    <Clock className="w-3 h-3 text-muted-foreground/70" /> Applied Sep 28 | Under Review
                   </span>
                   <div className="flex items-center gap-1.5">
                     <span className="px-2.5 py-1 rounded-lg bg-brand-navy text-white text-[11px] font-semibold flex items-center gap-1">

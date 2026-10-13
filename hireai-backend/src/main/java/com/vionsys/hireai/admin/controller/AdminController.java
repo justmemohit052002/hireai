@@ -1,6 +1,5 @@
 package com.vionsys.hireai.admin.controller;
 
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -17,7 +16,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.vionsys.hireai.admin.dto.AdminAuditLogResponse;
+import com.vionsys.hireai.admin.dto.AdminCallLogEntry;
+import com.vionsys.hireai.admin.dto.AdminCallLogsResponse;
+import com.vionsys.hireai.admin.dto.AdminHealthResponse;
+import com.vionsys.hireai.admin.dto.AdminStatsResponse;
 import com.vionsys.hireai.admin.dto.AdminUserResponse;
+import com.vionsys.hireai.admin.dto.ProvidersConfigDto;
 import com.vionsys.hireai.admin.dto.UpdateUserRoleRequest;
 import com.vionsys.hireai.admin.dto.UpdateUserStatusRequest;
 import com.vionsys.hireai.admin.service.AdminService;
@@ -25,8 +30,11 @@ import com.vionsys.hireai.common.dto.ApiResponse;
 import com.vionsys.hireai.common.enums.RoleType;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -39,56 +47,78 @@ public class AdminController {
 
     private final AdminService adminService;
 
-    @Operation(summary = "Get AI Module Health Summary", description = "Polls and checks operational status of all 6 AI engine modules with 30s TTL caching")
+    @Operation(summary = "Get AI Module Health Summary", description = "Returns cached operational status of all 6 AI engine modules, background poller snapshot, and database liveness")
     @GetMapping("/health")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getHealthSummary() {
-        Map<String, Object> health = adminService.getHealthSummary();
+    public ResponseEntity<ApiResponse<AdminHealthResponse>> getHealthSummary() {
+        AdminHealthResponse health = adminService.getHealthSummary();
         return ResponseEntity.ok(ApiResponse.success(health, "System health retrieved successfully"));
     }
 
-    @Operation(summary = "Get LLM Usage & Quota Statistics", description = "Fetches call volumes, provider breakdown, average latencies, and quota usage from AI call logs")
+    @Operation(summary = "Get LLM Usage & Quota Statistics", description = "Fetches call volumes, provider breakdown, average latencies, and quota usage from AI call logs with optional date range filter")
     @GetMapping("/stats")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getLlmStats() {
-        Map<String, Object> stats = adminService.getLlmStats();
+    public ResponseEntity<ApiResponse<AdminStatsResponse>> getLlmStats(
+            @Parameter(description = "Time range scope (today, week, all)", example = "today")
+            @RequestParam(name = "range", defaultValue = "all", required = false) String range) {
+
+        AdminStatsResponse stats = adminService.getLlmStats(range);
         return ResponseEntity.ok(ApiResponse.success(stats, "LLM statistics retrieved successfully"));
     }
 
-    @Operation(summary = "Query AI Call Logs & Audit Trail", description = "Searchable log viewer for AI engine invocations with truncated privacy-safe previews")
+    @Operation(summary = "Query AI Call Logs & Audit Trail", description = "Searchable log viewer for AI engine invocations with truncated privacy-safe previews, date filtering, and correlation tracking")
     @GetMapping("/logs")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getCallLogs(
+    public ResponseEntity<ApiResponse<AdminCallLogsResponse>> getCallLogs(
             @RequestParam(name = "query", required = false) String query,
             @RequestParam(name = "taskType", required = false) String taskType,
+            @RequestParam(name = "module", required = false) String module,
             @RequestParam(name = "status", required = false) String status,
             @RequestParam(name = "provider", required = false) String provider,
-            @RequestParam(name = "page", defaultValue = "1") int page,
-            @RequestParam(name = "size", defaultValue = "20") int size) {
+            @RequestParam(name = "from", required = false) String from,
+            @RequestParam(name = "to", required = false) String to,
+            @RequestParam(name = "correlationId", required = false) String correlationId,
+            @RequestParam(name = "candidateRef", required = false) String candidateRef,
+            @RequestParam(name = "page", defaultValue = "1") @Min(1) int page,
+            @RequestParam(name = "size", defaultValue = "20") @Min(1) @Max(100) int size) {
 
-        Map<String, Object> logs = adminService.getCallLogs(query, taskType, status, provider, page, size);
+        // Support module as alias of taskType
+        String effectiveTaskType = (taskType != null && !taskType.isBlank()) ? taskType : module;
+
+        AdminCallLogsResponse logs = adminService.getCallLogs(
+                query, effectiveTaskType, status, provider, from, to, correlationId, candidateRef, page, size);
         return ResponseEntity.ok(ApiResponse.success(logs, "Call logs retrieved successfully"));
+    }
+
+    @Operation(summary = "Get Single AI Call Log", description = "Fetches complete details for a single AI engine execution by ID, including sanitized error message for failures")
+    @GetMapping("/logs/{logId}")
+    public ResponseEntity<ApiResponse<AdminCallLogEntry>> getCallLogById(
+            @Parameter(description = "Unique UUID of the call log entry")
+            @PathVariable String logId) {
+
+        AdminCallLogEntry entry = adminService.getCallLogById(logId);
+        return ResponseEntity.ok(ApiResponse.success(entry, "Call log entry retrieved successfully"));
     }
 
     @Operation(summary = "Get Provider & API Key Status", description = "Read-only configuration view showing provider status and masked API key presence")
     @GetMapping("/providers")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getProvidersStatus() {
-        Map<String, Object> providers = adminService.getProvidersStatus();
+    public ResponseEntity<ApiResponse<ProvidersConfigDto>> getProvidersStatus() {
+        ProvidersConfigDto providers = adminService.getProvidersStatus();
         return ResponseEntity.ok(ApiResponse.success(providers, "Provider configuration retrieved successfully"));
     }
 
-    @Operation(summary = "List & Search System Users", description = "Paginated list of system accounts with role and status filtering")
+    @Operation(summary = "List & Search System Users", description = "Paginated list of system accounts with role and status filtering (size clamped to 100 max)")
     @GetMapping("/users")
     public ResponseEntity<ApiResponse<Page<AdminUserResponse>>> getUsers(
             @RequestParam(name = "search", required = false) String search,
             @RequestParam(name = "role", required = false) RoleType role,
             @RequestParam(name = "enabled", required = false) Boolean enabled,
-            @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "10") int size) {
+            @RequestParam(name = "page", defaultValue = "0") @Min(0) int page,
+            @RequestParam(name = "size", defaultValue = "10") @Min(1) @Max(100) int size) {
 
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, Math.min(size, 100));
         Page<AdminUserResponse> users = adminService.getUsers(search, role, enabled, pageable);
         return ResponseEntity.ok(ApiResponse.success(users, "User accounts retrieved successfully"));
     }
 
-    @Operation(summary = "Update User Role", description = "Assign a new role to an existing user account (requires ADMIN role)")
+    @Operation(summary = "Update User Role", description = "Assign a new role to an existing user account with self-demotion and last-admin protection")
     @PutMapping("/users/{userId}/role")
     public ResponseEntity<ApiResponse<AdminUserResponse>> updateUserRole(
             @PathVariable UUID userId,
@@ -98,7 +128,7 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(updated, "User role updated successfully"));
     }
 
-    @Operation(summary = "Update User Account Status", description = "Soft-deactivate/activate or lock/unlock a user account")
+    @Operation(summary = "Update User Account Status", description = "Soft-deactivate/activate or lock/unlock a user account with self-protection and last-admin protection")
     @PutMapping("/users/{userId}/status")
     public ResponseEntity<ApiResponse<AdminUserResponse>> updateUserStatus(
             @PathVariable UUID userId,
@@ -106,5 +136,16 @@ public class AdminController {
 
         AdminUserResponse updated = adminService.updateUserStatus(userId, request);
         return ResponseEntity.ok(ApiResponse.success(updated, "User account status updated successfully"));
+    }
+
+    @Operation(summary = "Get Administrative Action Audit Logs", description = "Paginated audit trail recording all user role changes, status updates, and account locks (newest first)")
+    @GetMapping("/audit")
+    public ResponseEntity<ApiResponse<Page<AdminAuditLogResponse>>> getAuditLogs(
+            @RequestParam(name = "page", defaultValue = "0") @Min(0) int page,
+            @RequestParam(name = "size", defaultValue = "20") @Min(1) @Max(100) int size) {
+
+        Pageable pageable = PageRequest.of(page, Math.min(size, 100));
+        Page<AdminAuditLogResponse> auditLogs = adminService.getAuditLogs(pageable);
+        return ResponseEntity.ok(ApiResponse.success(auditLogs, "Admin audit trail retrieved successfully"));
     }
 }

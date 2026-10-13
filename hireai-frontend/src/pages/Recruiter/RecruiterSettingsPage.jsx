@@ -25,7 +25,7 @@ export const RecruiterSettingsPage = () => {
         <div className="flex items-center justify-between py-3 border-b border-border/40">
           <div className="space-y-0.5">
             <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <Bell className="w-4 h-4 text-purple-500" /> Candidate Application Digests
+              <Bell className="w-4 h-4 text-brand-blue" /> Candidate Application Digests
             </h4>
             <p className="text-xs text-muted-foreground">Receive instant alerts when a 90%+ match applicant applies</p>
           </div>

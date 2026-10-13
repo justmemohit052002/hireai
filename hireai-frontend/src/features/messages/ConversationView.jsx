@@ -238,8 +238,11 @@ export const ConversationView = ({
       {/* Selected File Badge */}
       {selectedFile && (
         <div className="shrink-0 px-4 py-1.5 bg-brand-blue/15 border-t border-brand-blue/30 flex items-center justify-between text-xs text-brand-blue font-medium">
-          <span className="truncate">📎 Ready to send: {selectedFile.name}</span>
-          <button type="button" onClick={() => setSelectedFile(null)} className="p-1 hover:bg-brand-blue/20 rounded-full cursor-pointer">
+          <span className="truncate flex items-center gap-1.5">
+            <Paperclip className="w-3.5 h-3.5 shrink-0" />
+            Ready to send: {selectedFile.name}
+          </span>
+          <button type="button" onClick={() => setSelectedFile(null)} className="p-1 hover:bg-brand-blue/20 rounded-md cursor-pointer">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>

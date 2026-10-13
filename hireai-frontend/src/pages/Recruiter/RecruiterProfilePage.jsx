@@ -205,7 +205,7 @@ export const RecruiterProfilePage = () => {
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#C63FC5]/20 via-[#F56681]/20 to-[#FC9559]/20 border border-[#F56681]/30 flex items-center justify-center font-bold text-2xl text-foreground shrink-0 shadow-md">
+            <div className="w-16 h-16 rounded-2xl bg-brand-navy/10 border border-brand-blue/30 flex items-center justify-center font-bold text-2xl text-brand-blue shrink-0 shadow-sm">
               {companyInitial}
             </div>
 
@@ -214,7 +214,7 @@ export const RecruiterProfilePage = () => {
                 <h1 className="text-2xl sm:text-3xl font-bold font-heading text-foreground">
                   {companyName || 'Company Profile'}
                 </h1>
-                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
                   <ShieldCheck className="w-3.5 h-3.5" /> Verified Employer
                 </span>
               </div>
@@ -278,7 +278,7 @@ export const RecruiterProfilePage = () => {
           <Card glass className="p-8 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border/50">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#C63FC5]/20 to-[#F56681]/20 border border-[#F56681]/30 flex items-center justify-center font-bold text-3xl text-[#F56681]">
+                <div className="w-16 h-16 rounded-2xl bg-brand-navy/10 border border-brand-blue/30 flex items-center justify-center font-bold text-3xl text-brand-blue shadow-sm">
                   {companyInitial}
                 </div>
                 <div>

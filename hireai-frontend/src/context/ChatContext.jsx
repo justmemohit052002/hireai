@@ -71,7 +71,7 @@ export function ChatProvider({ children }) {
           const newUnread = isCurrentlyActive ? 0 : (c.unreadCount || 0) + 1;
           return {
             ...c,
-            lastMessageText: msg.messageText || (msg.attachmentName ? `📎 ${msg.attachmentName}` : 'New message'),
+            lastMessageText: msg.messageText || (msg.attachmentName ? `[Attachment: ${msg.attachmentName}]` : 'New message'),
             lastMessageAt: msg.createdAt || new Date().toISOString(),
             unreadCount: newUnread,
           };

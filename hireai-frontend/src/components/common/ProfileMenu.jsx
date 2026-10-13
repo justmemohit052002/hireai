@@ -52,8 +52,8 @@ export const ProfileMenu = () => {
         <div className="py-1">
           {role === 'admin' && (
             <DropdownMenuItem onClick={() => navigate(ROUTES.ADMIN_DASHBOARD)}>
-              <Settings className="w-3.5 h-3.5 text-purple-500" />
-              <span className="font-bold text-purple-600 dark:text-purple-400">Admin Console</span>
+              <Settings className="w-3.5 h-3.5 text-brand-blue" />
+              <span className="font-bold text-brand-blue">Admin Console</span>
             </DropdownMenuItem>
           )}
 

@@ -18,7 +18,7 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { PhoneInput } from '@/components/ui/PhoneInput';
 import { Button } from '@/components/ui/Button';
-import { Logo } from '@/components/common/Logo';
+import { Logo } from '@/components/brand/Logo';
 import { OAuthButtons } from '@/components/auth/OAuthButtons';
 import { ROUTES } from '@/constants';
 
@@ -220,7 +220,7 @@ export const SignupPage = () => {
     <div className="w-full my-auto">
       <Card glass className="w-full max-w-md mx-auto p-5 sm:p-6 space-y-4 sm:space-y-4.5 shadow-2xl rounded-[24px] border border-white/20 dark:border-white/10">
         <div className="text-center space-y-1">
-          <Logo size="lg" className="justify-center mb-1" />
+          <Logo variant="full" size="lg" showPro className="justify-center mb-1" />
           <h2 className="text-xl sm:text-2xl font-bold font-heading text-foreground">
             {step === 3 ? 'Verify Your Email' : 'Create Your Account'}
           </h2>
@@ -266,25 +266,25 @@ export const SignupPage = () => {
                   <button
                     type="button"
                     onClick={() => setRole('candidate')}
-                    className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 ${
+                    className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center gap-1.5 cursor-pointer ${
                       role === 'candidate'
-                        ? 'bg-[#C63FC5]/10 border-[#C63FC5] text-foreground font-bold shadow-md'
+                        ? 'bg-brand-blue/10 border-brand-blue text-foreground font-bold shadow-sm'
                         : 'bg-surface-2 border-border text-muted-foreground'
                     }`}
                   >
-                    <User className="w-5 h-5 text-[#C63FC5]" />
+                    <User className={`w-5 h-5 ${role === 'candidate' ? 'text-brand-blue' : 'text-muted-foreground'}`} />
                     <span className="text-xs">Job Seeker</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setRole('recruiter')}
-                    className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center gap-1.5 ${
+                    className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center gap-1.5 cursor-pointer ${
                       role === 'recruiter'
-                        ? 'bg-[#C63FC5]/10 border-[#C63FC5] text-foreground font-bold shadow-md'
+                        ? 'bg-brand-blue/10 border-brand-blue text-foreground font-bold shadow-sm'
                         : 'bg-surface-2 border-border text-muted-foreground'
                     }`}
                   >
-                    <Building2 className="w-5 h-5 text-[#C63FC5]" />
+                    <Building2 className={`w-5 h-5 ${role === 'recruiter' ? 'text-brand-blue' : 'text-muted-foreground'}`} />
                     <span className="text-xs">Recruiter</span>
                   </button>
                 </div>

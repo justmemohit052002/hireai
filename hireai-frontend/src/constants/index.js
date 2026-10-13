@@ -7,6 +7,8 @@ export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
   SIGNUP: '/signup',
+  PRIVACY: '/privacy',
+  TERMS: '/terms',
 
   // Candidate
   CANDIDATE_JOBS: '/candidate/jobs',

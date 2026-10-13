@@ -31,4 +31,24 @@ public class AiEngineProperties {
      * Maximum polling attempts before timeout.
      */
     private int pollingMaxAttempts = 30;
+
+    /**
+     * Shared secret key for authenticating admin microservice requests to the AI Engine.
+     */
+    private String internalKey = "hireai-internal-secret-key";
+
+    /**
+     * Connect timeout for fast admin health & telemetry queries.
+     */
+    private int healthConnectTimeoutMs = 2000;
+
+    /**
+     * Read timeout for fast admin health & telemetry queries.
+     */
+    private int healthReadTimeoutMs = 3000;
+
+    /**
+     * Interval in milliseconds between background health poll cycles.
+     */
+    private long healthPollRateMs = 45000;
 }

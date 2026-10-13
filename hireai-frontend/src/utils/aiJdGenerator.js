@@ -333,7 +333,7 @@ export function generateRoleRequirements({
     : 'Competitive Market Compensation (Negotiable)';
 
   const locationSnippet = location?.trim()
-    ? `${workplaceLabel} — ${location.trim()}`
+    ? `${workplaceLabel} | ${location.trim()}`
     : `${workplaceLabel}`;
 
   const deadlineSnippet = deadline?.trim()

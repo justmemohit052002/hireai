@@ -1,12 +1,17 @@
 package com.vionsys.hireai.admin.service;
 
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.vionsys.hireai.admin.dto.AdminAuditLogResponse;
+import com.vionsys.hireai.admin.dto.AdminCallLogEntry;
+import com.vionsys.hireai.admin.dto.AdminCallLogsResponse;
+import com.vionsys.hireai.admin.dto.AdminHealthResponse;
+import com.vionsys.hireai.admin.dto.AdminStatsResponse;
 import com.vionsys.hireai.admin.dto.AdminUserResponse;
+import com.vionsys.hireai.admin.dto.ProvidersConfigDto;
 import com.vionsys.hireai.admin.dto.UpdateUserRoleRequest;
 import com.vionsys.hireai.admin.dto.UpdateUserStatusRequest;
 import com.vionsys.hireai.common.enums.RoleType;
@@ -29,22 +34,35 @@ public interface AdminService {
     AdminUserResponse updateUserStatus(UUID userId, UpdateUserStatusRequest request);
 
     /**
-     * Return AI Engine module health and reachability (cached TTL 30s)
+     * Return AI Engine module health and reachability (cached via background poller)
      */
-    Map<String, Object> getHealthSummary();
+    AdminHealthResponse getHealthSummary();
 
     /**
      * Return LLM usage, cost estimates, and quota tracking
      */
-    Map<String, Object> getLlmStats();
+    AdminStatsResponse getLlmStats(String range);
 
     /**
-     * Query AI engine call logs / audit trail
+     * Query AI engine call logs / audit trail with range, correlation, and filters
      */
-    Map<String, Object> getCallLogs(String query, String taskType, String status, String provider, int page, int size);
+    AdminCallLogsResponse getCallLogs(
+            String query, String taskType, String status, String provider,
+            String from, String to, String correlationId, String candidateRef,
+            int page, int size);
+
+    /**
+     * Retrieve single AI call log entry by ID
+     */
+    AdminCallLogEntry getCallLogById(String logId);
 
     /**
      * Return read-only provider configuration status (no plain secrets)
      */
-    Map<String, Object> getProvidersStatus();
+    ProvidersConfigDto getProvidersStatus();
+
+    /**
+     * Retrieve paginated administrative user action audit log
+     */
+    Page<AdminAuditLogResponse> getAuditLogs(Pageable pageable);
 }

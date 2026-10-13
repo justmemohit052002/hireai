@@ -134,20 +134,20 @@ export const AdminUsersPage = () => {
     const role = (roleName || '').toUpperCase();
     if (role.includes('ADMIN')) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-brand-navy/15 text-brand-navy dark:text-brand-blue-light border border-brand-navy/30">
           <ShieldAlert className="w-3 h-3" /> System Admin
         </span>
       );
     }
     if (role.includes('RECRUITER')) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-brand-blue/15 text-brand-blue border border-brand-blue/20">
           <ShieldCheck className="w-3 h-3" /> Recruiter
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-surface-2 text-muted-foreground border border-border">
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-semibold bg-surface-2 text-muted-foreground border border-border">
         Candidate
       </span>
     );

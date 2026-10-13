@@ -34,6 +34,15 @@ LLM_CALL_LOG_PATH = os.getenv("LLM_CALL_LOG_PATH", "logs/llm_call_log.jsonl")
 # Full error details and stack traces are always logged server-side for debugging.
 SHOW_ERROR_DETAILS = os.getenv("SHOW_ERROR_DETAILS", "false").lower() in ("true", "1", "yes")
 
+# ---- Security & Internal Admin Authentication ----
+INTERNAL_API_KEY = os.getenv("INTERNAL_API_KEY", "hireai-internal-secret-key")
+APP_ENV = os.getenv("APP_ENV", os.getenv("ENVIRONMENT", "development")).lower()
+
+# ---- Admin Metrics Configuration ----
+GEMINI_DAILY_LIMIT = int(os.getenv("GEMINI_DAILY_LIMIT", "250"))
+ADMIN_TIMEZONE = os.getenv("ADMIN_TIMEZONE", os.getenv("TIMEZONE", "Asia/Kolkata"))
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+
 # ---- CORS ----
 # During team testing, frontend may call this service directly (not just
 # through backend), so we allow common local dev ports. Tighten this list

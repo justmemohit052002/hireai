@@ -25,7 +25,7 @@ export const ChartPlaceholder = () => {
           <div key={idx} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
             <div
               style={{ height: `${height}%` }}
-              className="w-full rounded-t-lg bg-gradient-to-t from-blue-600 via-indigo-500 to-purple-500 opacity-80 group-hover:opacity-100 transition-all duration-300 relative"
+              className="w-full rounded-t-lg bg-gradient-to-t from-brand-navy to-brand-blue opacity-85 group-hover:opacity-100 transition-all duration-300 relative"
             >
               {/* Tooltip on hover */}
               <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-foreground text-background text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shadow transition-opacity pointer-events-none whitespace-nowrap">

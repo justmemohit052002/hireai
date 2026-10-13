@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { ProfileMenu } from '@/components/common/ProfileMenu';
-import { Logo } from '@/components/common/Logo';
+import { Logo } from '@/components/brand/Logo';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { ADMIN_NAV_ITEMS, ROUTES } from '@/constants';
@@ -94,7 +94,7 @@ export const AdminLayout = () => {
             {/* Logo & Admin Ops Label */}
             <div className="flex items-center gap-3 shrink-0">
               <Link to={ROUTES.ADMIN_DASHBOARD} className="flex items-center gap-2">
-                <Logo size="md" />
+                <Logo variant="full" size="md" showPro />
               </Link>
               <div className="hidden lg:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-[10px] font-extrabold uppercase tracking-wider">
                 <ShieldCheck className="w-3.5 h-3.5" /> Ops Console

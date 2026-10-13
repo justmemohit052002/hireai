@@ -135,12 +135,22 @@ def _call_ollama(prompt: str, model: str = None) -> str:
         raise LLMCallError(f"Ollama did not respond within {LLM_TIMEOUT_SECONDS}s.")
 
 
+import re
+from app.config import (
+    LLM_PROVIDER, OLLAMA_MODEL, OLLAMA_BASE_URL,
+    GEMINI_API_KEY, GROQ_API_KEY, GROQ_MODEL, GEMINI_MODEL,
+    LLM_TIMEOUT_SECONDS, LLM_MAX_RETRIES, LLM_RETRY_BACKOFF_SECONDS,
+    LLM_CALL_LOG_PATH,
+)
+from app.context import get_current_request_id, get_current_candidate_ref
+
 def _call_gemini(prompt: str) -> str:
     if not GEMINI_API_KEY:
         raise LLMCallError("GEMINI_API_KEY not set - required when LLM_PROVIDER=gemini.")
+    model_name = GEMINI_MODEL or "gemini-1.5-flash"
     url = (
         "https://generativelanguage.googleapis.com/v1beta/models/"
-        f"gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        f"{model_name}:generateContent?key={GEMINI_API_KEY}"
     )
     response = requests.post(
         url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=60
@@ -173,11 +183,34 @@ def check_ollama_reachable() -> bool:
 
 
 def mask_key(key: str | None) -> str:
-    if not key:
-        return ""
-    if len(key) <= 8:
-        return "****"
-    return f"{key[:3]}...{key[-4:]}"
+    """
+    Exposes only a safe hint of at most the last 4 chars for keys > 12 chars.
+    Never exposes raw prefixes like AIza, gsk, sk, or plaintext secrets.
+    """
+    if not key or not str(key).strip():
+        return "Not Configured"
+    cleaned = str(key).strip()
+    if len(cleaned) > 12:
+        return f"...{cleaned[-4:]}"
+    return "Configured"
+
+
+def sanitize_error_message(msg: str | None) -> str | None:
+    """
+    Sanitizes failure messages to strip potential API keys, tokens, or authorization headers,
+    capping message length at 500 characters.
+    """
+    if not msg:
+        return None
+    text = str(msg)
+    # Strip potential API keys / tokens / Bearer strings
+    text = re.sub(r'Bearer\s+[A-Za-z0-9_\-\.]+', '[REDACTED_TOKEN]', text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:Bearer|bearer)', '[REDACTED_AUTH]', text)
+    text = re.sub(r'(?:sk|gsk|AIza|key|token)[A-Za-z0-9_\-\.]{6,}', '[REDACTED_SECRET]', text, flags=re.IGNORECASE)
+    text = re.sub(r'AIza[A-Za-z0-9_\-]{10,}', '[REDACTED_SECRET]', text)
+    if len(text) > 500:
+        text = text[:497] + "..."
+    return text
 
 
 def _log_call(
@@ -189,7 +222,12 @@ def _log_call(
     provider: str = None,
     status: str = "SUCCESS",
     error_message: str = None,
+    request_id: str = None,
+    candidate_ref: str = None,
 ) -> None:
+    req_id = request_id or get_current_request_id()
+    cand_ref = candidate_ref or get_current_candidate_ref()
+
     entry = {
         "id": str(uuid.uuid4()),
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -198,9 +236,11 @@ def _log_call(
         "latency_seconds": latency,
         "attempt": attempt,
         "status": status,
-        "error_message": error_message,
-        "prompt_preview": prompt[:200] if prompt else "",
-        "response_preview": response_text[:200] if response_text else "",
+        "error_message": sanitize_error_message(error_message),
+        "request_id": str(req_id) if req_id else None,
+        "candidate_ref": str(cand_ref) if cand_ref else None,
+        "prompt_preview": (prompt[:200] if prompt else ""),
+        "response_preview": (response_text[:200] if response_text else ""),
     }
     try:
         with open(LLM_CALL_LOG_PATH, "a", encoding="utf-8") as f:
