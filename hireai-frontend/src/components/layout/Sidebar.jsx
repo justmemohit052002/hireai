@@ -56,7 +56,7 @@ export const Sidebar = ({ role }) => {
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="rounded-full p-1.5 hover:bg-white/10 text-white/70 hover:text-white transition-colors cursor-pointer"
+          className="rounded-lg p-1.5 hover:bg-white/10 text-white/70 hover:text-white transition-colors cursor-pointer"
           title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -90,7 +90,7 @@ export const Sidebar = ({ role }) => {
                 <div className="flex items-center justify-between flex-1">
                   <span>{item.label}</span>
                   {isInbox && unreadTotal > 0 && (
-                    <span className="px-2 py-0.5 rounded-full bg-brand-accent text-brand-dark text-[10px] font-bold shadow-xs">
+                    <span className="px-2 py-0.5 rounded-md bg-brand-accent text-brand-dark text-[10px] font-bold shadow-xs">
                       {unreadTotal}
                     </span>
                   )}
@@ -109,7 +109,7 @@ export const Sidebar = ({ role }) => {
             <span>HireAI Engine</span>
           </div>
           <p className="text-[11px] text-white/70">
-            FastAPI Matching Active. 99.4% precision rank.
+            FastAPI deterministic ATS parsing active.
           </p>
         </div>
       )}

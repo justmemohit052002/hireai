@@ -313,11 +313,11 @@ export const ApplyModal = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-border/50">
-            <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-2.5 sm:gap-3 pt-3 border-t border-border/50">
+            <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button type="submit" variant="default" isLoading={isSubmitting}>
+            <Button type="submit" variant="default" isLoading={isSubmitting} className="w-full sm:w-auto">
               <Send className="w-4 h-4 mr-2" />
               Submit Application
             </Button>

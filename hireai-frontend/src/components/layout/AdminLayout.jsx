@@ -223,29 +223,29 @@ export const AdminLayout = () => {
       {/* Main Content Area */}
       <div className="flex-1 min-w-0 md:pl-72 flex flex-col min-h-screen">
         {/* Mobile Top Header (Visible only on small viewports) */}
-        <header className="md:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 bg-card/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-border/60">
-          <div className="flex items-center gap-2.5">
+        <header className="md:hidden sticky top-0 z-30 flex items-center justify-between px-3 sm:px-4 h-14 bg-card/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-border/60">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setDrawerOpen(true)}
-              className="p-2 rounded-lg text-foreground hover:bg-surface-2/70 transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-lg text-foreground hover:bg-surface-2/70 transition-colors cursor-pointer"
               aria-label="Open Admin Menu Drawer"
             >
               <Menu className="w-5 h-5" />
             </button>
-            <Link to={ROUTES.ADMIN_DASHBOARD} className="flex items-center gap-2">
+            <Link to={ROUTES.ADMIN_DASHBOARD} className="flex items-center gap-1.5">
               <Logo variant="full" size="sm" showPro />
             </Link>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {getStatusBadge(true)}
             <ThemeToggle />
           </div>
         </header>
 
         {/* Dynamic Route Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 animate-in fade-in duration-200">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 animate-in fade-in duration-200">
           <Outlet />
         </main>
       </div>

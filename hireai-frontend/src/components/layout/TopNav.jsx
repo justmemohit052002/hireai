@@ -33,8 +33,8 @@ export const TopNav = ({ title, role }) => {
   const homeRoute = isCandidate ? ROUTES.CANDIDATE_JOBS : ROUTES.RECRUITER_DASHBOARD;
 
   return (
-    <header className="sticky top-3 sm:top-4 z-40 flex flex-col items-center justify-center w-full mb-4 sm:mb-6 px-2 sm:px-4 pointer-events-none">
-      <nav className="pointer-events-auto flex items-center justify-between w-full max-w-6xl h-14 sm:h-16 px-4 sm:px-6 rounded-full glass border border-border shadow-2xl backdrop-blur-xl">
+    <header className="sticky top-2 sm:top-4 z-40 flex flex-col items-center justify-center w-full mb-3 sm:mb-6 px-2 sm:px-4 pointer-events-none">
+      <nav className="pointer-events-auto flex items-center justify-between w-full max-w-6xl h-14 sm:h-16 px-3 sm:px-6 rounded-xl glass border border-border shadow-2xl backdrop-blur-xl">
         {/* Brand Logo - Matches Landing Navbar */}
         <Link to={homeRoute} className="flex items-center gap-2 shrink-0">
           <Logo variant="full" size="md" showPro />
@@ -50,7 +50,7 @@ export const TopNav = ({ title, role }) => {
                 to={item.href}
                 className={({ isActive }) =>
                   cn(
-                    'relative px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-1.5',
+                    'relative px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap flex items-center gap-1.5',
                     isActive
                       ? 'bg-brand-blue text-white shadow-md shadow-brand-blue/20 font-bold scale-[1.02]'
                       : 'text-muted-foreground hover:text-foreground hover:bg-surface-2/60'
@@ -59,7 +59,7 @@ export const TopNav = ({ title, role }) => {
               >
                 <span>{item.label}</span>
                 {isInbox && unreadTotal > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-brand-accent text-slate-950 text-[10px] font-extrabold shadow-2xs">
+                  <span className="px-1.5 py-0.5 rounded-md bg-brand-accent text-slate-950 text-[10px] font-extrabold shadow-2xs">
                     {unreadTotal}
                   </span>
                 )}
@@ -69,17 +69,17 @@ export const TopNav = ({ title, role }) => {
         </div>
 
         {/* Right Actions & Controls - ThemeToggle, NotificationBell, ProfileMenu, Mobile Toggle */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           <ThemeToggle />
           <NotificationBell />
-          <div className="h-5 w-px bg-border/60 mx-0.5" />
+          <div className="h-5 w-px bg-border/60 mx-0.5 hidden xs:block" />
           <ProfileMenu />
 
           {/* Mobile Hamburger Button */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-surface-2/60 transition-colors ml-1 cursor-pointer"
+            className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-2/60 transition-colors ml-0.5 cursor-pointer"
             aria-label="Toggle Navigation Menu"
           >
             {mobileMenuOpen ? <X className="w-5 h-5 text-foreground" /> : <Menu className="w-5 h-5" />}
@@ -110,7 +110,7 @@ export const TopNav = ({ title, role }) => {
                   <span className="shrink-0">{iconMap[item.label]}</span>
                   <span className="truncate">{item.label}</span>
                   {isInbox && unreadTotal > 0 && (
-                    <span className="ml-auto px-1.5 py-0.2 rounded-full bg-brand-accent text-slate-950 text-[10px] font-black">
+                    <span className="ml-auto px-1.5 py-0.5 rounded-md bg-brand-accent text-slate-950 text-[10px] font-black">
                       {unreadTotal}
                     </span>
                   )}

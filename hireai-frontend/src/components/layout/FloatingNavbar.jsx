@@ -22,8 +22,8 @@ export const FloatingNavbar = () => {
   };
 
   return (
-    <header className="fixed top-3 sm:top-4 inset-x-0 z-50 flex flex-col items-center justify-center px-3 sm:px-4 pointer-events-none">
-      <nav className="pointer-events-auto flex items-center justify-between w-full max-w-6xl h-15 sm:h-16 px-4 sm:px-6 rounded-xl bg-surface/90 border border-border shadow-md backdrop-blur-xl">
+    <header className="fixed top-2 sm:top-4 inset-x-0 z-50 flex flex-col items-center justify-center px-2 sm:px-4 pointer-events-none">
+      <nav className="pointer-events-auto flex items-center justify-between w-full max-w-6xl h-14 sm:h-16 px-3 sm:px-6 rounded-xl bg-surface/90 border border-border shadow-md backdrop-blur-xl">
         {/* Brand Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
           <Logo variant="full" size="md" showPro />

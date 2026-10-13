@@ -97,7 +97,7 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
           <div className="flex items-center gap-2.5 flex-wrap">
             <h3 className="text-base font-bold text-foreground">{job.title}</h3>
             <span
-              className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+              className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md ${
                 job.listingStatus === 'open'
                   ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
                   : 'bg-surface-2 text-muted-foreground dark:bg-surface dark:text-muted-foreground'
@@ -150,7 +150,7 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0 ml-2 p-2 rounded-full border border-border/50 bg-background text-muted-foreground">
+          <div className="flex items-center gap-1.5 shrink-0 ml-2 p-2 rounded-lg border border-border/50 bg-background text-muted-foreground">
             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </div>
         </div>
@@ -199,7 +199,7 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
                             {app.candidateName || `Candidate ${idx + 1}`}
                           </span>
                           {idx === 0 && (
-                            <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 border border-amber-500/30 text-[10px] font-bold flex items-center gap-1">
+                            <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-600 border border-amber-500/30 text-[10px] font-bold flex items-center gap-1">
                               <Star className="w-3 h-3 fill-amber-500 text-amber-500" /> Top Match
                             </span>
                           )}
@@ -212,7 +212,7 @@ const JobLeaderboard = ({ job, applications, onUpdateStage }) => {
                     </div>
 
                     {/* ATS Score & Status Actions */}
-                    <div className="flex items-center gap-3 flex-wrap md:flex-nowrap justify-between md:justify-end">
+                    <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap justify-between sm:justify-end w-full md:w-auto">
                       {/* ATS Score Badge */}
                       <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-brand-blue/10 border border-brand-blue/30 font-mono font-bold text-xs text-brand-blue">
                         <Sparkles className="w-3.5 h-3.5 text-brand-blue" />
@@ -303,16 +303,16 @@ export const LeaderboardPage = () => {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold font-heading text-foreground">
+          <h2 className="text-xl sm:text-2xl font-bold font-heading text-foreground">
             ATS Applicant Leaderboard
           </h2>
           <p className="text-xs text-muted-foreground">
             AI evaluated candidate ranking with automated skills match and decision classifications.
           </p>
         </div>
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-blue/10 border border-brand-blue/30 text-xs font-bold font-mono text-brand-blue">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand-blue/10 border border-brand-blue/30 text-xs font-bold font-mono text-brand-blue shrink-0">
           <Sparkles className="w-3.5 h-3.5 text-brand-blue" /> AI Ranking Engine Active
         </div>
       </div>

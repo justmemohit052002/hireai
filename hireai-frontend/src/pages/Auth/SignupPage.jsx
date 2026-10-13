@@ -402,7 +402,7 @@ export const SignupPage = () => {
             </div>
 
             {/* 6-box OTP Input */}
-            <div className="flex justify-center gap-2 sm:gap-3 my-4">
+            <div className="flex justify-center gap-1.5 sm:gap-2.5 my-4">
               {otp.map((digit, idx) => (
                 <input
                   key={idx}
@@ -413,7 +413,7 @@ export const SignupPage = () => {
                   value={digit}
                   onChange={(e) => handleOtpChange(idx, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                  className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-mono font-bold rounded-xl bg-surface-2 border border-border focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all text-foreground shadow-sm"
+                  className="w-9.5 h-12 sm:w-11 sm:h-13 md:w-12 md:h-14 text-center text-lg sm:text-xl font-mono font-bold rounded-xl bg-surface-2 border border-border focus:border-brand-accent focus:ring-2 focus:ring-brand-accent/20 outline-none transition-all text-foreground shadow-sm"
                   autoFocus={idx === 0}
                 />
               ))}
@@ -462,7 +462,7 @@ export const SignupPage = () => {
 
         <div className="text-center pt-2 text-xs text-muted-foreground">
           Already have an account?{' '}
-          <Link to={ROUTES.LOGIN} state={{ role }} className="font-bold text-[#F56681] hover:underline">
+          <Link to={ROUTES.LOGIN} state={{ role }} className="font-bold text-brand-blue dark:text-brand-accent hover:underline">
             Sign In
           </Link>
         </div>

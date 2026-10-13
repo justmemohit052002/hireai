@@ -141,8 +141,8 @@ export const LandingShowcaseCarousel = () => {
       </div>
 
       {/* Segmented Tab Navigation */}
-      <div className="flex justify-center mb-8">
-        <div className="inline-flex p-1.5 rounded-2xl bg-surface border border-border shadow-xs max-w-full overflow-x-auto">
+      <div className="flex justify-center mb-8 w-full overflow-hidden px-1">
+        <div className="inline-flex p-1.5 rounded-2xl bg-surface border border-border shadow-xs max-w-full overflow-x-auto scrollbar-none">
           {SLIDES.map((slide, idx) => {
             const Icon = slide.tabIcon;
             const isActive = idx === currentIndex;
@@ -150,7 +150,7 @@ export const LandingShowcaseCarousel = () => {
               <button
                 key={slide.id}
                 onClick={() => setCurrentIndex(idx)}
-                className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
                   isActive
                     ? 'bg-brand-navy text-white shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
@@ -165,7 +165,7 @@ export const LandingShowcaseCarousel = () => {
       </div>
 
       {/* Main Interactive Showcase Card */}
-      <div className="rounded-2xl bg-surface border border-border p-6 sm:p-10 shadow-lg">
+      <div className="rounded-2xl bg-surface border border-border p-4 sm:p-8 lg:p-10 shadow-lg">
         <div className="grid lg:grid-cols-12 gap-8 items-center">
           {/* Narrative Column (5 cols) */}
           <div className="lg:col-span-5 space-y-5 text-left">

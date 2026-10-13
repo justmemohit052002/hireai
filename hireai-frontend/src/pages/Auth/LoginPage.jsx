@@ -151,7 +151,7 @@ export const LoginPage = () => {
 
         <div className="text-center pt-2 text-xs text-muted-foreground">
           Don't have an account yet?{' '}
-          <Link to={ROUTES.SIGNUP} state={{ role }} className="font-bold text-[#F56681] hover:underline">
+          <Link to={ROUTES.SIGNUP} state={{ role }} className="font-bold text-brand-blue dark:text-brand-accent hover:underline">
             Sign Up
           </Link>
         </div>

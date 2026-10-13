@@ -58,7 +58,7 @@ export const CandidateApplicationsPage = () => {
             Track status, stage updates, and live ATS match scoring across your active job pipeline.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {hydratedApplications.some((a) => a.status === 'withdrawn') && (
             <div className="flex items-center bg-muted/60 p-1 rounded-xl text-xs font-semibold">
               <button
@@ -83,7 +83,7 @@ export const CandidateApplicationsPage = () => {
               </button>
             </div>
           )}
-          <span className="text-xs font-mono font-bold px-3 py-1 rounded-full bg-brand-blue-light/30 text-brand-navy dark:text-brand-blue-light border border-brand-blue/20">
+          <span className="text-xs font-mono font-bold px-3 py-1 rounded-lg bg-brand-blue-light/30 text-brand-navy dark:text-brand-blue-light border border-brand-blue/20">
             {activeApplications.length} Applications Active
           </span>
         </div>

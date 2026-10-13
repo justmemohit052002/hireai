@@ -45,12 +45,12 @@ export const Modal = ({
                   exit={{ opacity: 0, scale: 0.95, y: 10 }}
                   transition={{ type: 'spring', damping: 25, stiffness: 350 }}
                   className={cn(
-                    'relative w-full my-auto rounded-3xl glass border border-white/20 dark:border-white/10 p-5 sm:p-6 md:p-8 shadow-2xl max-h-[90vh] flex flex-col',
+                    'relative w-full my-auto rounded-3xl glass border border-white/20 dark:border-white/10 p-4 sm:p-6 md:p-8 shadow-2xl max-h-[90dvh] flex flex-col',
                     maxWidthMap[maxWidth]
                   )}
                 >
                   {/* Close button */}
-                  <DialogPrimitive.Close className="absolute top-4 right-4 rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus:outline-none z-10">
+                  <DialogPrimitive.Close className="absolute top-4 right-4 rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus:outline-none z-10 cursor-pointer">
                     <X className="w-5 h-5" />
                   </DialogPrimitive.Close>
 

@@ -33,9 +33,9 @@ export const LandingHiring = () => {
       {/* Split Comparison Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
         {/* Recruiter Card */}
-        <div className="p-8 sm:p-10 rounded-2xl bg-surface border border-border shadow-sm flex flex-col justify-between space-y-8 text-left hover:border-brand-blue/40 transition-all">
+        <div className="p-4 sm:p-8 lg:p-10 rounded-2xl bg-surface border border-border shadow-sm flex flex-col justify-between space-y-8 text-left hover:border-brand-blue/40 transition-all">
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-muted text-foreground text-xs font-mono font-bold uppercase">
                 <Briefcase className="w-3.5 h-3.5 text-brand-blue" />
                 For Recruiters & Engineering Leads
@@ -86,9 +86,9 @@ export const LandingHiring = () => {
         </div>
 
         {/* Candidate Card */}
-        <div className="p-8 sm:p-10 rounded-2xl bg-surface border border-border shadow-sm flex flex-col justify-between space-y-8 text-left hover:border-brand-blue/40 transition-all">
+        <div className="p-4 sm:p-8 lg:p-10 rounded-2xl bg-surface border border-border shadow-sm flex flex-col justify-between space-y-8 text-left hover:border-brand-blue/40 transition-all">
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-muted text-foreground text-xs font-mono font-bold uppercase">
                 <UserCheck className="w-3.5 h-3.5 text-brand-blue" />
                 For Software Engineers & Candidates

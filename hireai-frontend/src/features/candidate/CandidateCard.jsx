@@ -18,7 +18,7 @@ export const CandidateCard = ({
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             {rank && (
-              <div className="w-7 h-7 rounded-full bg-brand-blue text-white font-extrabold text-xs flex items-center justify-center shadow-md">
+              <div className="w-7 h-7 rounded-lg bg-brand-blue text-white font-extrabold text-xs flex items-center justify-center shadow-md">
                 #{rank}
               </div>
             )}
@@ -32,7 +32,7 @@ export const CandidateCard = ({
           {candidate.score && (
             <div className="flex flex-col items-end">
               <span className="text-xs text-muted-foreground font-medium">AI Rank</span>
-              <span className="text-lg font-extrabold text-[#F56681] font-mono">{candidate.score}/100</span>
+              <span className="text-lg font-extrabold text-brand-blue font-mono">{candidate.score}/100</span>
             </div>
           )}
         </div>
@@ -58,7 +58,7 @@ export const CandidateCard = ({
       {/* Footer */}
       <div className="flex items-center justify-between pt-3 border-t border-border/50">
         <span className="text-xs text-muted-foreground flex items-center gap-1">
-          <MapPin className="w-3.5 h-3.5 text-[#F56681]" />
+          <MapPin className="w-3.5 h-3.5 text-brand-blue" />
           {candidate.location}
         </span>
 

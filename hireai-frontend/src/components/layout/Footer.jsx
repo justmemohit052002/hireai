@@ -6,8 +6,8 @@ import { ROUTES } from '@/constants';
 
 export const Footer = () => {
   return (
-    <footer className="border-t border-border/40 bg-surface-2/40 backdrop-blur-md pt-16 pb-10 text-foreground">
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+    <footer className="border-t border-border/40 bg-surface-2/40 backdrop-blur-md pt-12 sm:pt-16 pb-8 sm:pb-10 text-foreground">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10">
         {/* Brand & Contact Column */}
         <div className="space-y-4">
           <Logo variant="full" size="sm" showPro={false} />
@@ -84,7 +84,7 @@ export const Footer = () => {
       </div>
 
       {/* Bottom Legal Bar */}
-      <div className="max-w-7xl mx-auto px-6 mt-12 pt-6 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between text-xs text-muted-foreground gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-10 sm:mt-12 pt-6 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between text-xs text-muted-foreground gap-4">
         <p>© 2026 HireAI Inc. All rights reserved.</p>
         <div className="flex gap-4 text-xs">
           <Link to={ROUTES.PRIVACY} className="hover:text-foreground transition-colors">Privacy Policy</Link>

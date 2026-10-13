@@ -34,17 +34,17 @@ const STAGE_CONFIG = {
   },
   shortlisted: {
     label: 'Shortlisted',
-    badgeStyle: 'bg-indigo-500/15 text-indigo-500 border-indigo-500/30',
+    badgeStyle: 'bg-brand-blue/15 text-brand-blue border-brand-blue/30',
     icon: Sparkles,
   },
   interview: {
     label: 'Interview Invitation',
-    badgeStyle: 'bg-pink-500/10 text-pink-500 border-pink-500/20 dark:bg-pink-500/20 dark:border-pink-500/30',
+    badgeStyle: 'bg-brand-blue-light/30 text-brand-blue border-brand-blue/30 dark:bg-brand-blue/20 dark:border-brand-blue/30',
     icon: Sparkles,
   },
   interview_scheduled: {
     label: 'Interview Scheduled',
-    badgeStyle: 'bg-pink-500/10 text-pink-500 border-pink-500/20 dark:bg-pink-500/20 dark:border-pink-500/30',
+    badgeStyle: 'bg-brand-blue-light/30 text-brand-blue border-brand-blue/30 dark:bg-brand-blue/20 dark:border-brand-blue/30',
     icon: Sparkles,
   },
   offer: {
@@ -105,30 +105,30 @@ export const ApplicationCard = ({ application }) => {
   };
 
   return (
-    <Card hoverable className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+    <Card hoverable className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
       {/* Job Info */}
-      <div className="flex items-center gap-4 shrink-0">
-        <div className="w-12 h-12 rounded-2xl bg-brand-blue-light/30 border border-brand-blue/20 flex items-center justify-center font-bold text-lg text-brand-navy dark:text-brand-blue-light shrink-0 shadow-sm">
+      <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+        <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-brand-blue-light/30 border border-brand-blue/20 flex items-center justify-center font-bold text-base sm:text-lg text-brand-navy dark:text-brand-blue-light shrink-0 shadow-sm">
           {companyName[0] || 'H'}
         </div>
-        <div>
-          <h3 className="font-bold text-base font-heading text-foreground">{jobTitle}</h3>
-          <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5 mt-0.5">
-            <Building2 className="w-3.5 h-3.5 text-brand-blue" />
-            {companyName} • Applied on {formatShortDate(appliedAt)}
+        <div className="min-w-0 flex-1">
+          <h3 className="font-bold text-base font-heading text-foreground truncate">{jobTitle}</h3>
+          <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5 mt-0.5 truncate">
+            <Building2 className="w-3.5 h-3.5 text-brand-blue shrink-0" />
+            <span className="truncate">{companyName} • Applied on {formatShortDate(appliedAt)}</span>
           </p>
         </div>
       </div>
 
       {/* Dynamic Current Stage Badge, ATS Score & Chat Action */}
-      <div className="flex flex-col sm:items-end gap-2.5 shrink-0">
+      <div className="flex flex-col sm:items-end gap-2.5 w-full sm:w-auto shrink-0">
         <div className="flex items-center gap-2 flex-wrap">
           {matchPercent && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold px-2.5 py-1 rounded-full bg-brand-blue-light/20 border border-brand-blue/20 text-foreground">
+            <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold px-2.5 py-1 rounded-lg bg-brand-blue-light/20 border border-brand-blue/20 text-foreground">
               <Sparkles className="w-3 h-3 text-brand-blue" /> {matchPercent}% ATS Match
             </span>
           )}
-          <div className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border text-xs font-bold shadow-sm ${currentStage.badgeStyle}`}>
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs font-bold shadow-sm ${currentStage.badgeStyle}`}>
             <StageIcon className="w-3.5 h-3.5" />
             <span>{currentStage.label}</span>
           </div>
@@ -136,7 +136,7 @@ export const ApplicationCard = ({ application }) => {
             size="sm"
             variant="outline"
             onClick={() => navigate(ROUTES.CANDIDATE_INBOX)}
-            className="h-7 text-xs border-brand-blue/30 text-brand-blue hover:bg-brand-blue-light/20 flex items-center gap-1 px-2.5"
+            className="h-7 text-xs border-brand-blue/30 text-brand-blue hover:bg-brand-blue-light/20 flex items-center gap-1 px-2.5 rounded-lg"
           >
             <MessageSquare className="w-3 h-3" />
             <span>Chat</span>

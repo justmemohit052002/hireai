@@ -76,7 +76,7 @@ export const LandingHero = () => {
           </div>
 
           {/* Architecture Pillars Micro-Grid */}
-          <div className="pt-6 border-t border-border/80 grid grid-cols-3 gap-4">
+          <div className="pt-6 border-t border-border/80 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <div>
               <div className="text-sm sm:text-base font-bold font-heading text-foreground">
                 Deterministic
@@ -137,13 +137,13 @@ export const LandingHero = () => {
 
               {/* Candidate Card 1: Top Candidate Match */}
               <div className="p-4 rounded-xl bg-surface border border-brand-blue/30 shadow-xs space-y-3 relative group">
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-navy to-brand-blue text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
                       MS
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h4 className="font-bold text-sm text-foreground">Mohit Singh Chouhan</h4>
                         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                           <BadgeCheck className="w-3 h-3" /> Verified
@@ -155,7 +155,7 @@ export const LandingHero = () => {
                     </div>
                   </div>
 
-                  <div className="text-right shrink-0">
+                  <div className="sm:text-right shrink-0">
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-brand-blue/15 text-brand-blue font-mono font-bold text-xs">
                       <CheckCircle2 className="w-3 h-3" /> 96% Match
                     </span>
@@ -175,7 +175,7 @@ export const LandingHero = () => {
                 </div>
 
                 {/* Recruiter Action */}
-                <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs">
+                <div className="pt-2 border-t border-border/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
                   <span className="text-muted-foreground flex items-center gap-1 text-[11px]">
                     <Clock className="w-3 h-3 text-muted-foreground/70" /> Applied Sep 28 | Under Review
                   </span>
