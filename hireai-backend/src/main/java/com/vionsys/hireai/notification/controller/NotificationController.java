@@ -103,7 +103,7 @@ public class NotificationController {
     public ResponseEntity<ApiResponse<NotificationResponse>> sendTestNotification(
             @CurrentUser CustomUserDetails currentUser,
             @RequestParam(defaultValue = "HireAI Alert") String title,
-            @RequestParam(defaultValue = "Real-time notification test successful! ✨") String message
+            @RequestParam(defaultValue = "Real-time notification test successful!") String message
     ) {
         User user = userRepository.findById(currentUser.getId())
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
@@ -142,67 +142,67 @@ public class NotificationController {
 
         switch (scenario.toUpperCase()) {
             case "NEW_APPLICATION" -> {
-                title = "New Candidate Application 👤";
+                title = "New Candidate Application";
                 message = "Candidate Jane Doe applied for Senior Full Stack Engineer (Match: 78%).";
                 type = NotificationType.NEW_APPLICATION;
                 link = "/recruiter/jobs";
             }
             case "AI_MATCH" -> {
-                title = "🌟 High-Match Candidate Shortlisted (88%)";
-                message = "Candidate Jane Doe scored 88% on Full Stack Engineer (≥ 70% threshold) - Automatically Shortlisted!";
+                title = "High-Match Candidate Shortlisted (88%)";
+                message = "Candidate Jane Doe scored 88% on Full Stack Engineer (>= 70% threshold) - Automatically Shortlisted!";
                 type = NotificationType.AI_MATCH;
                 link = isRecruiter ? "/recruiter/jobs" : "/candidate/applications";
             }
             case "INTERVIEW_REMINDER" -> {
-                title = "Upcoming Interview in 15 Minutes ⏰";
+                title = "Upcoming Interview in 15 Minutes";
                 message = "Your technical interview for Senior Frontend Engineer starts in 15 minutes on Google Meet.";
                 type = NotificationType.INTERVIEW;
                 link = isRecruiter ? "/recruiter/inbox" : "/candidate/inbox";
             }
             case "STATUS_UPDATE", "OFFER_RELEASED" -> {
-                title = "Application Status: Offer Released 🏆";
+                title = "Application Status: Offer Released";
                 message = "Congratulations! An official job offer has been extended for your application.";
                 type = NotificationType.APPLICATION_STATUS;
                 link = "/candidate/applications";
             }
             case "INTERVIEW_INVITE" -> {
-                title = "Interview Invitation: Senior React Engineer 📅";
+                title = "Interview Invitation: Senior React Engineer";
                 message = "Jordan Kim invited you for a Technical Screen on Friday, 3:00 PM via Google Meet.";
                 type = NotificationType.INTERVIEW;
                 link = "/candidate/inbox";
             }
             case "JOB_CAPACITY" -> {
-                title = "Job Capacity Alert: Full Stack Developer ⚠️";
+                title = "Job Capacity Alert: Full Stack Developer";
                 message = "Your active posting has reached 50 applicants! Review shortlisted candidates before closing.";
                 type = NotificationType.SYSTEM;
                 link = "/recruiter/jobs";
             }
             case "RESUME_FEEDBACK" -> {
-                title = "Resume Parsed & ATS Feedback Ready ✨";
+                title = "Resume Parsed and ATS Feedback Ready";
                 message = "We extracted 14 skills from your resume. Your ATS profile has been updated with matching recommendations.";
                 type = NotificationType.AI_MATCH;
                 link = "/candidate/profile";
             }
             case "JOB_RECOMMENDATION" -> {
-                title = "Smart Job Recommendation 💼";
+                title = "Smart Job Recommendation";
                 message = "New opening for Staff React Architect at OpenAI matches 95% of your skill profile.";
                 type = NotificationType.AI_MATCH;
                 link = "/candidate/jobs";
             }
             case "PROFILE_COMPLETION" -> {
-                title = "Profile Completion Reminder 📝";
+                title = "Profile Completion Reminder";
                 message = "Complete your profile by uploading your portfolio and experience to increase recruiter visibility!";
                 type = NotificationType.SYSTEM;
                 link = isRecruiter ? "/recruiter/profile" : "/candidate/profile";
             }
             case "SECURITY_ALERT" -> {
-                title = "Security Alert: New Sign-in 🛡️";
+                title = "Security Alert: New Sign-in";
                 message = "New sign-in detected on your HireAI account from Chrome on Windows (127.0.0.1).";
                 type = NotificationType.SYSTEM;
                 link = isRecruiter ? "/recruiter/settings" : "/candidate/settings";
             }
             default -> {
-                title = "HireAI Real-Time Alert ✨";
+                title = "HireAI Real-Time Alert";
                 message = "Real-time notification test successful!";
                 type = NotificationType.SYSTEM;
                 link = isRecruiter ? "/recruiter/dashboard" : "/candidate/jobs";

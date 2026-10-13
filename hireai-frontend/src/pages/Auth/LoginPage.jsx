@@ -55,9 +55,12 @@ export const LoginPage = () => {
       } else if (err.status === 429) {
         setIsUnverified(false);
         setErrorMsg(msg || 'Too many failed login attempts. Please try again later.');
+      } else if (err.status >= 500) {
+        setIsUnverified(false);
+        setErrorMsg('An unexpected server error occurred. Please try again later.');
       } else {
         setIsUnverified(false);
-        setErrorMsg(msg || 'An unexpected server error occurred. Please try again later.');
+        setErrorMsg(msg || 'Request failed. Please check your credentials and try again.');
       }
     } finally {
       setIsLoading(false);
@@ -127,7 +130,10 @@ export const LoginPage = () => {
               Email Address
             </label>
             <Input
+              id="login-email"
+              name="email"
               type="email"
+              autoComplete="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -141,7 +147,10 @@ export const LoginPage = () => {
               Password
             </label>
             <Input
+              id="login-password"
+              name="password"
               type="password"
+              autoComplete="current-password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
