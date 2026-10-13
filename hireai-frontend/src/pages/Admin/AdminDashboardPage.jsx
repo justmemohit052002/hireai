@@ -96,6 +96,7 @@ export const AdminDashboardPage = () => {
   const overallStatus = healthData?.overallStatus || 'UNKNOWN';
   const providers = healthData?.providers || {};
   const activeProvider = providers.activeProvider || 'ollama';
+  const isEngineAvailable = statsData && statsData.available !== false;
   const quota = statsData?.quota || { dailyLimit: 250, usedToday: 0, percentageUsed: 0 };
   const totalCalls = statsData?.totalCalls || 0;
   const avgLatency = statsData?.avgLatencySeconds || 0;
@@ -111,7 +112,7 @@ export const AdminDashboardPage = () => {
             <h1 className="text-2xl sm:text-3xl font-bold font-heading text-foreground">
               Admin Ops Center
             </h1>
-            <Badge variant="outline" className="text-xs bg-indigo-500/10 text-indigo-500 border-indigo-500/20 font-bold">
+            <Badge variant="outline" className="text-xs bg-brand-blue/10 text-brand-blue border-brand-blue/20 font-bold">
               v1.0 Live
             </Badge>
           </div>
@@ -138,6 +139,21 @@ export const AdminDashboardPage = () => {
           </Link>
         </div>
       </div>
+
+      {/* Amber alert when engine is unreachable */}
+      {statsData && statsData.available === false && (
+        <div className="flex items-start sm:items-center gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300">
+          <AlertTriangle className="w-5 h-5 shrink-0 text-amber-500 mt-0.5 sm:mt-0" />
+          <div className="space-y-0.5">
+            <p className="text-xs font-bold text-amber-800 dark:text-amber-200 uppercase tracking-wider">
+              AI Engine Unreachable
+            </p>
+            <p className="text-xs">
+              {statsData?.message || 'AI engine unreachable'} - live telemetry, failure breakdown, and quota usage are currently offline.
+            </p>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-medium flex items-center gap-3">
@@ -170,15 +186,26 @@ export const AdminDashboardPage = () => {
         <Card glass className="p-5 rounded-2xl border border-white/20 dark:border-white/10 shadow-lg space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">LLM Calls</span>
-            <div className="p-2 rounded-xl bg-blue-500/10 text-blue-500">
+            <div className={`p-2 rounded-xl ${isEngineAvailable ? 'bg-blue-500/10 text-blue-500' : 'bg-amber-500/10 text-amber-500'}`}>
               <Cpu className="w-4 h-4" />
             </div>
           </div>
           <div>
-            <div className="text-2xl font-black text-foreground">{totalCalls} calls</div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              {statsData?.todayCalls || 0} today • {statsData?.successRate || 100}% success rate
-            </p>
+            {!isEngineAvailable ? (
+              <div>
+                <div className="text-2xl font-bold text-amber-500">Unreachable</div>
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
+                  AI engine unreachable
+                </p>
+              </div>
+            ) : (
+              <div>
+                <div className="text-2xl font-black text-foreground">{totalCalls} calls</div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {statsData?.todayCalls || 0} today : {statsData?.successRate || 100}% success rate
+                </p>
+              </div>
+            )}
           </div>
         </Card>
 
@@ -186,14 +213,14 @@ export const AdminDashboardPage = () => {
         <Card glass className="p-5 rounded-2xl border border-white/20 dark:border-white/10 shadow-lg space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Avg Latency</span>
-            <div className="p-2 rounded-xl bg-brand-blue/10 text-brand-blue">
+            <div className={`p-2 rounded-xl ${isEngineAvailable ? 'bg-brand-blue/10 text-brand-blue' : 'bg-amber-500/10 text-amber-500'}`}>
               <Clock className="w-4 h-4" />
             </div>
           </div>
           <div>
-            <div className="text-2xl font-black text-foreground">{avgLatency}s</div>
+            <div className="text-2xl font-black text-foreground">{isEngineAvailable ? `${avgLatency}s` : '-'}</div>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Local Ollama response time
+              {isEngineAvailable ? 'Local Ollama response time' : 'Telemetry offline'}
             </p>
           </div>
         </Card>
@@ -311,28 +338,34 @@ export const AdminDashboardPage = () => {
             </div>
 
             {/* Gemini Free Tier Daily Quota Meter */}
-            <div className="p-4 rounded-2xl bg-surface-2/70 border border-white/10 space-y-2.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-foreground">Gemini Free-Tier Quota</span>
-                <span className="font-mono text-[11px] text-muted-foreground">
-                  {quota.usedToday} / {quota.dailyLimit} Daily Req
-                </span>
+            {!isEngineAvailable || !statsData?.quota ? (
+              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300">
+                Quota counters and rate limits are unavailable while the AI engine is unreachable.
               </div>
-              
-              <div className="h-2.5 w-full rounded-full bg-muted/60 overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    quota.percentageUsed > 80 ? 'bg-rose-500' : quota.percentageUsed > 50 ? 'bg-amber-500' : 'bg-brand-blue'
-                  }`}
-                  style={{ width: `${Math.min(100, Math.max(2, quota.percentageUsed))}%` }}
-                />
-              </div>
+            ) : (
+              <div className="p-4 rounded-2xl bg-surface-2/70 border border-white/10 space-y-2.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-foreground">Gemini Free-Tier Quota</span>
+                  <span className="font-mono text-[11px] text-muted-foreground">
+                    {quota.usedToday} / {quota.dailyLimit} Daily Req
+                  </span>
+                </div>
+                
+                <div className="h-2.5 w-full rounded-full bg-muted/60 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      quota.percentageUsed > 80 ? 'bg-rose-500' : quota.percentageUsed > 50 ? 'bg-amber-500' : 'bg-brand-blue'
+                    }`}
+                    style={{ width: `${Math.min(100, Math.max(2, quota.percentageUsed))}%` }}
+                  />
+                </div>
 
-              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                <span>{quota.remainingToday} requests remaining today</span>
-                <span>{quota.percentageUsed}% used</span>
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                  <span>{quota.remainingToday} requests remaining today</span>
+                  <span>{quota.percentageUsed}% used</span>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Read-Only Keys Summary Note */}
             <div className="text-[11px] text-muted-foreground bg-muted/40 p-3 rounded-xl border border-border/40 space-y-1">

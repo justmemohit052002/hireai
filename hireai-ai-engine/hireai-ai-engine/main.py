@@ -105,7 +105,7 @@ def handle_unexpected_error(request: Request, exc: Exception):
 
 
 import secrets
-from fastapi import Depends, Header, status
+from fastapi import Depends, Header, status, APIRouter
 from app.config import INTERNAL_API_KEY, APP_ENV
 from app.context import set_request_context, clear_request_context
 from app import admin_service
@@ -125,14 +125,14 @@ async def correlation_middleware(request: Request, call_next):
         clear_request_context()
 
 
-# ---- Security Dependency for Admin APIs ----
+# ---- Security Dependency for Internal APIs ----
 def verify_internal_key(x_internal_key: Optional[str] = Header(None, alias="X-Internal-Key")):
     """
-    Authenticates internal administrative requests via constant-time comparison.
+    Authenticates internal service requests via constant-time comparison.
     Fails closed if the key is missing or unset.
     """
     if not INTERNAL_API_KEY:
-        logger.error("INTERNAL_API_KEY is not configured on server. Admin requests are denied.")
+        logger.error("INTERNAL_API_KEY is not configured on server. Internal requests are denied.")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing internal API key",
@@ -145,7 +145,7 @@ def verify_internal_key(x_internal_key: Optional[str] = Header(None, alias="X-In
         )
 
 
-# ---- Health check ----
+# ---- Public Health Check & Root Endpoints ----
 @app.get("/health")
 def health_check():
     ollama_ok = check_ollama_reachable()
@@ -157,18 +157,35 @@ def health_check():
     }
 
 
-# ---- Admin APIs (Secured with X-Internal-Key) ----
-@app.get("/api/v1/admin/health-summary", dependencies=[Depends(verify_internal_key)])
+@app.get("/")
+def root():
+    return {
+        "service": "HireAI AI Engine",
+        "docs": "/docs",
+        "health": "/health",
+        "adminHealth": "/api/v1/admin/health-summary",
+    }
+
+
+# ==============================================================================
+# Internal API Router (/api/v1/*) - Protected with shared verify_internal_key
+# Only the Spring Boot backend service is authorized to access these routes.
+# ==============================================================================
+api_v1 = APIRouter(prefix="/api/v1", dependencies=[Depends(verify_internal_key)])
+
+
+# ---- Admin APIs ----
+@api_v1.get("/admin/health-summary")
 def admin_health_summary():
     return admin_service.get_system_health()
 
 
-@app.get("/api/v1/admin/stats", dependencies=[Depends(verify_internal_key)])
+@api_v1.get("/admin/stats")
 def admin_stats(range: str = "all"):
     return admin_service.get_llm_statistics(range_param=range)
 
 
-@app.get("/api/v1/admin/logs", dependencies=[Depends(verify_internal_key)])
+@api_v1.get("/admin/logs")
 def admin_call_logs(
     query: Optional[str] = None,
     task_type: Optional[str] = None,
@@ -197,7 +214,7 @@ def admin_call_logs(
     )
 
 
-@app.get("/api/v1/admin/logs/{log_id}", dependencies=[Depends(verify_internal_key)])
+@api_v1.get("/admin/logs/{log_id}")
 def admin_get_log(log_id: str):
     entry = admin_service.get_single_log(log_id)
     if not entry:
@@ -205,18 +222,8 @@ def admin_get_log(log_id: str):
     return entry
 
 
-@app.get("/")
-def root():
-    return {
-        "service": "HireAI AI Engine",
-        "docs": "/docs",
-        "health": "/health",
-        "adminHealth": "/api/v1/admin/health-summary",
-    }
-
-
 # ---- 1. JD Generator (sync) ----
-@app.post("/api/v1/jd/generate", response_model=GenerateJDResponse)
+@api_v1.post("/jd/generate", response_model=GenerateJDResponse)
 def jd_generate(request: GenerateJDRequest):
     logger.info(f"JD generation requested for '{request.job_title}'")
     result = generate_jd(request.job_title, request.required_skills, request.experience_level)
@@ -224,7 +231,7 @@ def jd_generate(request: GenerateJDRequest):
 
 
 # ---- 2. Resume Parser (async / polling) ----
-@app.post("/api/v1/resumes/parse", response_model=JobAcceptedResponse)
+@api_v1.post("/resumes/parse", response_model=JobAcceptedResponse)
 def resumes_parse(request: ParseResumeRequest):
     def job_target(resume_text: str, candidate_id: str) -> dict:
         result = parse_resume(resume_text)
@@ -236,7 +243,7 @@ def resumes_parse(request: ParseResumeRequest):
     return JobAcceptedResponse(job_id=job_id, status="processing")
 
 
-@app.get("/api/v1/resumes/status/{job_id}", response_model=JobStatusResponse)
+@api_v1.get("/resumes/status/{job_id}", response_model=JobStatusResponse)
 def resumes_status(job_id: str):
     job = jobs.get_job(job_id)
     if job is None:
@@ -245,14 +252,14 @@ def resumes_status(job_id: str):
 
 
 # ---- 3. Match Engine (sync, no LLM) ----
-@app.post("/api/v1/match/score", response_model=MatchScoreResponse)
+@api_v1.post("/match/score", response_model=MatchScoreResponse)
 def match_score(request: MatchScoreRequest):
     result = calculate_match_score(request.resume_skills, request.job_skills)
     return MatchScoreResponse(**result)
 
 
 # ---- 4. AI Chatbot (sync) ----
-@app.post("/api/v1/chatbot/message", response_model=ChatMessageResponse)
+@api_v1.post("/chatbot/message", response_model=ChatMessageResponse)
 def chatbot_message(request: ChatMessageRequest):
     history = [{"role": t.role, "text": t.text} for t in request.conversation_history]
     result = handle_message(history, request.new_message)
@@ -260,13 +267,13 @@ def chatbot_message(request: ChatMessageRequest):
 
 
 # ---- 5. Interview AI (sync) ----
-@app.post("/api/v1/interview/questions", response_model=InterviewQuestionsResponse)
+@api_v1.post("/interview/questions", response_model=InterviewQuestionsResponse)
 def interview_questions(request: InterviewQuestionsRequest):
     result = generate_questions(request.skills)
     return InterviewQuestionsResponse(**result)
 
 
-@app.post("/api/v1/interview/evaluate", response_model=InterviewEvaluateResponse)
+@api_v1.post("/interview/evaluate", response_model=InterviewEvaluateResponse)
 def interview_evaluate(request: InterviewEvaluateRequest):
     answers = [{"question_id": a.question_id, "answer_text": a.answer_text} for a in request.answers]
     result = evaluate_answers(answers)
@@ -274,10 +281,15 @@ def interview_evaluate(request: InterviewEvaluateRequest):
 
 
 # ---- 6. Decision Engine (sync, no LLM) ----
-@app.post("/api/v1/decision/finalize", response_model=DecisionResponse)
+@api_v1.post("/decision/finalize", response_model=DecisionResponse)
 def decision_finalize(request: DecisionRequest):
     result = finalize_decision(request.resume_score, request.interview_score, request.chatbot_signal_score)
     return DecisionResponse(**result)
+
+
+# Include protected /api/v1 router into application
+app.include_router(api_v1)
+
 
 
 if __name__ == "__main__":

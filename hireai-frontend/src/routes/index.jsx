@@ -36,6 +36,7 @@ const RecruiterSettingsPage = lazy(() => import('@/pages/Recruiter/RecruiterSett
 const AdminDashboardPage = lazy(() => import('@/pages/Admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })));
 const AdminLlmUsagePage = lazy(() => import('@/pages/Admin/AdminLlmUsagePage').then((m) => ({ default: m.AdminLlmUsagePage })));
 const AdminCallLogsPage = lazy(() => import('@/pages/Admin/AdminCallLogsPage').then((m) => ({ default: m.AdminCallLogsPage })));
+const AdminAuditPage = lazy(() => import('@/pages/Admin/AdminAuditPage').then((m) => ({ default: m.AdminAuditPage })));
 const AdminUsersPage = lazy(() => import('@/pages/Admin/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage })));
 const AdminProvidersPage = lazy(() => import('@/pages/Admin/AdminProvidersPage').then((m) => ({ default: m.AdminProvidersPage })));
 
@@ -269,6 +270,14 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<SuspenseFallback />}>
                 <AdminCallLogsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'audit',
+            element: (
+              <Suspense fallback={<SuspenseFallback />}>
+                <AdminAuditPage />
               </Suspense>
             ),
           },

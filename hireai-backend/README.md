@@ -593,10 +593,37 @@ git clone https://github.com/justmemohit052002/hireai.git
 cd hireai
 ```
 
-## Backend
+## Backend Setup & Environment Variables
+
+Copy `src/main/resources/application.properties.example` to `src/main/resources/application.properties` and configure your environment:
 
 ```bash
-cd backend
+cd hireai-backend
+cp src/main/resources/application.properties.example src/main/resources/application.properties
+```
+
+### Mandatory Environment Variables (Fail-Fast at Startup)
+The application strictly fails to start if any of the following secrets are missing or blank:
+
+| Environment Variable | Property Key | Description |
+|---|---|---|
+| `SPRING_DATASOURCE_PASSWORD` | `spring.datasource.password` | PostgreSQL database user password |
+| `JWT_SECRET` | `jwt.secret` | Base64-encoded 256-bit+ HMAC signing secret for JWT tokens |
+| `AI_ENGINE_INTERNAL_KEY` | `ai-engine.internal-key` | Shared secret key matching `INTERNAL_API_KEY` on FastAPI AI Engine |
+
+### Optional & Operational Environment Variables
+| Environment Variable | Property Key | Default | Description |
+|---|---|---|---|
+| `SPRING_DATASOURCE_URL` | `spring.datasource.url` | `jdbc:postgresql://localhost:5432/hireai` | PostgreSQL database connection URL |
+| `SPRING_DATASOURCE_USERNAME` | `spring.datasource.username` | `postgres` | Database username |
+| `SPRING_JPA_HIBERNATE_DDL_AUTO` | `spring.jpa.hibernate.ddl-auto` | `validate` (`update` in dev) | Hibernate DDL strategy (`update` is strictly dev-only) |
+| `APP_CORS_ALLOWED_ORIGINS` | `app.cors.allowed-origins` | `http://localhost:5173` | Comma-separated list of allowed frontend origins |
+| `ADMIN_SEED_ENABLED` | `hireai.admin.seed.enabled` | `false` | Enable startup seeding of administrator user |
+| `ADMIN_SEED_PASSWORD` | `hireai.admin.seed.password` | (none) | Administrator password (minimum 12 characters required) |
+| `DEV_DEMO_PASSWORD` | `hireai.dev.demo-password` | (none) | Demo users password (active only under `dev` Spring profile) |
+| `AI_ENGINE_BASE_URL` | `ai-engine.base-url` | `http://localhost:8000` | FastAPI AI Engine microservice base URL |
+
+```bash
 mvn clean install
 mvn spring-boot:run
 ```

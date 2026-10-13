@@ -16,12 +16,16 @@ by both sides before either team changes their code.
 
 - All requests/responses are JSON. Base path: `/api/v1/`
 - Field names: `snake_case`
-- IDs: strings (e.g. `"cand_1029"`, `"job_44""`) — not raw database integers,
-  so the ID format can change later without breaking the frontend
-- Missing/unknown values: `null` — never an empty string standing in for
-  "no data", and never omit a key entirely
+- IDs: strings (e.g. `"cand_1029"`, `"job_44"`) - not raw database integers, so the ID format can change later without breaking callers
+- Missing/unknown values: `null` - never an empty string standing in for "no data", and never omit a key entirely
 - Timestamps: ISO 8601 strings, e.g. `"2026-08-08T14:30:00Z"`
-- Every error response uses the same shape (see bottom of this doc)
+- **Authentication**: All endpoints under `/api/v1/*` (jd, resumes, match, chatbot, interview, decision, admin) require the shared internal secret header:
+  ```http
+  X-Internal-Key: <INTERNAL_API_KEY>
+  ```
+  Requests missing this header or providing an invalid key receive HTTP 401 Unauthorized (`{"error": true, "errorCode": "HTTP_401", "message": "Invalid or missing internal API key"}`).
+- **Public Endpoints**: `/health` (service health and Ollama reachability) and `/` (root service metadata) remain public and do not require `X-Internal-Key`.
+- Every error response uses the same unified shape (see bottom of this doc)
 
 ---
 
@@ -264,7 +268,7 @@ of a response, rather than assuming success.
 
 Administrative endpoints provide operational telemetry, LLM token quotas, call logging, and module health monitoring.
 
-**Security:** All `/api/v1/admin/*` endpoints require the shared internal secret header:
+**Security:** Like all `/api/v1/*` endpoints, `/api/v1/admin/*` endpoints require the shared internal secret header:
 ```http
 X-Internal-Key: <INTERNAL_API_KEY>
 ```

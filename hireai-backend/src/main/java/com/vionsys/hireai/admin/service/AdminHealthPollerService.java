@@ -32,13 +32,15 @@ public class AdminHealthPollerService {
     private final JdbcTemplate jdbcTemplate;
     private final AiEngineProperties aiEngineProperties;
 
+    @org.springframework.beans.factory.annotation.Value("${admin.health.poll-rate-ms:45000}")
+    private long pollRateMs = 45000L;
+
     private final AtomicReference<AdminHealthResponse> latestSnapshot = new AtomicReference<>();
     private volatile Instant lastCheckedInstant = Instant.EPOCH;
 
     @PostConstruct
     public void init() {
-        log.info("Initializing AdminHealthPollerService background snapshot...");
-        pollHealth();
+        log.info("Initialized AdminHealthPollerService with poll rate {}ms (deferred until scheduled run or first request).", pollRateMs);
     }
 
     @Scheduled(fixedRateString = "${admin.health.poll-rate-ms:45000}")
@@ -94,8 +96,8 @@ public class AdminHealthPollerService {
         }
 
         // Check if snapshot is older than 3x the poll interval
-        long pollRateMs = aiEngineProperties.getHealthPollRateMs() > 0 ? aiEngineProperties.getHealthPollRateMs() : 45000;
-        boolean stale = lastCheckedInstant == null || Instant.now().isAfter(lastCheckedInstant.plusMillis(3 * pollRateMs));
+        long effectivePollRateMs = this.pollRateMs > 0 ? this.pollRateMs : 45000L;
+        boolean stale = lastCheckedInstant == null || Instant.now().isAfter(lastCheckedInstant.plusMillis(3 * effectivePollRateMs));
 
         // Create shallow copy to set stale flag without mutating cached ref
         return AdminHealthResponse.builder()

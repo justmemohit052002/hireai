@@ -192,6 +192,23 @@ public class GlobalExceptionHandler {
 				.body(response);
 	}
 
+	@ExceptionHandler(AiCallLogNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handleAiCallLogNotFound(
+			AiCallLogNotFoundException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.NOT_FOUND.value(),
+				HttpStatus.NOT_FOUND.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.NOT_FOUND)
+				.body(response);
+	}
+
 	@ExceptionHandler(RecruiterProfileNotFoundException.class)
 	public ResponseEntity<ErrorResponse> handleRecruiterProfileNotFound(
 			RecruiterProfileNotFoundException ex,

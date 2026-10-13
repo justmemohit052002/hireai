@@ -432,7 +432,11 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ---
 
 ### 3. Start the Backend Service (Spring Boot)
-Configure your database & email credentials in `hireai-backend/src/main/resources/application.properties`, then start the service:
+Copy `src/main/resources/application.properties.example` to `src/main/resources/application.properties` and set the mandatory secrets:
+- `SPRING_DATASOURCE_PASSWORD`: PostgreSQL database user password
+- `JWT_SECRET`: Base64-encoded 256-bit+ HMAC secret
+- `AI_ENGINE_INTERNAL_KEY`: Shared secret key matching `INTERNAL_API_KEY` in `hireai-ai-engine`
+
 ```bash
 cd hireai-backend
 mvn clean install -DskipTests

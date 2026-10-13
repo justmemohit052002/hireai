@@ -49,9 +49,12 @@ public class AiEngineClient {
         factory.setConnectTimeout(Duration.ofMillis(timeout));
         factory.setReadTimeout(Duration.ofMillis(timeout));
 
+        String internalKey = this.properties.getInternalKey() != null ? this.properties.getInternalKey() : "";
+
         this.restClient = RestClient.builder()
                 .baseUrl(baseUrl)
                 .requestFactory(factory)
+                .defaultHeader("X-Internal-Key", internalKey)
                 .build();
 
         // Dedicated fast RestClient for admin telemetry and monitoring calls
@@ -62,7 +65,6 @@ public class AiEngineClient {
         adminFactory.setConnectTimeout(Duration.ofMillis(adminConnectTimeout));
         adminFactory.setReadTimeout(Duration.ofMillis(adminReadTimeout));
 
-        String internalKey = this.properties.getInternalKey() != null ? this.properties.getInternalKey() : "";
         this.adminRestClient = RestClient.builder()
                 .baseUrl(baseUrl)
                 .requestFactory(adminFactory)

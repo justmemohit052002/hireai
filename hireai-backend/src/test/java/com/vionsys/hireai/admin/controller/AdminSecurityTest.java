@@ -37,6 +37,15 @@ class AdminSecurityTest {
     @MockBean
     private AdminService adminService;
 
+    @Autowired
+    private com.vionsys.hireai.security.jwt.JwtService jwtService;
+
+    @Autowired
+    private com.vionsys.hireai.user.repository.UserRepository userRepository;
+
+    @Autowired
+    private com.vionsys.hireai.role.repository.RoleRepository roleRepository;
+
     // ==========================================
     // 1. Unauthenticated Requests -> 401
     // ==========================================
@@ -171,5 +180,118 @@ class AdminSecurityTest {
     void testGetAudit_AdminRole_Returns200() throws Exception {
         mockMvc.perform(get("/admin/audit"))
                 .andExpect(status().isOk());
+    }
+
+    // ==========================================
+    // 5. Immediate Access Token Invalidation Tests
+    // ==========================================
+
+    @Test
+    @DisplayName("Deactivated user access token immediately stops working (returns 401)")
+    void testDeactivatedUser_TokenImmediatelyInvalidated() throws Exception {
+        com.vionsys.hireai.role.entity.Role adminRole = roleRepository.findByName(RoleType.ROLE_ADMIN)
+                .orElseGet(() -> roleRepository.save(com.vionsys.hireai.role.entity.Role.builder().name(RoleType.ROLE_ADMIN).build()));
+
+        com.vionsys.hireai.user.entity.User testUser = com.vionsys.hireai.user.entity.User.builder()
+                .email("test-deact-" + UUID.randomUUID() + "@vionsys.com")
+                .firstName("Active")
+                .lastName("Admin")
+                .role(adminRole)
+                .enabled(true)
+                .accountNonLocked(true)
+                .password("$2a$10$hashedPasswordHere")
+                .build();
+        testUser = userRepository.save(testUser);
+
+        com.vionsys.hireai.security.CustomUserDetails userDetails =
+                com.vionsys.hireai.security.CustomUserDetails.fromUser(testUser);
+        String token = jwtService.generateAccessToken(userDetails);
+
+        // When enabled, token authenticates successfully
+        mockMvc.perform(get("/admin/health")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        // Deactivate user in database
+        testUser.setEnabled(false);
+        userRepository.save(testUser);
+
+        // Same access token must immediately fail with 401 Unauthorized
+        mockMvc.perform(get("/admin/health")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Locked user access token immediately stops working (returns 401)")
+    void testLockedUser_TokenImmediatelyInvalidated() throws Exception {
+        com.vionsys.hireai.role.entity.Role adminRole = roleRepository.findByName(RoleType.ROLE_ADMIN)
+                .orElseGet(() -> roleRepository.save(com.vionsys.hireai.role.entity.Role.builder().name(RoleType.ROLE_ADMIN).build()));
+
+        com.vionsys.hireai.user.entity.User testUser = com.vionsys.hireai.user.entity.User.builder()
+                .email("test-lock-" + UUID.randomUUID() + "@vionsys.com")
+                .firstName("Locked")
+                .lastName("Admin")
+                .role(adminRole)
+                .enabled(true)
+                .accountNonLocked(true)
+                .password("$2a$10$hashedPasswordHere")
+                .build();
+        testUser = userRepository.save(testUser);
+
+        com.vionsys.hireai.security.CustomUserDetails userDetails =
+                com.vionsys.hireai.security.CustomUserDetails.fromUser(testUser);
+        String token = jwtService.generateAccessToken(userDetails);
+
+        mockMvc.perform(get("/admin/health")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        // Lock user in database
+        testUser.setAccountNonLocked(false);
+        userRepository.save(testUser);
+
+        // Same access token must immediately fail with 401 Unauthorized
+        mockMvc.perform(get("/admin/health")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("User whose role is changed has old access token immediately invalidated (returns 401)")
+    void testRoleChanged_TokenImmediatelyInvalidated() throws Exception {
+        com.vionsys.hireai.role.entity.Role adminRole = roleRepository.findByName(RoleType.ROLE_ADMIN)
+                .orElseGet(() -> roleRepository.save(com.vionsys.hireai.role.entity.Role.builder().name(RoleType.ROLE_ADMIN).build()));
+        com.vionsys.hireai.role.entity.Role recruiterRole = roleRepository.findByName(RoleType.ROLE_RECRUITER)
+                .orElseGet(() -> roleRepository.save(com.vionsys.hireai.role.entity.Role.builder().name(RoleType.ROLE_RECRUITER).build()));
+
+        com.vionsys.hireai.user.entity.User testUser = com.vionsys.hireai.user.entity.User.builder()
+                .email("test-rolechange-" + UUID.randomUUID() + "@vionsys.com")
+                .firstName("Demoted")
+                .lastName("Admin")
+                .role(adminRole)
+                .enabled(true)
+                .accountNonLocked(true)
+                .password("$2a$10$hashedPasswordHere")
+                .build();
+        testUser = userRepository.save(testUser);
+
+        com.vionsys.hireai.security.CustomUserDetails userDetails =
+                com.vionsys.hireai.security.CustomUserDetails.fromUser(testUser);
+        String token = jwtService.generateAccessToken(userDetails);
+
+        // Active admin token succeeds
+        mockMvc.perform(get("/admin/health")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        // Demote user to recruiter in database
+        testUser.setRole(recruiterRole);
+        userRepository.save(testUser);
+
+        // Old admin access token must immediately fail with 401 Unauthorized (token role does not match user DB role)
+        mockMvc.perform(get("/admin/health")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized());
     }
 }

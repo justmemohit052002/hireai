@@ -43,11 +43,6 @@ class AdminHealthPollerServiceTest {
     @InjectMocks
     private AdminHealthPollerService pollerService;
 
-    @BeforeEach
-    void setUp() {
-        when(aiEngineProperties.getHealthPollRateMs()).thenReturn(45000L);
-    }
-
     @Test
     @DisplayName("Health poller computes UP database status when JDBC query succeeds")
     void testPollHealth_Success() {
@@ -105,5 +100,23 @@ class AdminHealthPollerServiceTest {
         AdminHealthResponse snapshot = pollerService.getCachedHealthSnapshot();
         assertNotNull(snapshot);
         assertEquals("DOWN", snapshot.getDatabaseStatus());
+    }
+
+    @Test
+    @DisplayName("init() does not trigger synchronous poll, but getCachedHealthSnapshot triggers poll lazily")
+    void testGetCachedHealthSnapshot_TriggersPollLazily() {
+        when(jdbcTemplate.queryForObject(eq("SELECT 1"), eq(Integer.class))).thenReturn(1);
+        when(userRepository.countActiveUsers()).thenReturn(2L);
+        when(userRepository.countTotalUsers()).thenReturn(5L);
+        when(aiEngineClient.getAdminHealthSummary()).thenReturn(Optional.empty());
+
+        // Call init() to simulate @PostConstruct - should not fail or poll
+        pollerService.init();
+
+        // First request triggers lazy poll
+        AdminHealthResponse snapshot = pollerService.getCachedHealthSnapshot();
+        assertNotNull(snapshot);
+        assertEquals("OFFLINE", snapshot.getOverallStatus());
+        assertEquals("UP", snapshot.getDatabaseStatus());
     }
 }

@@ -13,6 +13,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AdminStatsResponse {
+    private Boolean available;
+    private String message;
     private Long totalCalls;
     private Long todayCalls;
     private Long weekCalls;

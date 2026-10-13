@@ -35,7 +35,7 @@ public class AiEngineProperties {
     /**
      * Shared secret key for authenticating admin microservice requests to the AI Engine.
      */
-    private String internalKey = "hireai-internal-secret-key";
+    private String internalKey;
 
     /**
      * Connect timeout for fast admin health & telemetry queries.

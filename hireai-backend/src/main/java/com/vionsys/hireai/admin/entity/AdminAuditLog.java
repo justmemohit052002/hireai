@@ -36,7 +36,7 @@ public class AdminAuditLog {
     @Column(name = "action", nullable = false, length = 100)
     private String action;
 
-    @Column(name = "target_user_id", nullable = false)
+    @Column(name = "target_user_id")
     private UUID targetUserId;
 
     @Column(name = "old_value", columnDefinition = "TEXT")

@@ -31,6 +31,7 @@ export const ROUTES = {
   ADMIN_HEALTH: '/admin/health',
   ADMIN_LLM_USAGE: '/admin/llm-usage',
   ADMIN_LOGS: '/admin/logs',
+  ADMIN_AUDIT: '/admin/audit',
   ADMIN_USERS: '/admin/users',
   ADMIN_PROVIDERS: '/admin/providers',
 };
@@ -60,6 +61,7 @@ export const ADMIN_NAV_ITEMS = [
   { label: 'Overview & Health', href: ROUTES.ADMIN_DASHBOARD, icon: 'Activity' },
   { label: 'LLM Usage & Quota', href: ROUTES.ADMIN_LLM_USAGE, icon: 'Cpu' },
   { label: 'Call Logs & Audit', href: ROUTES.ADMIN_LOGS, icon: 'FileCode' },
+  { label: 'Audit Trail', href: ROUTES.ADMIN_AUDIT, icon: 'ShieldCheck' },
   { label: 'User Roles & Access', href: ROUTES.ADMIN_USERS, icon: 'Users' },
   { label: 'Provider & Keys', href: ROUTES.ADMIN_PROVIDERS, icon: 'Key' },
 ];

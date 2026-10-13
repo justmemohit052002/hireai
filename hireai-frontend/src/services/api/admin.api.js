@@ -7,18 +7,22 @@ import { apiClient } from './apiClient';
  */
 export const adminApi = {
   /**
-   * Fetches AI Engine module health and reachability (cached TTL 30s on backend)
+   * Fetches AI Engine module health and reachability (cached snapshot polled every 45s on backend)
    */
   getHealth: () => apiClient.get('/admin/health'),
 
   /**
    * Fetches LLM usage, cost estimates, and quota tracking
+   * @param {string} range - 'today' | 'week' | 'all'
    */
-  getStats: () => apiClient.get('/admin/stats'),
+  getStats: (range = 'all') => {
+    const qs = range ? `?range=${encodeURIComponent(range)}` : '';
+    return apiClient.get(`/admin/stats${qs}`);
+  },
 
   /**
    * Searchable AI Engine call logs with pagination and filters
-   * @param {Object} params - { query, taskType, status, provider, page, size }
+   * @param {Object} params - { query, taskType, status, provider, from, to, correlationId, candidateRef, page, size }
    */
   getLogs: (params = {}) => {
     const queryParams = new URLSearchParams();
@@ -26,11 +30,28 @@ export const adminApi = {
     if (params.taskType && params.taskType !== 'ALL') queryParams.set('taskType', params.taskType);
     if (params.status && params.status !== 'ALL') queryParams.set('status', params.status);
     if (params.provider && params.provider !== 'ALL') queryParams.set('provider', params.provider);
+    if (params.from) queryParams.set('from', params.from);
+    if (params.to) queryParams.set('to', params.to);
+    if (params.correlationId) queryParams.set('correlationId', params.correlationId);
+    if (params.candidateRef) queryParams.set('candidateRef', params.candidateRef);
     if (params.page) queryParams.set('page', params.page);
     if (params.size) queryParams.set('size', params.size);
 
     const qs = queryParams.toString();
     return apiClient.get(`/admin/logs${qs ? `?${qs}` : ''}`);
+  },
+
+  /**
+   * Fetches paginated administrative audit logs (newest first)
+   * @param {Object} params - { page, size }
+   */
+  getAuditLogs: (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.page !== undefined) queryParams.set('page', params.page);
+    if (params.size !== undefined) queryParams.set('size', params.size);
+
+    const qs = queryParams.toString();
+    return apiClient.get(`/admin/audit${qs ? `?${qs}` : ''}`);
   },
 
   /**

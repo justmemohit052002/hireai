@@ -33,9 +33,15 @@ export const AdminCallLogsPage = () => {
   const [taskFilter, setTaskFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [providerFilter, setProviderFilter] = useState('ALL');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [correlationId, setCorrelationId] = useState('');
+  const [candidateRef, setCandidateRef] = useState('');
 
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isAvailable, setIsAvailable] = useState(true);
+  const [unavailableMessage, setUnavailableMessage] = useState('');
   const [selectedLog, setSelectedLog] = useState(null);
 
   const fetchLogs = async (silent = false) => {
@@ -48,15 +54,29 @@ export const AdminCallLogsPage = () => {
         taskType: taskFilter,
         status: statusFilter,
         provider: providerFilter,
+        from: fromDate || undefined,
+        to: toDate || undefined,
+        correlationId: correlationId || undefined,
+        candidateRef: candidateRef || undefined,
         page,
         size,
       });
+
+      if (res && res.available === false) {
+        setIsAvailable(false);
+        setUnavailableMessage(res.message || 'AI engine unreachable');
+      } else {
+        setIsAvailable(true);
+        setUnavailableMessage('');
+      }
 
       setLogs(res?.items || []);
       setTotalElements(res?.totalElements || 0);
       setTotalPages(res?.totalPages || 1);
     } catch (err) {
       console.error('Failed to query call logs:', err);
+      setIsAvailable(false);
+      setUnavailableMessage('AI engine unreachable');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -71,6 +91,18 @@ export const AdminCallLogsPage = () => {
     e.preventDefault();
     setPage(1);
     fetchLogs();
+  };
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setTaskFilter('ALL');
+    setStatusFilter('ALL');
+    setProviderFilter('ALL');
+    setFromDate('');
+    setToDate('');
+    setCorrelationId('');
+    setCandidateRef('');
+    setPage(1);
   };
 
   return (
@@ -99,57 +131,150 @@ export const AdminCallLogsPage = () => {
         </Button>
       </div>
 
+      {/* Amber alert when engine is unreachable */}
+      {!isAvailable && (
+        <div className="flex items-start sm:items-center gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300">
+          <AlertTriangle className="w-5 h-5 shrink-0 text-amber-500 mt-0.5 sm:mt-0" />
+          <div className="space-y-0.5">
+            <p className="text-xs font-bold text-amber-800 dark:text-amber-200 uppercase tracking-wider">
+              AI Engine Unreachable
+            </p>
+            <p className="text-xs">
+              {unavailableMessage || 'AI engine unreachable'} - call log records and historical traces cannot be queried while the AI engine is unreachable.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Filter and Search Bar */}
-      <Card glass className="p-4 sm:p-5 rounded-2xl border border-white/20 dark:border-white/10 shadow-md">
-        <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {/* Search Query Input */}
-          <div className="lg:col-span-2 relative">
-            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by prompt, task, ID or keyword..."
-              className="pl-9 rounded-xl text-xs"
-            />
+      <Card glass className="p-4 sm:p-5 rounded-2xl border border-white/20 dark:border-white/10 shadow-md space-y-3">
+        <form onSubmit={handleSearchSubmit} className="space-y-3">
+          {/* Top Row: Search, Module, Provider, Status, Buttons */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+            {/* Search Query Input */}
+            <div className="lg:col-span-2 relative">
+              <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search prompt, task, ID or keyword..."
+                className="pl-9 rounded-xl text-xs"
+              />
+            </div>
+
+            {/* Task Type Filter */}
+            <select
+              value={taskFilter}
+              onChange={(e) => {
+                setTaskFilter(e.target.value);
+                setPage(1);
+              }}
+              className="w-full px-3 py-2 rounded-xl text-xs font-medium bg-surface-2 border border-border text-foreground focus:outline-hidden focus:ring-2 focus:ring-brand-blue/30"
+            >
+              <option value="ALL">All Modules</option>
+              <option value="jd_generate">Job Description Generator</option>
+              <option value="resume_parse">Resume Parser</option>
+              <option value="match_score">Match Engine</option>
+              <option value="chatbot">Chatbot</option>
+              <option value="interview_questions">Interview Questions</option>
+              <option value="interview_evaluate">Interview Evaluation</option>
+              <option value="decision_finalize">Decision Engine</option>
+            </select>
+
+            {/* Provider Filter */}
+            <select
+              value={providerFilter}
+              onChange={(e) => {
+                setProviderFilter(e.target.value);
+                setPage(1);
+              }}
+              className="w-full px-3 py-2 rounded-xl text-xs font-medium bg-surface-2 border border-border text-foreground focus:outline-hidden focus:ring-2 focus:ring-brand-blue/30"
+            >
+              <option value="ALL">All Providers</option>
+              <option value="ollama">Ollama (Local)</option>
+              <option value="gemini">Gemini (Cloud)</option>
+              <option value="groq">Groq (Cloud)</option>
+            </select>
+
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
+              className="w-full px-3 py-2 rounded-xl text-xs font-medium bg-surface-2 border border-border text-foreground focus:outline-hidden focus:ring-2 focus:ring-brand-blue/30"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="SUCCESS">Success Only</option>
+              <option value="FAILED">Failed Only</option>
+            </select>
+
+            {/* Search Action Buttons */}
+            <div className="flex items-center gap-2">
+              <Button type="submit" size="sm" className="w-full rounded-xl text-xs font-bold shadow-md cursor-pointer">
+                <Filter className="w-3.5 h-3.5 mr-1" /> Apply
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleResetFilters}
+                className="rounded-xl text-xs font-medium cursor-pointer"
+                title="Reset Filters"
+              >
+                Reset
+              </Button>
+            </div>
           </div>
 
-          {/* Task Type Filter */}
-          <select
-            value={taskFilter}
-            onChange={(e) => {
-              setTaskFilter(e.target.value);
-              setPage(1);
-            }}
-            className="w-full px-3 py-2 rounded-xl text-xs font-medium bg-surface-2 border border-border text-foreground focus:outline-hidden focus:ring-2 focus:ring-brand-blue/30"
-          >
-            <option value="ALL">All Modules</option>
-            <option value="jd_generate">Job Description Generator</option>
-            <option value="resume_parse">Resume Parser</option>
-            <option value="match_score">Match Engine</option>
-            <option value="chatbot">Chatbot</option>
-            <option value="interview_questions">Interview Questions</option>
-            <option value="interview_evaluate">Interview Evaluation</option>
-            <option value="decision_finalize">Decision Engine</option>
-          </select>
-
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(1);
-            }}
-            className="w-full px-3 py-2 rounded-xl text-xs font-medium bg-surface-2 border border-border text-foreground focus:outline-hidden focus:ring-2 focus:ring-brand-blue/30"
-          >
-            <option value="ALL">All Statuses</option>
-            <option value="SUCCESS">Success Only</option>
-            <option value="FAILED">Failed Only</option>
-          </select>
-
-          {/* Search Action Button */}
-          <Button type="submit" size="sm" className="rounded-xl text-xs font-bold shadow-md cursor-pointer">
-            <Filter className="w-3.5 h-3.5 mr-1" /> Apply Filters
-          </Button>
+          {/* Bottom Row: Date Range & IDs */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-border/40">
+            <div>
+              <label className="block text-[10px] font-bold text-muted-foreground uppercase mb-1">
+                From Date
+              </label>
+              <Input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="rounded-xl text-xs"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-muted-foreground uppercase mb-1">
+                To Date
+              </label>
+              <Input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="rounded-xl text-xs"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-muted-foreground uppercase mb-1">
+                Correlation ID
+              </label>
+              <Input
+                value={correlationId}
+                onChange={(e) => setCorrelationId(e.target.value)}
+                placeholder="e.g. req-abc-123"
+                className="rounded-xl text-xs"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-muted-foreground uppercase mb-1">
+                Candidate Ref
+              </label>
+              <Input
+                value={candidateRef}
+                onChange={(e) => setCandidateRef(e.target.value)}
+                placeholder="e.g. cand-uuid or ref"
+                className="rounded-xl text-xs"
+              />
+            </div>
+          </div>
         </form>
       </Card>
 
@@ -327,6 +452,22 @@ export const AdminCallLogsPage = () => {
                   {selectedLog.latency_seconds || selectedLog.latencySeconds || 0}s
                 </p>
               </div>
+              {(selectedLog.requestId || selectedLog.correlationId) && (
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold">Correlation ID</span>
+                  <p className="font-mono text-[11px] text-foreground truncate">
+                    {selectedLog.requestId || selectedLog.correlationId}
+                  </p>
+                </div>
+              )}
+              {selectedLog.candidateRef && (
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold">Candidate Ref</span>
+                  <p className="font-mono text-[11px] text-foreground truncate">
+                    {selectedLog.candidateRef}
+                  </p>
+                </div>
+              )}
             </div>
 
             {selectedLog.error_message && (

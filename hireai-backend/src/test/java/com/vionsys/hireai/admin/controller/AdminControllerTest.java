@@ -184,6 +184,62 @@ class AdminControllerTest {
     }
 
     @Test
+    @DisplayName("GET /admin/stats returns available=false when AI engine is unreachable")
+    void testGetStats_WhenAiEngineDown() throws Exception {
+        AdminStatsResponse statsResponse = AdminStatsResponse.builder()
+                .available(false)
+                .message("AI engine unreachable")
+                .totalCalls(0L)
+                .successRate(0.0)
+                .build();
+
+        when(adminService.getLlmStats("today")).thenReturn(statsResponse);
+
+        mockMvc.perform(get("/admin/stats?range=today"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.available").value(false))
+                .andExpect(jsonPath("$.data.message").value("AI engine unreachable"))
+                .andExpect(jsonPath("$.data.totalCalls").value(0));
+    }
+
+    @Test
+    @DisplayName("GET /admin/logs returns available=false when AI engine is unreachable")
+    void testGetCallLogs_WhenAiEngineDown() throws Exception {
+        AdminCallLogsResponse logsResponse = AdminCallLogsResponse.builder()
+                .available(false)
+                .message("AI engine unreachable")
+                .items(List.of())
+                .totalElements(0L)
+                .page(1)
+                .size(20)
+                .totalPages(0)
+                .build();
+
+        when(adminService.getCallLogs(any(), any(), any(), any(), any(), any(), any(), any(), eq(1), eq(20)))
+                .thenReturn(logsResponse);
+
+        mockMvc.perform(get("/admin/logs?page=1&size=20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.available").value(false))
+                .andExpect(jsonPath("$.data.message").value("AI engine unreachable"))
+                .andExpect(jsonPath("$.data.totalElements").value(0));
+    }
+
+    @Test
+    @DisplayName("GET /admin/logs/{id} returns 404 when call log is not found")
+    void testGetSingleCallLog_NotFound_Returns404() throws Exception {
+        when(adminService.getCallLogById("non-existent-id"))
+                .thenThrow(new com.vionsys.hireai.exception.AiCallLogNotFoundException("AI call log not found with id: non-existent-id"));
+
+        mockMvc.perform(get("/admin/logs/non-existent-id"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("AI call log not found with id: non-existent-id"));
+    }
+
+    @Test
     @DisplayName("GET /admin/providers returns 200 with masked key hints")
     void testGetProvidersStatus() throws Exception {
         ProvidersConfigDto providers = ProvidersConfigDto.builder()

@@ -30,8 +30,10 @@ import com.vionsys.hireai.admin.repository.AdminAuditLogRepository;
 import com.vionsys.hireai.admin.service.AdminHealthPollerService;
 import com.vionsys.hireai.admin.service.AdminService;
 import com.vionsys.hireai.ai.client.AiEngineClient;
+import com.vionsys.hireai.auth.repository.RefreshTokenRepository;
 import com.vionsys.hireai.common.enums.RoleType;
 import com.vionsys.hireai.exception.AdminConflictException;
+import com.vionsys.hireai.exception.AiCallLogNotFoundException;
 import com.vionsys.hireai.exception.RoleNotFoundException;
 import com.vionsys.hireai.exception.UserNotFoundException;
 import com.vionsys.hireai.role.entity.Role;
@@ -52,6 +54,7 @@ public class AdminServiceImpl implements AdminService {
     private final AdminAuditLogRepository auditLogRepository;
     private final AdminHealthPollerService healthPollerService;
     private final AiEngineClient aiEngineClient;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     private static final int MAX_PAGE_SIZE = 100;
 
@@ -101,6 +104,9 @@ public class AdminServiceImpl implements AdminService {
 
         user.setRole(newRole);
         User saved = userRepository.save(user);
+
+        // Immediately revoke all active refresh tokens for the user
+        refreshTokenRepository.revokeAllUserTokens(saved);
 
         // Record audit log inside transaction
         AdminAuditLog auditLog = AdminAuditLog.builder()
@@ -167,6 +173,11 @@ public class AdminServiceImpl implements AdminService {
         User saved = userRepository.save(user);
         String newStatus = String.format("enabled=%s, accountNonLocked=%s", saved.getEnabled(), saved.getAccountNonLocked());
 
+        // Immediately revoke active refresh tokens if user was deactivated or locked
+        if (Boolean.FALSE.equals(saved.getEnabled()) || Boolean.FALSE.equals(saved.getAccountNonLocked())) {
+            refreshTokenRepository.revokeAllUserTokens(saved);
+        }
+
         // Record audit log inside transaction
         AdminAuditLog auditLog = AdminAuditLog.builder()
                 .actorUserId(actorUserId)
@@ -190,28 +201,28 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public AdminStatsResponse getLlmStats(String range) {
-        return aiEngineClient.getAdminStats(range).orElseGet(() -> AdminStatsResponse.builder()
-                .totalCalls(0L)
-                .todayCalls(0L)
-                .weekCalls(0L)
-                .failedCalls(0L)
-                .successRate(100.0)
-                .avgLatencySeconds(0.0)
-                .unknownTimeCount(0L)
-                .quota(QuotaUsageDto.builder()
-                        .provider("gemini")
-                        .tier("Free Tier")
-                        .dailyLimit(250)
-                        .usedToday(0L)
-                        .remainingToday(250L)
-                        .percentageUsed(0.0)
-                        .timezone("Asia/Kolkata")
-                        .build())
-                .providerDistribution(List.of())
-                .moduleBreakdown(List.of())
-                .build());
+        return aiEngineClient.getAdminStats(range)
+                .map(stats -> {
+                    stats.setAvailable(true);
+                    return stats;
+                })
+                .orElseGet(() -> AdminStatsResponse.builder()
+                        .available(false)
+                        .message("AI engine unreachable")
+                        .totalCalls(0L)
+                        .todayCalls(0L)
+                        .weekCalls(0L)
+                        .failedCalls(0L)
+                        .successRate(0.0)
+                        .avgLatencySeconds(0.0)
+                        .unknownTimeCount(0L)
+                        .quota(null)
+                        .providerDistribution(List.of())
+                        .moduleBreakdown(List.of())
+                        .build());
     }
 
+    @Transactional
     @Override
     public AdminCallLogsResponse getCallLogs(
             String query, String taskType, String status, String provider,
@@ -221,9 +232,32 @@ public class AdminServiceImpl implements AdminService {
         int clampedSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
         int clampedPage = Math.max(page, 1);
 
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String actorEmail = auth != null ? auth.getName() : "system";
+        UUID actorUserId = resolveActorUserId(actorEmail);
+
+        String filters = String.format("query=%s, taskType=%s, status=%s, provider=%s, from=%s, to=%s, correlationId=%s, candidateRef=%s, page=%d, size=%d",
+                query, taskType, status, provider, from, to, correlationId, candidateRef, clampedPage, clampedSize);
+
+        AdminAuditLog auditLog = AdminAuditLog.builder()
+                .actorUserId(actorUserId)
+                .actorEmail(actorEmail)
+                .action("VIEW_CALL_LOGS")
+                .targetUserId(null)
+                .newValue(filters)
+                .createdAt(LocalDateTime.now())
+                .build();
+        auditLogRepository.save(auditLog);
+
         return aiEngineClient.getAdminLogs(
                 query, taskType, status, provider, from, to, correlationId, candidateRef, clampedPage, clampedSize)
+                .map(logs -> {
+                    logs.setAvailable(true);
+                    return logs;
+                })
                 .orElseGet(() -> AdminCallLogsResponse.builder()
+                        .available(false)
+                        .message("AI engine unreachable")
                         .items(List.of())
                         .totalElements(0L)
                         .page(clampedPage)
@@ -232,10 +266,27 @@ public class AdminServiceImpl implements AdminService {
                         .build());
     }
 
+    @Transactional
     @Override
     public AdminCallLogEntry getCallLogById(String logId) {
-        return aiEngineClient.getAdminLogById(logId)
-                .orElseThrow(() -> new UserNotFoundException("AI call log not found with id: " + logId));
+        AdminCallLogEntry entry = aiEngineClient.getAdminLogById(logId)
+                .orElseThrow(() -> new AiCallLogNotFoundException("AI call log not found with id: " + logId));
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String actorEmail = auth != null ? auth.getName() : "system";
+        UUID actorUserId = resolveActorUserId(actorEmail);
+
+        AdminAuditLog auditLog = AdminAuditLog.builder()
+                .actorUserId(actorUserId)
+                .actorEmail(actorEmail)
+                .action("VIEW_CALL_LOG")
+                .targetUserId(null)
+                .newValue("logId=" + logId)
+                .createdAt(LocalDateTime.now())
+                .build();
+        auditLogRepository.save(auditLog);
+
+        return entry;
     }
 
     @Override

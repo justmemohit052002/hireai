@@ -2,6 +2,10 @@
  * HireAI API Client
  * Centralized fetch client with automatic JWT header injection,
  * thread-safe single-flight token refresh handling, and standardized error extraction.
+ *
+ * NOTE ON TOKEN STORAGE & SECURITY ARCHITECTURE:
+ * Moving the refresh token to a secure httpOnly cookie is the planned follow-up
+ * to mitigate client-side script token access and complete XSS hardening.
  */
 
 const TOKEN_KEY = 'hireai_token';
