@@ -581,6 +581,25 @@ public class GlobalExceptionHandler {
 	// GENERIC FALLBACK EXCEPTION
 	// =========================================================
 
+	@ExceptionHandler(org.springframework.transaction.UnexpectedRollbackException.class)
+	public ResponseEntity<ErrorResponse> handleUnexpectedRollback(
+			org.springframework.transaction.UnexpectedRollbackException ex,
+			HttpServletRequest request) {
+
+		log.error("Transaction rolled back on {} [{}]: {}", request.getMethod(), request.getRequestURI(), ex.getMessage(), ex);
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.INTERNAL_SERVER_ERROR.value(),
+				"Transaction Rollback Error",
+				"A transaction conflict occurred. Please retry your request.",
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(response);
+	}
+
 	@ExceptionHandler(Exception.class)
 	public ResponseEntity<ErrorResponse> handleException(
 			Exception ex,

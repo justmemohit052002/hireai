@@ -11,6 +11,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.vionsys.hireai.auth.dto.AuthResponse;
 import com.vionsys.hireai.auth.dto.ForgotPasswordRequest;
@@ -384,7 +386,12 @@ public class AuthService {
         }
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = {
+            BadCredentialsException.class,
+            UserNotFoundException.class,
+            AccountNotVerifiedException.class,
+            AccountLockedException.class
+    })
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail().trim().toLowerCase())
                 .orElseThrow(() -> new UserNotFoundException("User not found. Please sign up first."));
@@ -477,43 +484,44 @@ public class AuthService {
             }
         }
 
-        // 5. Send security login notification email asynchronously
-        try {
-            emailService.sendLoginAlertEmail(user);
-        } catch (Exception ex) {
-            log.warn("Failed to send login alert email: {}", ex.getMessage());
-        }
-
-        // 6. Send in-app security sign-in notification & profile completion prompt
-        try {
-            boolean isRecruiter = user.getRole() != null && user.getRole().getName() != null &&
-                    user.getRole().getName().name().contains("RECRUITER");
-            String settingsRoute = isRecruiter ? "/recruiter/settings" : "/candidate/settings";
-
-            notificationService.createAndSendNotification(
-                    user,
-                    "Security Alert: Account Sign-in 🛡️",
-                    "New sign-in detected on your HireAI account. If this wasn't you, review your security settings.",
-                    com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
-                    settingsRoute
-            );
-
-            // Check if candidate needs to upload resume for profile completion
-            if (!isRecruiter) {
-                boolean hasResume = resumeRepository.findByCandidateUserIdAndDeletedFalse(user.getId()).isPresent();
-                if (!hasResume) {
-                    notificationService.createAndSendNotification(
-                            user,
-                            "Profile Completion Reminder 📝",
-                            "Upload your resume to complete your candidate profile and unlock automatic AI job matching!",
-                            com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
-                            "/candidate/profile"
-                    );
-                }
+        // 5. Send security login notification email & in-app alerts post-commit
+        final User finalLoginUser = user;
+        executeAfterCommit(() -> {
+            try {
+                emailService.sendLoginAlertEmail(finalLoginUser);
+            } catch (Exception ex) {
+                log.warn("Failed to send login alert email: {}", ex.getMessage());
             }
-        } catch (Exception ex) {
-            log.warn("Failed to dispatch in-app login notifications: {}", ex.getMessage());
-        }
+
+            try {
+                boolean isRecruiter = finalLoginUser.getRole() != null && finalLoginUser.getRole().getName() != null &&
+                        finalLoginUser.getRole().getName().name().contains("RECRUITER");
+                String settingsRoute = isRecruiter ? "/recruiter/settings" : "/candidate/settings";
+
+                notificationService.createAndSendNotification(
+                        finalLoginUser,
+                        "Security Alert: Account Sign-in",
+                        "New sign-in detected on your HireAI account. If this wasn't you, review your security settings.",
+                        com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
+                        settingsRoute
+                );
+
+                if (!isRecruiter) {
+                    boolean hasResume = resumeRepository.findByCandidateUserIdAndDeletedFalse(finalLoginUser.getId()).isPresent();
+                    if (!hasResume) {
+                        notificationService.createAndSendNotification(
+                                finalLoginUser,
+                                "Profile Completion Reminder",
+                                "Upload your resume to complete your candidate profile and unlock automatic AI job matching!",
+                                com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
+                                "/candidate/profile"
+                        );
+                    }
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to dispatch in-app login notifications: {}", ex.getMessage());
+            }
+        });
 
         CustomUserDetails userDetails = CustomUserDetails.fromUser(user);
         String accessToken = jwtService.generateAccessToken(userDetails);
@@ -608,36 +616,39 @@ public class AuthService {
             }
         }
 
-        // Send in-app security sign-in notification & profile completion prompt
-        try {
-            boolean isRecruiter = user.getRole() != null && user.getRole().getName() != null &&
-                    user.getRole().getName().name().contains("RECRUITER");
-            String settingsRoute = isRecruiter ? "/recruiter/settings" : "/candidate/settings";
+        // Send in-app security sign-in notification & profile completion prompt post-commit
+        final User finalOAuthUser = user;
+        executeAfterCommit(() -> {
+            try {
+                boolean isRecruiter = finalOAuthUser.getRole() != null && finalOAuthUser.getRole().getName() != null &&
+                        finalOAuthUser.getRole().getName().name().contains("RECRUITER");
+                String settingsRoute = isRecruiter ? "/recruiter/settings" : "/candidate/settings";
 
-            notificationService.createAndSendNotification(
-                    user,
-                    "Security Alert: Account Sign-in 🛡️",
-                    "New sign-in detected on your HireAI account via " + provider + ". If this wasn't you, review your security settings.",
-                    com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
-                    settingsRoute
-            );
+                notificationService.createAndSendNotification(
+                        finalOAuthUser,
+                        "Security Alert: Account Sign-in",
+                        "New sign-in detected on your HireAI account via " + provider + ". If this wasn't you, review your security settings.",
+                        com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
+                        settingsRoute
+                );
 
-            // Check if candidate needs to upload resume for profile completion
-            if (!isRecruiter) {
-                boolean hasResume = resumeRepository.findByCandidateUserIdAndDeletedFalse(user.getId()).isPresent();
-                if (!hasResume) {
-                    notificationService.createAndSendNotification(
-                            user,
-                            "Profile Completion Reminder 📝",
-                            "Upload your resume to complete your candidate profile and unlock automatic AI job matching!",
-                            com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
-                            "/candidate/profile"
-                    );
+                // Check if candidate needs to upload resume for profile completion
+                if (!isRecruiter) {
+                    boolean hasResume = resumeRepository.findByCandidateUserIdAndDeletedFalse(finalOAuthUser.getId()).isPresent();
+                    if (!hasResume) {
+                        notificationService.createAndSendNotification(
+                                finalOAuthUser,
+                                "Profile Completion Reminder",
+                                "Upload your resume to complete your candidate profile and unlock automatic AI job matching!",
+                                com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
+                                "/candidate/profile"
+                        );
+                    }
                 }
+            } catch (Exception ex) {
+                log.warn("Failed to dispatch in-app OAuth login notifications: {}", ex.getMessage());
             }
-        } catch (Exception ex) {
-            log.warn("Failed to dispatch in-app OAuth login notifications: {}", ex.getMessage());
-        }
+        });
 
         // Generate JWT session tokens
         CustomUserDetails userDetails = CustomUserDetails.fromUser(user);
@@ -902,20 +913,43 @@ public class AuthService {
         resetToken.setUsed(true);
         passwordResetTokenRepository.save(resetToken);
 
-        // Send security alert notification to user
-        try {
-            boolean isRecruiter = user.getRole() != null && user.getRole().getName() != null &&
-                    user.getRole().getName().name().contains("RECRUITER");
-            notificationService.createAndSendNotification(
-                    user,
-                    "Security Alert: Password Changed 🔐",
-                    "Your HireAI account password was recently updated. If you did not make this change, please contact support immediately.",
-                    com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
-                    isRecruiter ? "/recruiter/settings" : "/candidate/settings"
-            );
-        } catch (Exception ex) {
-            log.warn("Failed to dispatch password change notification: {}", ex.getMessage());
-        }
+        // Send security alert notification to user post-commit
+        final User finalResetUser = user;
+        executeAfterCommit(() -> {
+            try {
+                boolean isRecruiter = finalResetUser.getRole() != null && finalResetUser.getRole().getName() != null &&
+                        finalResetUser.getRole().getName().name().contains("RECRUITER");
+                notificationService.createAndSendNotification(
+                        finalResetUser,
+                        "Security Alert: Password Changed",
+                        "Your HireAI account password was recently updated. If you did not make this change, please contact support immediately.",
+                        com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
+                        isRecruiter ? "/recruiter/settings" : "/candidate/settings"
+                );
+            } catch (Exception ex) {
+                log.warn("Failed to dispatch password change notification: {}", ex.getMessage());
+            }
+        });
     }
 
+    private void executeAfterCommit(Runnable task) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    try {
+                        task.run();
+                    } catch (Exception ex) {
+                        log.warn("Post-commit background task execution error: {}", ex.getMessage());
+                    }
+                }
+            });
+        } else {
+            try {
+                task.run();
+            } catch (Exception ex) {
+                log.warn("Background task execution error: {}", ex.getMessage());
+            }
+        }
+    }
 }
