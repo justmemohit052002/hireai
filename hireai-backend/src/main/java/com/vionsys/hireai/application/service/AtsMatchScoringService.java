@@ -5,8 +5,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Service;
 
@@ -27,22 +30,57 @@ public class AtsMatchScoringService {
 
     private final LlmAtsClient llmAtsClient;
 
+    private static final Map<String, String> COMMON_ALIASES = Map.ofEntries(
+            Map.entry("dsa", "data structures and algorithms"),
+            Map.entry("oop", "object-oriented programming"),
+            Map.entry("oops", "object-oriented programming"),
+            Map.entry("dbms", "database management systems"),
+            Map.entry("rdbms", "database management systems"),
+            Map.entry("k8s", "kubernetes"),
+            Map.entry("js", "javascript"),
+            Map.entry("ts", "typescript"),
+            Map.entry("py", "python"),
+            Map.entry("postgres", "postgresql"),
+            Map.entry("mongo", "mongodb"),
+            Map.entry("reactjs", "react"),
+            Map.entry("nodejs", "node.js"),
+            Map.entry("springboot", "spring boot")
+    );
+
+    private static final Map<String, Set<String>> CATEGORY_MEMBERS = Map.of(
+            "version control", Set.of("git", "github", "gitlab", "bitbucket", "svn"),
+            "cloud computing", Set.of("aws", "azure", "gcp", "ec2", "s3", "lambda"),
+            "database management", Set.of("mysql", "postgresql", "postgres", "oracle", "sql server", "sqlite", "sql", "dbms"),
+            "testing frameworks", Set.of("junit", "testng", "mockito", "pytest", "jest")
+    );
+
     /**
      * Compute ATS match score (0-100) between a Candidate profile and a Job posting.
-     * Uses LLM microservice if enabled/available, with graceful rule-based fallback.
+     * Uses AI Engine microservice if enabled/available, with graceful intelligent rule-based fallback.
      */
     public AtsMatchResult computeAtsScore(Candidate candidate, Job job) {
 
-        // 1. Try external LLM scoring first
+        // 1. Try external AI Engine scoring first
         Optional<LlmAtsResponse> llmResponse = llmAtsClient.scoreWithLlm(candidate, job);
         if (llmResponse.isPresent()) {
             LlmAtsResponse res = llmResponse.get();
+            log.info("ATS score computed via AI Match Engine: {}% for Candidate {}",
+                    res.getAtsScore(), candidate.getCandidateId());
+
+            double skillPercent = res.getSkillCoveragePercent() != null
+                    ? res.getSkillCoveragePercent()
+                    : (double) res.getAtsScore();
+
+            double expPercent = res.getExperienceMatchPercent() != null
+                    ? res.getExperienceMatchPercent()
+                    : (double) res.getAtsScore();
+
             return AtsMatchResult.builder()
                     .matchScore(Math.min(100, Math.max(0, res.getAtsScore())))
                     .matchingSkills(res.getMatchingSkills() != null ? res.getMatchingSkills() : Collections.emptyList())
                     .missingSkills(res.getMissingSkills() != null ? res.getMissingSkills() : Collections.emptyList())
-                    .skillMatchPercentage((double) res.getAtsScore())
-                    .experienceMatchPercentage((double) res.getAtsScore())
+                    .skillMatchPercentage(skillPercent)
+                    .experienceMatchPercentage(expPercent)
                     .build();
         }
 
@@ -51,11 +89,11 @@ public class AtsMatchScoringService {
                 ? job.getSkills().stream().map(String::trim).filter(s -> !s.isBlank()).toList()
                 : Collections.emptyList();
 
-        Set<String> candidateSkillNames = new HashSet<>();
+        List<String> candidateSkillNames = new ArrayList<>();
         if (candidate.getSkills() != null) {
             for (Skill s : candidate.getSkills()) {
-                if (s.getName() != null) {
-                    candidateSkillNames.add(s.getName().trim().toLowerCase());
+                if (s.getName() != null && !s.getName().isBlank()) {
+                    candidateSkillNames.add(s.getName().trim());
                 }
             }
         }
@@ -64,11 +102,10 @@ public class AtsMatchScoringService {
         List<String> missingSkills = new ArrayList<>();
 
         if (jobSkills.isEmpty()) {
-            // If no explicit skills required on job, default to candidate skills
             matchedSkills.addAll(candidateSkillNames);
         } else {
             for (String required : jobSkills) {
-                if (candidateSkillNames.contains(required.toLowerCase())) {
+                if (isSkillMatched(required, candidateSkillNames)) {
                     matchedSkills.add(required);
                 } else {
                     missingSkills.add(required);
@@ -82,13 +119,16 @@ public class AtsMatchScoringService {
             skillScore = skillRatio * 60.0;
         }
 
-        // 2. Experience Level Matching (Weight: 25%)
+        // Experience Level Matching (Weight: 25%)
         double expScore = calculateExperienceScore(candidate.getExperience(), job.getExperienceLevel());
 
-        // 3. Designation / Title Relevance (Weight: 15%)
+        // Designation / Title Relevance (Weight: 15%)
         double titleScore = calculateTitleScore(candidate.getCurrentDesignation(), job.getTitle());
 
         int finalScore = (int) Math.min(100, Math.round(skillScore + expScore + titleScore));
+
+        log.info("ATS score computed via rule-based intelligent fallback: {}% for Candidate {}",
+                finalScore, candidate.getCandidateId());
 
         return AtsMatchResult.builder()
                 .matchScore(finalScore)
@@ -97,6 +137,106 @@ public class AtsMatchScoringService {
                 .skillMatchPercentage(jobSkills.isEmpty() ? 100.0 : ((double) matchedSkills.size() / jobSkills.size()) * 100.0)
                 .experienceMatchPercentage((expScore / 25.0) * 100.0)
                 .build();
+    }
+
+    private boolean isSkillMatched(String required, List<String> candidateSkills) {
+        String reqNorm = normalize(required);
+
+        // 1. Exact or alias match
+        for (String c : candidateSkills) {
+            String cNorm = normalize(c);
+            if (reqNorm.equals(cNorm)) {
+                return true;
+            }
+        }
+
+        // 2. Decompose parenthesized examples (e.g. "Cloud computing platforms (e.g. AWS)")
+        Pattern egPattern = Pattern.compile("\\((?:e\\.g\\.?|eg:?|such as|including)\\s*([^)]+)\\)", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = egPattern.matcher(required);
+        if (matcher.find()) {
+            String rawExamples = matcher.group(1);
+            String[] examples = rawExamples.split("[,;/]|\\s+or\\s+");
+            for (String ex : examples) {
+                String exTrim = ex.trim();
+                if (!exTrim.isBlank()) {
+                    for (String c : candidateSkills) {
+                        if (tokenMatches(exTrim, c) || normalize(exTrim).equals(normalize(c))) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. Decompose alternatives (e.g. "A / B" or "A or B")
+        if (required.contains("/") || required.matches(".*\\b(or|and/or)\\b.*")) {
+            String[] parts = required.split("/|\\b(or|and/or)\\b");
+            for (String part : parts) {
+                String partTrim = part.trim();
+                if (!partTrim.isBlank()) {
+                    for (String c : candidateSkills) {
+                        if (tokenMatches(partTrim, c) || normalize(partTrim).equals(normalize(c))) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. Category checks
+        for (Map.Entry<String, Set<String>> cat : CATEGORY_MEMBERS.entrySet()) {
+            if (reqNorm.contains(cat.getKey())) {
+                for (String c : candidateSkills) {
+                    String cNorm = normalize(c);
+                    if (cat.getValue().contains(cNorm)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        // 5. Strict token matching
+        for (String c : candidateSkills) {
+            if (tokenMatches(reqNorm, c) || tokenMatches(c, required)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private String normalize(String skill) {
+        if (skill == null) return "";
+        String s = skill.trim().toLowerCase();
+
+        // Strip filler phrases
+        s = s.replaceAll("^(?:proficient in|hands[- ]on experience with|knowledge of|expertise in)\\s+", "");
+        s = s.replaceAll("\\s+(?:programming language|frameworks?|concepts?|tools?|platforms?|systems?)$", "");
+
+        // Strip parenthetical notes like (core java, java 8+)
+        s = s.replaceAll("\\s*\\([^)]*\\)", "").trim();
+
+        // Check alias dictionary
+        if (COMMON_ALIASES.containsKey(s)) {
+            return COMMON_ALIASES.get(s);
+        }
+
+        return s;
+    }
+
+    private boolean tokenMatches(String token, String target) {
+        if (token == null || target == null || token.isBlank() || target.isBlank()) return false;
+        String tLow = token.trim().toLowerCase();
+        String tarLow = target.trim().toLowerCase();
+
+        // Negative guards against common false positives
+        if (tLow.equals("java") && tarLow.contains("javascript")) return false;
+        if (tLow.equals("sql") && tarLow.contains("nosql")) return false;
+        if (tLow.equals("go") && tarLow.contains("mongodb")) return false;
+
+        String escaped = Pattern.quote(tLow);
+        Pattern p = Pattern.compile("(?<![a-zA-Z0-9_])" + escaped + "(?![a-zA-Z0-9_])");
+        return p.matcher(tarLow).find();
     }
 
     private double calculateExperienceScore(BigDecimal candidateExp, ExperienceLevel requiredLevel) {

@@ -277,12 +277,14 @@ public class ResumeServiceImpl implements ResumeService {
                     app.setMatchingSkills(String.join(", ", atsResult.getMatchingSkills()));
                     app.setMissingSkills(String.join(", ", atsResult.getMissingSkills()));
 
+                    boolean newlyShortlisted = false;
                     if (newScore >= atsProperties.getShortlistThreshold()) {
                         if (app.getStatus() == com.vionsys.hireai.application.enums.ApplicationStatus.APPLIED ||
                                 app.getStatus() == com.vionsys.hireai.application.enums.ApplicationStatus.SCREENING ||
                                 (app.getStatus() == com.vionsys.hireai.application.enums.ApplicationStatus.REJECTED &&
                                         app.getRecruiterNotes() != null && app.getRecruiterNotes().contains("ATS Skill Match Score"))) {
                             app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.SHORTLISTED);
+                            newlyShortlisted = true;
                         }
                         app.setRecruiterNotes(
                                 String.format("Shortlisted for interview by AI ATS (Match Score: %d%% >= %d%% threshold)",
@@ -300,6 +302,21 @@ public class ResumeServiceImpl implements ResumeService {
                     jobApplicationRepository.save(app);
                     log.info("Auto-updated Application {} with freshly calculated ATS Match Score: {}%", app.getId(),
                             newScore);
+
+                    // Dispatch notification if newly auto-shortlisted
+                    if (newlyShortlisted && candidate != null && candidate.getUser() != null) {
+                        try {
+                            notificationService.createAndSendNotification(
+                                    candidate.getUser(),
+                                    "Application Auto-Shortlisted",
+                                    "Your newly parsed resume scored " + newScore + "% on " + app.getJob().getTitle() + " and was auto-shortlisted!",
+                                    com.vionsys.hireai.notification.enums.NotificationType.AI_MATCH,
+                                    "/candidate/applications"
+                            );
+                        } catch (Exception exNotif) {
+                            log.debug("Notice on re-score shortlist candidate notification: {}", exNotif.getMessage());
+                        }
+                    }
                 }
             } catch (Exception ex) {
                 log.warn("Failed to auto-update ATS score on existing applications: {}", ex.getMessage());
@@ -315,7 +332,7 @@ public class ResumeServiceImpl implements ResumeService {
                 int skillCount = parsedResult.getSkills() != null ? parsedResult.getSkills().size() : 0;
                 notificationService.createAndSendNotification(
                         candidate.getUser(),
-                        "Resume Parsed & ATS Feedback Ready ✨",
+                        "Resume Parsed and ATS Feedback Ready",
                         "We extracted " + skillCount + " skills from your resume. Your ATS profile has been updated for AI job matching!",
                         com.vionsys.hireai.notification.enums.NotificationType.AI_MATCH,
                         "/candidate/profile"
@@ -335,7 +352,7 @@ public class ResumeServiceImpl implements ResumeService {
                 if (resume.getCandidate() != null && resume.getCandidate().getUser() != null) {
                     notificationService.createAndSendNotification(
                             resume.getCandidate().getUser(),
-                            "Resume Parsing Needs Attention ⚠️",
+                            "Resume Parsing Needs Attention",
                             "We couldn't extract all details from your resume. Please check your uploaded document format (PDF or DOCX recommended) and re-upload.",
                             com.vionsys.hireai.notification.enums.NotificationType.AI_MATCH,
                             "/candidate/profile"

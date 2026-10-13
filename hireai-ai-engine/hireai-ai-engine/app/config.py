@@ -52,6 +52,10 @@ GEMINI_DAILY_LIMIT = int(os.getenv("GEMINI_DAILY_LIMIT", "250"))
 ADMIN_TIMEZONE = os.getenv("ADMIN_TIMEZONE", os.getenv("TIMEZONE", "Asia/Kolkata"))
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
 
+# ---- Match Engine ATS Thresholds ----
+ATS_SHORTLIST_THRESHOLD = int(os.getenv("ATS_SHORTLIST_THRESHOLD", "70"))
+ATS_REJECT_THRESHOLD = int(os.getenv("ATS_REJECT_THRESHOLD", "40"))
+
 # ---- CORS ----
 # During local development, frontend may call this service directly, so default local ports are allowed.
 # Outside development, CORS_ALLOWED_ORIGINS defaults to an empty list (no wildcard).

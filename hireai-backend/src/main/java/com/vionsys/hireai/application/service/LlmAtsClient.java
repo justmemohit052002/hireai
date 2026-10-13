@@ -14,6 +14,7 @@ import com.vionsys.hireai.application.dto.llm.LlmAtsResponse;
 import com.vionsys.hireai.candidate.entity.Candidate;
 import com.vionsys.hireai.candidate.entity.Skill;
 import com.vionsys.hireai.job.entity.Job;
+import com.vionsys.hireai.job.enums.ExperienceLevel;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,9 +46,19 @@ public class LlmAtsClient {
                     ? job.getSkills().stream().filter(s -> s != null && !s.isBlank()).toList()
                     : Collections.emptyList();
 
+            Double candExpYears = candidate.getExperience() != null
+                    ? candidate.getExperience().doubleValue()
+                    : null;
+
+            Double reqExpYears = job.getExperienceLevel() != null
+                    ? getMinExpectedExperience(job.getExperienceLevel())
+                    : null;
+
             AiMatchScoreRequest request = AiMatchScoreRequest.builder()
                     .resumeSkills(candidateSkills)
                     .jobSkills(jobSkills)
+                    .candidateExperienceYears(candExpYears)
+                    .requiredExperienceYears(reqExpYears)
                     .build();
 
             Optional<AiMatchScoreResponse> aiResponse = aiEngineClient.calculateMatchScore(request);
@@ -61,7 +72,12 @@ public class LlmAtsClient {
                         .atsScore(res.getMatchScore())
                         .matchingSkills(res.getMatchedSkills() != null ? res.getMatchedSkills() : Collections.emptyList())
                         .missingSkills(res.getMissingSkills() != null ? res.getMissingSkills() : Collections.emptyList())
+                        .bonusSkills(res.getBonusSkills() != null ? res.getBonusSkills() : Collections.emptyList())
+                        .skillCoveragePercent(res.getSkillCoveragePercent())
+                        .experienceMatchPercent(res.getExperienceMatchPercent())
+                        .rationale(res.getRationale())
                         .recommendation(res.getAutoAction())
+                        .recommended("shortlist".equalsIgnoreCase(res.getAutoAction()))
                         .build();
 
                 return Optional.of(response);
@@ -72,5 +88,16 @@ public class LlmAtsClient {
         }
 
         return Optional.empty();
+    }
+
+    private double getMinExpectedExperience(ExperienceLevel level) {
+        if (level == null) return 0.0;
+        return switch (level) {
+            case FRESHER -> 0.0;
+            case JUNIOR -> 1.0;
+            case MID_LEVEL -> 3.0;
+            case SENIOR -> 5.0;
+            case LEAD -> 8.0;
+        };
     }
 }

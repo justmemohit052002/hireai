@@ -1,6 +1,7 @@
 package com.vionsys.hireai.application.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,16 +41,18 @@ class AtsMatchScoringServiceTest {
 
     @BeforeEach
     void setUp() {
-        Skill java = Skill.builder().id(UUID.randomUUID()).name("Java").build();
+        Skill java = Skill.builder().id(UUID.randomUUID()).name("Java (Core Java, Java 8+)").build();
         Skill spring = Skill.builder().id(UUID.randomUUID()).name("Spring Boot").build();
         Skill postgres = Skill.builder().id(UUID.randomUUID()).name("PostgreSQL").build();
+        Skill dsa = Skill.builder().id(UUID.randomUUID()).name("DSA").build();
+        Skill aws = Skill.builder().id(UUID.randomUUID()).name("AWS (EC2)").build();
 
         candidate = Candidate.builder()
                 .id(UUID.randomUUID())
                 .candidateId("CAND-001")
                 .firstName("Mohit")
                 .lastName("Kumar")
-                .skills(Set.of(java, spring, postgres))
+                .skills(Set.of(java, spring, postgres, dsa, aws))
                 .experience(BigDecimal.valueOf(4.0))
                 .currentDesignation("Senior Java Developer")
                 .build();
@@ -57,17 +60,19 @@ class AtsMatchScoringServiceTest {
         job = Job.builder()
                 .id(UUID.randomUUID())
                 .title("Senior Java Backend Engineer")
-                .skills(List.of("Java", "Spring Boot", "PostgreSQL", "Docker"))
+                .skills(List.of("Java programming language", "Spring Boot", "Cloud computing platforms (e.g. AWS)", "Data structures and algorithms", "MongoDB"))
                 .experienceLevel(ExperienceLevel.MID_LEVEL)
                 .build();
     }
 
     @Test
-    void testComputeScore_WithLlmResponse() {
+    void testComputeScore_WithLlmResponse_CarriesSeparatePercentages() {
         LlmAtsResponse mockLlm = LlmAtsResponse.builder()
                 .atsScore(88)
-                .matchingSkills(List.of("Java", "Spring Boot", "PostgreSQL"))
-                .missingSkills(List.of("Docker"))
+                .matchingSkills(List.of("Java programming language", "Spring Boot", "Cloud computing platforms (e.g. AWS)", "Data structures and algorithms"))
+                .missingSkills(List.of("MongoDB"))
+                .skillCoveragePercent(80.0)
+                .experienceMatchPercent(100.0)
                 .recommendation("shortlist")
                 .build();
 
@@ -77,19 +82,47 @@ class AtsMatchScoringServiceTest {
 
         assertNotNull(result);
         assertEquals(88, result.getMatchScore());
-        assertEquals(3, result.getMatchingSkills().size());
+        assertEquals(4, result.getMatchingSkills().size());
         assertEquals(1, result.getMissingSkills().size());
+        assertEquals(80.0, result.getSkillMatchPercentage());
+        assertEquals(100.0, result.getExperienceMatchPercentage());
     }
 
     @Test
-    void testComputeScore_WithRuleBasedFallback() {
+    void testComputeScore_WithRuleBasedFallback_DecomposesAndResolvesAliases() {
         when(llmAtsClient.scoreWithLlm(any(), any())).thenReturn(Optional.empty());
 
         AtsMatchResult result = scoringService.computeAtsScore(candidate, job);
 
         assertNotNull(result);
-        assertTrue(result.getMatchScore() >= 70, "Rule based score should be high for matching skills and experience");
-        assertTrue(result.getMatchingSkills().contains("Java"));
-        assertTrue(result.getMissingSkills().contains("Docker"));
+        assertTrue(result.getMatchScore() >= 75, "Intelligent fallback should score high for decomposed and alias skills");
+        assertTrue(result.getMatchingSkills().contains("Java programming language"), "Java (Core Java, Java 8+) should match Java programming language");
+        assertTrue(result.getMatchingSkills().contains("Cloud computing platforms (e.g. AWS)"), "AWS (EC2) should match Cloud computing platforms (e.g. AWS)");
+        assertTrue(result.getMatchingSkills().contains("Data structures and algorithms"), "DSA should match Data structures and algorithms");
+        assertTrue(result.getMissingSkills().contains("MongoDB"), "MongoDB must be reported missing");
+    }
+
+    @Test
+    void testComputeScore_WithRuleBasedFallback_NoFalsePositives() {
+        when(llmAtsClient.scoreWithLlm(any(), any())).thenReturn(Optional.empty());
+
+        Candidate jsOnlyCandidate = Candidate.builder()
+                .id(UUID.randomUUID())
+                .candidateId("CAND-002")
+                .skills(Set.of(Skill.builder().name("JavaScript").build(), Skill.builder().name("NoSQL").build()))
+                .build();
+
+        Job javaSqlJob = Job.builder()
+                .id(UUID.randomUUID())
+                .title("Java SQL Developer")
+                .skills(List.of("Java", "SQL"))
+                .build();
+
+        AtsMatchResult result = scoringService.computeAtsScore(jsOnlyCandidate, javaSqlJob);
+
+        assertNotNull(result);
+        assertFalse(result.getMatchingSkills().contains("Java"), "JavaScript must not match Java");
+        assertFalse(result.getMatchingSkills().contains("SQL"), "NoSQL must not match SQL");
+        assertEquals(2, result.getMissingSkills().size());
     }
 }

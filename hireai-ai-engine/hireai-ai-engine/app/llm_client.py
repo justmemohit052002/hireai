@@ -111,8 +111,8 @@ def _call_ollama(prompt: str, model: str = None) -> str:
         "options": {
             "temperature": 0.1 if is_json_request else 0.3,
             "top_p": 0.9,
-            "num_ctx": 4096,
-            "num_predict": 1024,
+            "num_ctx": 8192,
+            "num_predict": 2048,
             "repeat_penalty": 1.1,
         },
     }
@@ -152,8 +152,13 @@ def _call_gemini(prompt: str) -> str:
         "https://generativelanguage.googleapis.com/v1beta/models/"
         f"{model_name}:generateContent?key={GEMINI_API_KEY}"
     )
+    is_json = "json" in prompt.lower() or "{" in prompt
+    body: dict = {"contents": [{"parts": [{"text": prompt}]}]}
+    if is_json:
+        body["generationConfig"] = {"response_mime_type": "application/json"}
+
     response = requests.post(
-        url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=60
+        url, json=body, timeout=LLM_TIMEOUT_SECONDS
     )
     response.raise_for_status()
     return response.json()["candidates"][0]["content"]["parts"][0]["text"]
@@ -163,11 +168,16 @@ def _call_groq(prompt: str, model: str = None) -> str:
     if not GROQ_API_KEY:
         raise LLMCallError("GROQ_API_KEY not set - required when LLM_PROVIDER=groq.")
     use_model = model or GROQ_MODEL
+    is_json = "json" in prompt.lower() or "{" in prompt
+    body: dict = {"model": use_model, "messages": [{"role": "user", "content": prompt}]}
+    if is_json:
+        body["response_format"] = {"type": "json_object"}
+
     response = requests.post(
         "https://api.groq.com/openai/v1/chat/completions",
         headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
-        json={"model": use_model, "messages": [{"role": "user", "content": prompt}]},
-        timeout=60,
+        json=body,
+        timeout=LLM_TIMEOUT_SECONDS,
     )
     response.raise_for_status()
     return response.json()["choices"][0]["message"]["content"]

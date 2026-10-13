@@ -39,46 +39,46 @@ public class AiJdServiceImpl implements AiJdService {
 
         if (request.getRequiredSkills() != null && !request.getRequiredSkills().isEmpty()) {
             mustHave = request.getRequiredSkills();
-            niceToHave = List.of("Git & Version Control", "Agile Methodologies", "Problem Solving");
+            niceToHave = List.of("Git", "Agile", "Problem Solving");
         } else if (lowerTitle.contains("python") || lowerTitle.contains("django") || lowerTitle.contains("fastapi") || lowerTitle.contains("flask")) {
-            mustHave = List.of("Python", "Django / FastAPI", "PostgreSQL / MySQL", "RESTful APIs", "SQLAlchemy / ORM");
+            mustHave = List.of("Python", "FastAPI", "PostgreSQL", "REST APIs", "SQLAlchemy");
             niceToHave = List.of("Docker", "Redis", "Celery", "PyTest", "Git");
         } else if (lowerTitle.contains("front") || lowerTitle.contains("react") || lowerTitle.contains("vue") || lowerTitle.contains("angular") || lowerTitle.contains("ui")) {
-            mustHave = List.of("React.js", "TypeScript", "JavaScript (ES6+)", "HTML5 / CSS3", "REST APIs");
-            niceToHave = List.of("TailwindCSS", "Redux / Zustand", "Jest / React Testing Library", "Git", "Webpack / Vite");
+            mustHave = List.of("React.js", "TypeScript", "JavaScript", "HTML5", "CSS3", "REST APIs");
+            niceToHave = List.of("Tailwind CSS", "Redux", "Jest", "Git", "Vite");
         } else if (lowerTitle.contains("data sci") || lowerTitle.contains("machine learn") || lowerTitle.contains("ml") || lowerTitle.contains("ai")) {
-            mustHave = List.of("Python", "PyTorch / TensorFlow", "Scikit-Learn", "SQL", "Feature Engineering");
-            niceToHave = List.of("Docker", "FastAPI", "MLOps", "Pandas & NumPy", "Git");
+            mustHave = List.of("Python", "PyTorch", "Scikit-Learn", "SQL", "Feature Engineering");
+            niceToHave = List.of("Docker", "FastAPI", "MLOps", "Pandas", "Git");
         } else if (lowerTitle.contains("data anal") || lowerTitle.contains("business anal") || lowerTitle.contains("bi ")) {
-            mustHave = List.of("SQL", "Python", "Power BI / Tableau", "Excel (Advanced)", "Data Modeling");
+            mustHave = List.of("SQL", "Python", "Power BI", "Data Modeling");
             niceToHave = List.of("ETL Pipelines", "Statistical Analysis", "Dashboarding", "JIRA");
         } else if (lowerTitle.contains("devops") || lowerTitle.contains("cloud") || lowerTitle.contains("sre") || lowerTitle.contains("infra")) {
-            mustHave = List.of("Kubernetes", "Docker", "AWS / GCP", "CI/CD Pipelines", "Terraform");
-            niceToHave = List.of("Linux / Bash", "Prometheus & Grafana", "Helm", "Security Best Practices");
+            mustHave = List.of("Kubernetes", "Docker", "AWS", "CI/CD", "Terraform");
+            niceToHave = List.of("Linux", "Prometheus", "Helm", "Security");
         } else if (lowerTitle.contains("qa") || lowerTitle.contains("test") || lowerTitle.contains("sdet") || lowerTitle.contains("quality")) {
-            mustHave = List.of("Selenium / Cypress", "Test Automation Frameworks", "API Testing (Postman/RestAssured)", "Java / Python");
-            niceToHave = List.of("CI/CD Integration", "JIRA", "SQL", "Performance Testing (JMeter)");
+            mustHave = List.of("Selenium", "Test Automation", "API Testing", "Java", "Python");
+            niceToHave = List.of("CI/CD", "JIRA", "SQL", "JMeter");
         } else if (lowerTitle.contains("mobile") || lowerTitle.contains("android") || lowerTitle.contains("ios") || lowerTitle.contains("flutter") || lowerTitle.contains("react native")) {
-            mustHave = List.of("Flutter / React Native", "Dart / Kotlin / Swift", "Mobile Architecture", "RESTful APIs", "State Management");
-            niceToHave = List.of("Firebase", "CI/CD Mobile Pipelines", "App Store Deployment", "Git");
+            mustHave = List.of("Flutter", "Kotlin", "Swift", "REST APIs", "State Management");
+            niceToHave = List.of("Firebase", "CI/CD", "App Store Deployment", "Git");
         } else if (lowerTitle.contains("data eng") || lowerTitle.contains("big data") || lowerTitle.contains("etl") || lowerTitle.contains("spark") || lowerTitle.contains("snowflake")) {
-            mustHave = List.of("Apache Spark", "Python", "SQL (Advanced)", "Data Warehousing (Snowflake / BigQuery)", "ETL Pipelines");
-            niceToHave = List.of("Airflow", "Kafka", "AWS / GCP", "Docker", "Git");
+            mustHave = List.of("Apache Spark", "Python", "SQL", "Snowflake", "ETL Pipelines");
+            niceToHave = List.of("Airflow", "Kafka", "AWS", "Docker", "Git");
         } else if (lowerTitle.contains("security") || lowerTitle.contains("cyber") || lowerTitle.contains("infosec") || lowerTitle.contains("soc")) {
-            mustHave = List.of("Network Security", "Vulnerability Assessment", "SIEM Tools", "Threat Modeling", "OWASP Top 10");
-            niceToHave = List.of("Incident Response", "Python / Bash", "Zero Trust", "IAM");
+            mustHave = List.of("Network Security", "Vulnerability Assessment", "SIEM", "Threat Modeling", "OWASP");
+            niceToHave = List.of("Incident Response", "Python", "Zero Trust", "IAM");
         } else if (lowerTitle.contains("product manager") || lowerTitle.contains("product owner") || lowerTitle.contains("tpm")) {
-            mustHave = List.of("Product Roadmap & Strategy", "Agile / Scrum", "User Story Mapping", "JIRA", "Data Analytics");
+            mustHave = List.of("Product Roadmap", "Agile", "User Stories", "JIRA", "Data Analytics");
             niceToHave = List.of("A/B Testing", "Customer Discovery", "PRD Writing", "Stakeholder Management");
         } else if (lowerTitle.contains("design") || lowerTitle.contains("ui") || lowerTitle.contains("ux")) {
-            mustHave = List.of("Figma", "UI/UX Design", "Design Systems", "Wireframing & Prototyping", "User Research");
-            niceToHave = List.of("Interaction Design", "Accessibility (WCAG)", "Design Thinking", "Responsive Design");
+            mustHave = List.of("Figma", "UI/UX Design", "Design Systems", "Wireframing", "User Research");
+            niceToHave = List.of("Interaction Design", "Accessibility", "Design Thinking", "Responsive Design");
         } else if (lowerTitle.contains("java") || lowerTitle.contains("spring") || lowerTitle.contains("backend")) {
-            mustHave = List.of("Java", "Spring Boot", "Microservices", "PostgreSQL / MySQL", "RESTful APIs");
+            mustHave = List.of("Java", "Spring Boot", "Microservices", "PostgreSQL", "REST APIs");
             niceToHave = List.of("Docker", "Redis", "Kafka", "Git", "System Design");
         } else {
-            mustHave = List.of("Core Programming", "Data Structures & Algorithms", "RESTful APIs", "Relational Databases", "Problem Solving");
-            niceToHave = List.of("Git & Version Control", "Docker", "Agile / Scrum Methodologies", "CI/CD");
+            mustHave = List.of("Programming", "Data Structures and Algorithms", "REST APIs", "Relational Databases", "Problem Solving");
+            niceToHave = List.of("Git", "Docker", "Agile", "CI/CD");
         }
 
         responsibilities = List.of(

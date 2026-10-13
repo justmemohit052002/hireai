@@ -102,32 +102,66 @@ should branch on this field, not assume every response is clean.
 
 **`POST /api/v1/match/score`**
 
-Request:
+Request (camelCase JSON):
 ```json
 {
-  "candidate_id": "cand_1029",
-  "job_id": "job_118"
-}
-```
-(The AI engine looks up the already-parsed resume and JD internally by ID —
-frontend doesn't need to resend that data.)
-
-Response:
-```json
-{
-  "candidate_id": "cand_1029",
-  "job_id": "job_118",
-  "match_score": 92,
-  "matched_skills": ["Node.js", "PostgreSQL"],
-  "missing_skills": ["Kubernetes"],
-  "rationale": "Strong overlap on core backend stack; no cloud orchestration experience listed.",
-  "auto_action": "shortlist"
+  "resumeSkills": ["Java (Core Java, Java 8+)", "Spring Boot", "AWS (EC2)", "MySQL", "Git"],
+  "jobSkills": [
+    "Java programming language",
+    "Cloud computing platforms (e.g. AWS)",
+    "Database management systems (e.g. MySQL)",
+    "MongoDB",
+    "Version control systems (e.g. Git)"
+  ],
+  "niceToHaveSkills": ["Docker", "Kubernetes"],
+  "resumeText": "Optional raw text of the resume for token evidence extraction...",
+  "candidateExperienceYears": 3.5,
+  "requiredExperienceYears": 3.0
 }
 ```
 
-`auto_action` is one of: `"shortlist"` (score ≥ 80), `"reject"` (score <
-40), or `"review"` (needs a human to decide) — this drives whether the
-candidate row shows up in the recruiter's queue at all.
+Response (camelCase JSON):
+```json
+{
+  "matchScore": 88,
+  "autoAction": "shortlist",
+  "matchedSkills": [
+    "Java programming language",
+    "Cloud computing platforms (e.g. AWS)",
+    "Database management systems (e.g. MySQL)",
+    "Version control systems (e.g. Git)"
+  ],
+  "missingSkills": [
+    "MongoDB"
+  ],
+  "bonusSkills": [
+    "Spring Boot"
+  ],
+  "matchDetails": [
+    {
+      "requiredSkill": "Cloud computing platforms (e.g. AWS)",
+      "status": "matched",
+      "matchedWith": "AWS (EC2)",
+      "matchType": "example",
+      "confidence": 1.0
+    }
+  ],
+  "skillCoveragePercent": 80.0,
+  "experienceMatchPercent": 100.0,
+  "scoreBreakdown": {
+    "skillScore": 85,
+    "experienceScore": 100
+  },
+  "rationale": "Matched 4 of 5 required skills (80.0% coverage). Missing: MongoDB.",
+  "engineVersion": "match-v2",
+  "semanticModelAvailable": true
+}
+```
+
+`autoAction` is one of:
+- `"shortlist"` (score >= 70, aligned with backend `ats.shortlist-threshold=70`)
+- `"reject"` (score < 40)
+- `"review"` (score 40 to 69, requiring recruiter review)
 
 ---
 

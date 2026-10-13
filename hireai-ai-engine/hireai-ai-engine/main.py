@@ -254,7 +254,14 @@ def resumes_status(job_id: str):
 # ---- 3. Match Engine (sync, no LLM) ----
 @api_v1.post("/match/score", response_model=MatchScoreResponse)
 def match_score(request: MatchScoreRequest):
-    result = calculate_match_score(request.resume_skills, request.job_skills)
+    result = calculate_match_score(
+        resume_skills=request.resume_skills,
+        job_skills=request.job_skills,
+        nice_to_have_skills=request.nice_to_have_skills,
+        resume_text=request.resume_text,
+        candidate_experience_years=request.candidate_experience_years,
+        required_experience_years=request.required_experience_years,
+    )
     return MatchScoreResponse(**result)
 
 

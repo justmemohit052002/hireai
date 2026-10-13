@@ -12,6 +12,12 @@ Use exactly this structure:
   "interview_questions": ["3-5 relevant technical/behavioral interview questions for this role"]
 }
 
+Rules for skills:
+- Every skill in must_have_skills and nice_to_have_skills MUST be an atomic, canonical skill name (e.g. "Java", "AWS", "Git", "MySQL", "Docker", "JUnit").
+- Never output composite skill items with slashes (e.g. do NOT write "PostgreSQL / MySQL", output separate entries like "PostgreSQL" and "MySQL").
+- Never output descriptive parenthetical phrases (e.g. do NOT write "Cloud computing platforms (e.g. AWS)", output "AWS").
+- Keep skill names concise, precise, and industry-standard without filler words.
+
 Job title: {job_title}
 Required skills: {required_skills}
 Experience level: {experience_level}

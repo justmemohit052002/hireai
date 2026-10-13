@@ -171,7 +171,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             // 1. Candidate notification
             if (candidate.getUser() != null) {
                 String candidateTitle = isAutoShortlisted
-                        ? "Application Auto-Shortlisted 🎉"
+                        ? "Application Auto-Shortlisted"
                         : "Application Submitted Successfully";
                 String candidateMsg = isAutoShortlisted
                         ? "Congratulations! Your profile is a " + matchScore + "% match for " + job.getTitle() + " at " + companyName + " and was automatically shortlisted!"
@@ -191,7 +191,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             // 2. Recruiter notification with shortlist highlighting
             if (job.getRecruiterProfile() != null && job.getRecruiterProfile().getUser() != null) {
                 String recruiterTitle = isAutoShortlisted
-                        ? "🌟 High-Match Candidate Auto-Shortlisted (" + matchScore + "%)"
+                        ? "High-Match Candidate Auto-Shortlisted (" + matchScore + "%)"
                         : "New Applicant Received";
                 String recruiterMsg = isAutoShortlisted
                         ? "Candidate " + candidate.getFirstName() + " " + candidate.getLastName() + " scored " + matchScore + "% on " + job.getTitle() + " (≥ " + atsProperties.getShortlistThreshold() + "% threshold) - Automatically Shortlisted!"
@@ -212,7 +212,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 if (applicantCount == 10 || applicantCount == 25 || applicantCount == 50 || applicantCount == 100) {
                     notificationService.createAndSendNotification(
                             job.getRecruiterProfile().getUser(),
-                            "Job Capacity Milestone 📈",
+                            "Job Capacity Milestone",
                             "Your job posting '" + job.getTitle() + "' has reached " + applicantCount + " applicants. Review candidates or update listing status.",
                             com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
                             "/recruiter/jobs"
@@ -306,17 +306,17 @@ public class JobApplicationServiceImpl implements JobApplicationService {
 
                 switch (request.getStatus()) {
                     case SHORTLISTED -> {
-                        title = "Congratulations! You're Shortlisted 🎉";
+                        title = "Congratulations! You're Shortlisted";
                         msg = "Your application for " + application.getJob().getTitle() + " has advanced to the Shortlisted stage.";
                         notifType = com.vionsys.hireai.notification.enums.NotificationType.APPLICATION_STATUS;
                     }
                     case INTERVIEW_SCHEDULED -> {
-                        title = "Interview Scheduled 📅";
+                        title = "Interview Scheduled";
                         msg = "An interview has been scheduled for " + application.getJob().getTitle() + ". Please review meeting details in your inbox.";
                         notifType = com.vionsys.hireai.notification.enums.NotificationType.INTERVIEW;
                     }
                     case OFFERED -> {
-                        title = "Job Offer Extended! 🏆";
+                        title = "Job Offer Extended";
                         msg = "Congratulations! A job offer has been released for " + application.getJob().getTitle() + ". View your application details.";
                         notifType = com.vionsys.hireai.notification.enums.NotificationType.APPLICATION_STATUS;
                     }
@@ -326,7 +326,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                         notifType = com.vionsys.hireai.notification.enums.NotificationType.APPLICATION_STATUS;
                     }
                     case SCREENING -> {
-                        title = "Application Under Review 🔍";
+                        title = "Application Under Review";
                         msg = "The hiring team is currently reviewing your resume for " + application.getJob().getTitle() + ".";
                         notifType = com.vionsys.hireai.notification.enums.NotificationType.APPLICATION_STATUS;
                     }
