@@ -134,8 +134,12 @@ public class RecruiterProfileServiceImpl implements RecruiterProfileService {
 		}
 
 		String savedPath = photoStorageService.storePhoto(file);
+		String photoUrl = "/recruiter/profile/" + user.getId() + "/photo";
 		recruiterProfile.setProfilePhotoPath(savedPath);
-		recruiterProfile.setProfilePhotoUrl("/recruiter/profile/photo");
+		recruiterProfile.setProfilePhotoUrl(photoUrl);
+
+		user.setAvatarUrl(photoUrl);
+		userRepository.save(user);
 
 		RecruiterProfile saved = recruiterProfileRepository.save(recruiterProfile);
 		return RecruiterProfileMapper.toResponse(saved);
@@ -189,6 +193,9 @@ public class RecruiterProfileServiceImpl implements RecruiterProfileService {
 			recruiterProfile.setProfilePhotoPath(null);
 			recruiterProfile.setProfilePhotoUrl(null);
 		}
+
+		user.setAvatarUrl(null);
+		userRepository.save(user);
 
 		RecruiterProfile saved = recruiterProfileRepository.save(recruiterProfile);
 		return RecruiterProfileMapper.toResponse(saved);

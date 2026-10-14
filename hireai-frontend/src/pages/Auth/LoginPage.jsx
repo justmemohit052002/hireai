@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { User, Building2, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
+import { User, Building2, Lock, Mail, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -17,6 +17,8 @@ export const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [isUnverified, setIsUnverified] = useState(false);
+
+  const infoMessage = location.state?.message;
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -75,6 +77,14 @@ export const LoginPage = () => {
           <h2 className="text-xl sm:text-2xl font-bold font-heading text-foreground">Welcome Back</h2>
           <p className="text-xs text-muted-foreground">Sign in to your HireAI account</p>
         </div>
+
+        {/* Success / Info Notice */}
+        {infoMessage && (
+          <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium flex items-start gap-2.5">
+            <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-500" />
+            <span>{infoMessage}</span>
+          </div>
+        )}
 
         {/* Role Selector Tabs */}
         <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-muted/60 glass border border-white/10">

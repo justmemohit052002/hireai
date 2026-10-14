@@ -138,9 +138,13 @@ public class SecurityConfig {
                         // RECRUITER APIs
                         // =====================================================
 
-                        // Shared profile photo viewing
-                        .requestMatchers(HttpMethod.GET, "/candidates/*/profile/photo", "/recruiter/profile/*/photo")
-                        .authenticated()
+                        // Public Profile Photos & Static Image Assets (enables browser <img> tag rendering without JWT headers)
+                        .requestMatchers(HttpMethod.GET,
+                                "/candidates/*/profile/photo",
+                                "/recruiter/profile/*/photo",
+                                "/users/*/avatar",
+                                "/uploads/profile-photos/**")
+                        .permitAll()
 
                         .requestMatchers("/recruiter/**")
                         .hasAnyRole("RECRUITER", "ADMIN")
@@ -175,7 +179,7 @@ public class SecurityConfig {
                         // USER SELF-SERVICE & OTHER AUTHENTICATED APIS
                         // =====================================================
 
-                        .requestMatchers("/users/**", "/test")
+                        .requestMatchers("/users/**", "/api/v1/users/**", "/api/users/**", "/test")
                         .authenticated()
 
                         .anyRequest()

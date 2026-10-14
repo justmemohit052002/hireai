@@ -46,8 +46,8 @@ public class CustomUserDetails implements UserDetails {
         return new CustomUserDetails(
                 user.getId(),
                 user.getEmail(),
-                user.getPassword(),
-                Boolean.TRUE.equals(user.getEnabled()),
+                user.getPassword() != null ? user.getPassword() : "",
+                Boolean.TRUE.equals(user.getEnabled()) && !Boolean.TRUE.equals(user.getDeleted()),
                 isNonLocked,
                 grantedAuthorities
         );

@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authApi } from '@/services/api/auth.api';
+import { candidateApi } from '@/services/api/candidate.api';
+import { recruiterApi } from '@/services/api/recruiter.api';
 import { getStoredToken, getStoredUser, clearAuthSession } from '@/services/api/apiClient';
 
 const AuthContext = createContext(null);
@@ -37,12 +39,40 @@ export function AuthProvider({ children }) {
     try {
       const me = await authApi.getMe();
       if (me) {
-        setUser((prev) => ({
-          ...prev,
-          ...me,
-          id: me.id || prev?.id,
-          role: me.role || prev?.role,
-        }));
+        let avatar = me.avatarUrl || null;
+        const userRole = normalizeRole(me.role);
+
+        if (!avatar) {
+          if (userRole === 'candidate') {
+            try {
+              const candProfile = await candidateApi.getMyProfile();
+              if (candProfile?.profilePhotoUrl) {
+                avatar = candProfile.profilePhotoUrl;
+              }
+            } catch {}
+          } else if (userRole === 'recruiter') {
+            try {
+              const recProfile = await recruiterApi.getMyProfile();
+              if (recProfile?.profilePhotoUrl) {
+                avatar = recProfile.profilePhotoUrl;
+              }
+            } catch {}
+          }
+        }
+
+        setUser((prev) => {
+          const updated = {
+            ...prev,
+            ...me,
+            id: me.id || prev?.id,
+            role: me.role || prev?.role,
+            avatarUrl: avatar || prev?.avatarUrl || null,
+            hasPassword: me.hasPassword !== undefined ? Boolean(me.hasPassword) : (prev?.hasPassword ?? true),
+            authProvider: me.authProvider || prev?.authProvider || 'LOCAL',
+          };
+          localStorage.setItem('hireai_user', JSON.stringify(updated));
+          return updated;
+        });
       }
     } catch (err) {
       console.warn('[AuthContext] Session validation failed:', err.message);
@@ -54,6 +84,24 @@ export function AuthProvider({ children }) {
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  const updateUserAvatar = useCallback((newAvatarUrl) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, avatarUrl: newAvatarUrl };
+      localStorage.setItem('hireai_user', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const updateUserPasswordStatus = useCallback((hasPassword) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, hasPassword: Boolean(hasPassword) };
+      localStorage.setItem('hireai_user', JSON.stringify(updated));
+      return updated;
+    });
   }, []);
 
   useEffect(() => {
@@ -78,6 +126,9 @@ export function AuthProvider({ children }) {
         lastName: response.lastName,
         role: response.role,
         companyName: response.companyName,
+        avatarUrl: response.avatarUrl || response.profilePhotoUrl || null,
+        hasPassword: response.hasPassword !== undefined ? Boolean(response.hasPassword) : true,
+        authProvider: response.authProvider || 'LOCAL',
       };
       setUser(loggedUser);
       return { success: true, user: loggedUser, role: normalizeRole(response.role) };
@@ -102,6 +153,9 @@ export function AuthProvider({ children }) {
         firstName: response.firstName,
         lastName: response.lastName,
         role: response.role,
+        avatarUrl: response.avatarUrl || response.profilePhotoUrl || null,
+        hasPassword: true,
+        authProvider: 'LOCAL',
       };
       setUser(registeredUser);
       return { success: true, user: registeredUser, role: 'candidate' };
@@ -124,6 +178,9 @@ export function AuthProvider({ children }) {
         lastName: response.lastName,
         role: response.role,
         companyName: response.companyName,
+        avatarUrl: response.avatarUrl || response.profilePhotoUrl || null,
+        hasPassword: true,
+        authProvider: 'LOCAL',
       };
       setUser(registeredUser);
       return { success: true, user: registeredUser, role: 'recruiter' };
@@ -143,6 +200,9 @@ export function AuthProvider({ children }) {
         lastName: response.lastName,
         role: response.role,
         companyName: response.companyName,
+        avatarUrl: response.avatarUrl || response.profilePhotoUrl || null,
+        hasPassword: response.hasPassword !== undefined ? Boolean(response.hasPassword) : true,
+        authProvider: response.authProvider || 'LOCAL',
       };
       setUser(loggedUser);
       return { success: true, user: loggedUser, role: normalizeRole(response.role) };
@@ -167,6 +227,9 @@ export function AuthProvider({ children }) {
         lastName: response?.lastName,
         role: effectiveRole,
         companyName: response?.companyName || payload?.companyName,
+        avatarUrl: response?.avatarUrl || response?.profilePhotoUrl || null,
+        hasPassword: response?.hasPassword !== undefined ? Boolean(response.hasPassword) : false,
+        authProvider: response?.authProvider || 'GOOGLE',
       };
       setUser(loggedUser);
       return { success: true, user: loggedUser, role: normalizeRole(effectiveRole) };
@@ -187,6 +250,9 @@ export function AuthProvider({ children }) {
         lastName: response?.lastName,
         role: effectiveRole,
         companyName: response?.companyName || payload?.companyName,
+        avatarUrl: response?.avatarUrl || response?.profilePhotoUrl || null,
+        hasPassword: response?.hasPassword !== undefined ? Boolean(response.hasPassword) : false,
+        authProvider: response?.authProvider || 'LINKEDIN',
       };
       setUser(loggedUser);
       return { success: true, user: loggedUser, role: normalizeRole(effectiveRole) };
@@ -220,6 +286,8 @@ export function AuthProvider({ children }) {
         loginWithLinkedIn,
         logout,
         refreshUserProfile,
+        updateUserAvatar,
+        updateUserPasswordStatus,
       }}
     >
       {children}

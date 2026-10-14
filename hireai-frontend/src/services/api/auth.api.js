@@ -133,4 +133,53 @@ export const authApi = {
   updateMe: async (userData) => {
     return apiClient.put('/users/me', userData);
   },
+
+  /** Changes password for authenticated user */
+  changePassword: async ({ currentPassword, newPassword, confirmPassword }) => {
+    return apiClient.put('/users/me/change-password', {
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    });
+  },
+
+  /** Requests 6-digit OTP to set password for OAuth user */
+  requestSetPasswordOtp: async () => {
+    return apiClient.post('/users/me/set-password/request');
+  },
+
+  /** Confirms OTP and sets initial password for OAuth user */
+  confirmSetPassword: async ({ otp, newPassword, confirmPassword }) => {
+    return apiClient.post('/users/me/set-password/confirm', {
+      otp,
+      newPassword,
+      confirmPassword,
+    });
+  },
+
+  /** Uploads profile avatar */
+  uploadAvatar: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.upload('/users/me/avatar', formData);
+  },
+
+  /** Deletes profile avatar */
+  deleteAvatar: async () => {
+    return apiClient.delete('/users/me/avatar');
+  },
+
+  /** Requests 6-digit OTP to delete account for OAuth user */
+  requestDeleteAccountOtp: async () => {
+    return apiClient.post('/users/me/delete-account/request');
+  },
+
+  /** Permanently deletes authenticated user account */
+  deleteAccount: async ({ currentPassword, otp, confirmationText }) => {
+    return apiClient.delete('/users/me/delete-account', {
+      currentPassword,
+      otp,
+      confirmationText,
+    });
+  },
 };

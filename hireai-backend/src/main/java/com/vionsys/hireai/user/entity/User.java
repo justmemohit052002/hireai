@@ -42,8 +42,12 @@ public class User extends BaseEntity {
     @Column(name = "email", nullable = false, unique = true, length = 150)
     private String email;
 
-    @Column(name = "password", nullable = false)
+    @Column(name = "password")
     private String password;
+
+    @Column(name = "password_set", nullable = false, columnDefinition = "boolean default true")
+    @Builder.Default
+    private Boolean passwordSet = true;
 
     @Column(name = "phone_number", length = 30)
     private String phoneNumber;
@@ -73,8 +77,30 @@ public class User extends BaseEntity {
     @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
 
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "account_status", length = 30)
+    @Builder.Default
+    private com.vionsys.hireai.user.enums.AccountStatus accountStatus = com.vionsys.hireai.user.enums.AccountStatus.ACTIVE;
+
+    @Column(name = "deleted", nullable = false, columnDefinition = "boolean default false")
+    @Builder.Default
+    private Boolean deleted = false;
+
+    @Column(name = "deleted_at")
+    private java.time.LocalDateTime deletedAt;
+
     public Integer getFailedLoginAttempts() {
         return failedLoginAttempts != null ? failedLoginAttempts : 0;
+    }
+
+    public boolean hasPassword() {
+        if (Boolean.FALSE.equals(this.passwordSet) || this.password == null || this.password.isBlank()) {
+            return false;
+        }
+        if (Boolean.TRUE.equals(this.passwordSet)) {
+            return true;
+        }
+        return this.providerId == null || "LOCAL".equalsIgnoreCase(this.authProvider);
     }
 
     @ManyToOne(fetch = FetchType.LAZY)

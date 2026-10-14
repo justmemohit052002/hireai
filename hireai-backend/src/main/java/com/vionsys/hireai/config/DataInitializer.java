@@ -53,12 +53,17 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        // 0. Ensure PostgreSQL schema matches Candidate entity (relax legacy NOT NULL & UNIQUE constraints on candidates.phone)
+        // 0. Ensure PostgreSQL schema matches Candidate entity and User entity
         try {
             jdbcTemplate.execute("ALTER TABLE candidates ALTER COLUMN phone DROP NOT NULL");
             jdbcTemplate.execute("ALTER TABLE candidates DROP CONSTRAINT IF EXISTS uk5ilb7049i3j8efmvh4w7adqxk");
+            jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_set BOOLEAN DEFAULT TRUE NOT NULL");
+            jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN password DROP NOT NULL");
+            jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT FALSE NOT NULL");
+            jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP");
+            jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS account_status VARCHAR(30) DEFAULT 'ACTIVE'");
         } catch (Exception ex) {
-            log.debug("[DataInitializer] Candidate phone schema alignment notice: {}", ex.getMessage());
+            log.debug("[DataInitializer] Schema alignment notice: {}", ex.getMessage());
         }
 
         // 1. Initialize Essential Roles

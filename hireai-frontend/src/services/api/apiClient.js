@@ -39,6 +39,9 @@ export const setAuthSession = (authData) => {
     phone: authData.phone,
     role: authData.role,
     companyName: authData.companyName,
+    avatarUrl: authData.avatarUrl || authData.profilePhotoUrl || null,
+    hasPassword: authData.hasPassword !== undefined ? Boolean(authData.hasPassword) : true,
+    authProvider: authData.authProvider || 'LOCAL',
   };
   localStorage.setItem(USER_KEY, JSON.stringify(user));
   localStorage.setItem('hireai_auth', JSON.stringify(authData));
@@ -186,7 +189,9 @@ export async function request(endpoint, options = {}) {
 
     return data;
   } catch (error) {
-    console.error(`[API Error] ${method} ${endpoint}:`, error);
+    if (!options?.silent) {
+      console.error(`[API Error] ${method} ${endpoint}:`, error);
+    }
     throw error;
   }
 }
@@ -196,7 +201,15 @@ export const apiClient = {
   post: (url, body, options = {}) => request(url, { ...options, method: 'POST', body }),
   put: (url, body, options = {}) => request(url, { ...options, method: 'PUT', body }),
   patch: (url, body, options = {}) => request(url, { ...options, method: 'PATCH', body }),
-  delete: (url, options = {}) => request(url, { ...options, method: 'DELETE' }),
+  delete: (url, bodyOrOptions = {}, maybeOptions = {}) => {
+    if (bodyOrOptions && (bodyOrOptions.headers || bodyOrOptions.requireAuth !== undefined || bodyOrOptions.silent !== undefined)) {
+      return request(url, { ...bodyOrOptions, method: 'DELETE' });
+    }
+    if (bodyOrOptions && typeof bodyOrOptions === 'object' && Object.keys(bodyOrOptions).length > 0) {
+      return request(url, { ...maybeOptions, method: 'DELETE', body: bodyOrOptions });
+    }
+    return request(url, { ...bodyOrOptions, method: 'DELETE' });
+  },
   upload: (url, formData, options = {}) =>
     request(url, { ...options, method: 'POST', body: formData, isFormData: true }),
 };

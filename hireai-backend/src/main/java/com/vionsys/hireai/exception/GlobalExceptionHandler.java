@@ -48,6 +48,23 @@ public class GlobalExceptionHandler {
 				.body(response);
 	}
 
+	@ExceptionHandler(org.springframework.security.authentication.DisabledException.class)
+	public ResponseEntity<ErrorResponse> handleDisabled(
+			org.springframework.security.authentication.DisabledException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.FORBIDDEN.value(),
+				HttpStatus.FORBIDDEN.getReasonPhrase(),
+				ex.getMessage() != null ? ex.getMessage() : "This account has been deleted or deactivated.",
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.FORBIDDEN)
+				.body(response);
+	}
+
 	@ExceptionHandler(AccountLockedException.class)
 	public ResponseEntity<ErrorResponse> handleAccountLocked(
 			AccountLockedException ex,
@@ -333,11 +350,13 @@ public class GlobalExceptionHandler {
 			NoResourceFoundException ex,
 			HttpServletRequest request) {
 
+		String message = "Endpoint not found: " + request.getMethod() + " " + request.getRequestURI();
+
 		ErrorResponse response = new ErrorResponse(
 				false,
 				HttpStatus.NOT_FOUND.value(),
 				HttpStatus.NOT_FOUND.getReasonPhrase(),
-				"Requested endpoint or static resource was not found",
+				message,
 				request.getRequestURI());
 
 		return ResponseEntity

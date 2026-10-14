@@ -26,4 +26,11 @@ public class UserResponse {
     private String phoneNumber;
 
     private String role;
+
+    private String avatarUrl;
+ 
+    @Builder.Default
+    private boolean hasPassword = true;
+
+    private String authProvider;
 }

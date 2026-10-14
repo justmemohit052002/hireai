@@ -717,6 +717,159 @@ public class EmailServiceImpl implements EmailService {
         sendHtmlEmail(user.getEmail(), subject, htmlContent);
     }
 
+    @Override
+    public void sendSetPasswordOtp(com.vionsys.hireai.user.entity.User user, String otpCode, int expiryMinutes) {
+        if (!emailProperties.isEnabled() || user == null || user.getEmail() == null) {
+            return;
+        }
+
+        if (!isSmtpConfigured()) {
+            if (environment.acceptsProfiles(org.springframework.core.env.Profiles.of("dev", "test", "default"))) {
+                log.info("[SIMULATED EMAIL DISPATCH] (Dev Profile Active - SMTP Unconfigured) Set Password OTP for {}: {}",
+                        maskEmail(user.getEmail()), otpCode);
+            } else {
+                log.info("[SIMULATED EMAIL DISPATCH] (SMTP Unconfigured) Set Password OTP dispatched for {}",
+                        maskEmail(user.getEmail()));
+            }
+            return;
+        }
+
+        String name = (user.getFirstName() != null ? user.getFirstName() : "User")
+                + (user.getLastName() != null ? " " + user.getLastName() : "");
+        String subject = "Set Account Password - Verification Code - HireAI";
+
+        String htmlContent = String.format("""
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #0f172a; margin: 0; padding: 20px; color: #f8fafc; }
+                .container { max-width: 580px; margin: 0 auto; background: #1e293b; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.4); border: 1px solid #334155; }
+                .header { background: linear-gradient(135deg, #112358 0%%%%, #004499 100%%%%); padding: 32px 24px; text-align: center; color: #ffffff; }
+                .header h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+                .header p { margin: 6px 0 0; font-size: 14px; opacity: 0.9; }
+                .content { padding: 32px 28px; }
+                .greeting { font-size: 16px; line-height: 1.6; color: #cbd5e1; margin-bottom: 20px; }
+                .otp-card { background: #0f172a; border: 2px dashed #0192C6; border-radius: 12px; padding: 24px; text-align: center; margin: 28px 0; }
+                .otp-label { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; color: #0192C6; margin-bottom: 12px; }
+                .otp-number { font-family: 'Courier New', monospace; font-size: 38px; font-weight: 800; letter-spacing: 10px; color: #ffffff; text-shadow: 0 0 12px rgba(1, 146, 198, 0.5); }
+                .info-text { font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 24px; }
+                .security-note { background: #0f172a; border-left: 4px solid #f59e0b; padding: 14px 18px; border-radius: 0 8px 8px 0; font-size: 13px; color: #cbd5e1; }
+                .footer { background: #0f172a; padding: 20px 24px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #1e293b; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>Set Your Account Password</h1>
+                  <p>HireAI Intelligent Recruitment Platform</p>
+                </div>
+                <div class="content">
+                  <p class="greeting">Hello %s,</p>
+                  <p class="info-text">
+                    You requested to set a password for your HireAI account. Use the 6-digit verification code below to verify your identity:
+                  </p>
+
+                  <div class="otp-card">
+                    <div class="otp-label">Verification Code</div>
+                    <div class="otp-number">%s</div>
+                  </div>
+
+                  <p class="info-text">
+                    This verification code is valid for <strong>%d minutes</strong>.
+                  </p>
+
+                  <div class="security-note">
+                    <strong>Security Tip:</strong> Never share this code with anyone. HireAI staff will never ask for your verification code. If you did not request this, please review your account security.
+                  </div>
+                </div>
+                <div class="footer">
+                  (c) 2026 HireAI Intelligent Recruitment Platform - All rights reserved.
+                </div>
+              </div>
+            </body>
+            </html>
+            """, name, otpCode, expiryMinutes);
+
+        sendHtmlEmail(user.getEmail(), subject, htmlContent);
+    }
+
+    @Override
+    public void sendDeleteAccountOtp(com.vionsys.hireai.user.entity.User user, String otpCode, int expiryMinutes) {
+        if (!emailProperties.isEnabled() || user == null || user.getEmail() == null) {
+            return;
+        }
+
+        if (!isSmtpConfigured()) {
+            if (environment.acceptsProfiles(org.springframework.core.env.Profiles.of("dev", "test", "default"))) {
+                log.info("[SIMULATED EMAIL DISPATCH] (Dev Profile Active - SMTP Unconfigured) Delete Account OTP for {}: {}",
+                        maskEmail(user.getEmail()), otpCode);
+            } else {
+                log.info("[SIMULATED EMAIL DISPATCH] (SMTP Unconfigured) Delete Account OTP dispatched for {}",
+                        maskEmail(user.getEmail()));
+            }
+            return;
+        }
+
+        String name = (user.getFirstName() != null ? user.getFirstName() : "User")
+                + (user.getLastName() != null ? " " + user.getLastName() : "");
+        String subject = "Security Alert: Delete Account Verification Code - HireAI";
+
+        String htmlContent = String.format("""
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #0f172a; margin: 0; padding: 20px; color: #f8fafc; }
+                .container { max-width: 580px; margin: 0 auto; background: #1e293b; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.4); border: 1px solid #334155; }
+                .header { background: linear-gradient(135deg, #112358 0%%%%, #dc2626 100%%%%); padding: 32px 24px; text-align: center; color: #ffffff; }
+                .header h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+                .header p { margin: 6px 0 0; font-size: 14px; opacity: 0.9; }
+                .content { padding: 32px 28px; }
+                .greeting { font-size: 16px; line-height: 1.6; color: #cbd5e1; margin-bottom: 20px; }
+                .otp-card { background: #0f172a; border: 2px dashed #dc2626; border-radius: 12px; padding: 24px; text-align: center; margin: 28px 0; }
+                .otp-label { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; color: #ef4444; margin-bottom: 12px; }
+                .otp-number { font-family: 'Courier New', monospace; font-size: 38px; font-weight: 800; letter-spacing: 10px; color: #ffffff; text-shadow: 0 0 12px rgba(220, 38, 38, 0.5); }
+                .info-text { font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 24px; }
+                .security-note { background: #0f172a; border-left: 4px solid #ef4444; padding: 14px 18px; border-radius: 0 8px 8px 0; font-size: 13px; color: #cbd5e1; }
+                .footer { background: #0f172a; padding: 20px 24px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #1e293b; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>Account Deletion Request</h1>
+                  <p>HireAI Intelligent Recruitment Platform</p>
+                </div>
+                <div class="content">
+                  <p class="greeting">Hello %s,</p>
+                  <p class="info-text">
+                    We received a request to permanently delete your HireAI account. To confirm this irreversible action, enter the verification code below:
+                  </p>
+                  <div class="otp-card">
+                    <div class="otp-label">Account Deletion Code</div>
+                    <div class="otp-number">%s</div>
+                  </div>
+                  <p class="info-text">
+                    This verification code is valid for <strong>%d minutes</strong>. Once confirmed, all your personal profile details will be permanently anonymized.
+                  </p>
+                  <div class="security-note">
+                    <strong>Critical Warning:</strong> If you did not initiate this account deletion request, please immediately log in and change your password or contact security support.
+                  </div>
+                </div>
+                <div class="footer">
+                  (c) 2026 HireAI Intelligent Recruitment Platform - All rights reserved.
+                </div>
+              </div>
+            </body>
+            </html>
+            """, name, otpCode, expiryMinutes);
+
+        sendHtmlEmail(user.getEmail(), subject, htmlContent);
+    }
+
     // =========================================================
     // CORE HTML EMAIL SENDER WITH LOG HYGIENE & STRICT ERROR PROPAGATION
     // =========================================================

@@ -170,6 +170,8 @@ public class AuthService {
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .role(user.getRole().getName().name())
+                .hasPassword(true)
+                .authProvider("LOCAL")
                 .requiresVerification(true)
                 .emailVerified(false)
                 .message("Registration successful! A 6-digit verification code has been sent to your email.")
@@ -250,6 +252,8 @@ public class AuthService {
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .role(user.getRole().getName().name())
+                .hasPassword(true)
+                .authProvider("LOCAL")
                 .requiresVerification(true)
                 .emailVerified(false)
                 .message("Registration successful! A 6-digit verification code has been sent to your email.")
@@ -274,6 +278,9 @@ public class AuthService {
                     .role(user.getRole().getName().name())
                     .accessToken(accessToken)
                     .refreshToken(refreshToken)
+                    .avatarUrl(resolveUserAvatar(user))
+                    .hasPassword(user.hasPassword())
+                    .authProvider(user.getAuthProvider())
                     .requiresVerification(false)
                     .emailVerified(true)
                     .message("Account is already verified.")
@@ -342,6 +349,9 @@ public class AuthService {
                 .role(user.getRole().getName().name())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
+                .avatarUrl(resolveUserAvatar(user))
+                .hasPassword(user.hasPassword())
+                .authProvider(user.getAuthProvider())
                 .requiresVerification(false)
                 .emailVerified(true)
                 .message("Email verified successfully! Welcome to HireAI.")
@@ -399,6 +409,10 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail().trim().toLowerCase())
                 .orElseThrow(() -> new UserNotFoundException("User not found. Please sign up first."));
+
+        if (Boolean.TRUE.equals(user.getDeleted())) {
+            throw new org.springframework.security.authentication.DisabledException("This account has been deleted.");
+        }
 
         // Check email verification status before authenticating
         if (!Boolean.TRUE.equals(user.getEnabled())) {
@@ -537,6 +551,9 @@ public class AuthService {
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .role(user.getRole().getName().name())
+                .avatarUrl(resolveUserAvatar(user))
+                .hasPassword(user.hasPassword())
+                .authProvider(user.getAuthProvider())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
@@ -561,6 +578,15 @@ public class AuthService {
 
         Role desiredRole = roleRepository.findByName(desiredRoleType)
                 .orElseThrow(() -> new RoleNotFoundException("Role not found"));
+
+        if (existingUserOpt.isPresent()) {
+            User existing = existingUserOpt.get();
+            if (Boolean.TRUE.equals(existing.getDeleted())) {
+                existing.setEmail("deleted_" + existing.getId() + "@deleted.hireai.internal");
+                userRepository.save(existing);
+                existingUserOpt = Optional.empty();
+            }
+        }
 
         if (existingUserOpt.isPresent()) {
             user = existingUserOpt.get();
@@ -591,7 +617,8 @@ public class AuthService {
                     .firstName(userInfo.getFirstName())
                     .lastName(userInfo.getLastName())
                     .email(email)
-                    .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                    .password(null)
+                    .passwordSet(false)
                     .enabled(true) // Pre-verified via OAuth!
                     .accountNonLocked(true)
                     .failedLoginAttempts(0)
@@ -665,6 +692,9 @@ public class AuthService {
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .role(user.getRole().getName().name())
+                .avatarUrl(resolveUserAvatar(user))
+                .hasPassword(user.hasPassword())
+                .authProvider(user.getAuthProvider())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .requiresVerification(false)
@@ -786,6 +816,9 @@ public class AuthService {
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .role(user.getRole().getName().name())
+                .avatarUrl(resolveUserAvatar(user))
+                .hasPassword(user.hasPassword())
+                .authProvider(user.getAuthProvider())
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken)
                 .build();
@@ -907,6 +940,7 @@ public class AuthService {
 
         User user = resetToken.getUser();
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setPasswordSet(true);
         user.setFailedLoginAttempts(0);
         user.setLockoutUntil(null);
         userRepository.save(user);
@@ -960,5 +994,35 @@ public class AuthService {
                 log.warn("Background task execution error: {}", ex.getMessage());
             }
         }
+    }
+
+    private String resolveUserAvatar(User user) {
+        if (user == null) {
+            return null;
+        }
+        if (user.getAvatarUrl() != null && !user.getAvatarUrl().isBlank()) {
+            return user.getAvatarUrl();
+        }
+        if (candidateRepository != null) {
+            Optional<com.vionsys.hireai.candidate.entity.Candidate> candidateOpt =
+                    candidateRepository.findByUserId(user.getId());
+            if (candidateOpt.isPresent() && candidateOpt.get().getProfilePhotoPath() != null) {
+                String url = "/candidate/profile/photo";
+                user.setAvatarUrl(url);
+                userRepository.save(user);
+                return url;
+            }
+        }
+        if (recruiterProfileRepository != null) {
+            Optional<com.vionsys.hireai.recruiter.entity.RecruiterProfile> recruiterOpt =
+                    recruiterProfileRepository.findByUserId(user.getId());
+            if (recruiterOpt.isPresent() && recruiterOpt.get().getProfilePhotoPath() != null) {
+                String url = "/recruiter/profile/photo";
+                user.setAvatarUrl(url);
+                userRepository.save(user);
+                return url;
+            }
+        }
+        return null;
     }
 }

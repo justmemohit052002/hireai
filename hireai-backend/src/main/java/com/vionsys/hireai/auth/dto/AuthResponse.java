@@ -39,4 +39,11 @@ public class AuthResponse {
     private Boolean emailVerified = false;
 
     private String message;
+
+    private String avatarUrl;
+
+    @Builder.Default
+    private Boolean hasPassword = true;
+
+    private String authProvider;
 }

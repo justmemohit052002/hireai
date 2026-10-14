@@ -141,9 +141,8 @@ public class CandidateController {
 				.body(resource);
 	}
 
-	@Operation(summary = "Get Candidate Profile Photo by Candidate ID", description = "Recruiters and candidates can view a candidate's profile photo")
+	@Operation(summary = "Get Candidate Profile Photo by Candidate ID", description = "Recruiters and public profile views can display a candidate's profile photo")
 	@GetMapping("/candidates/{id}/profile/photo")
-	@PreAuthorize("hasAnyRole('CANDIDATE', 'RECRUITER', 'ADMIN')")
 	public ResponseEntity<Resource> getCandidateProfilePhoto(
 			@PathVariable UUID id) {
 
@@ -154,6 +153,7 @@ public class CandidateController {
 		return ResponseEntity.ok()
 				.contentType(mediaType)
 				.header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+				.header(HttpHeaders.CACHE_CONTROL, "max-age=3600, must-revalidate")
 				.header("X-Content-Type-Options", "nosniff")
 				.body(resource);
 	}

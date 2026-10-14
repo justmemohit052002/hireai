@@ -46,6 +46,16 @@ public interface EmailService {
     void sendEmailVerificationOtp(com.vionsys.hireai.user.entity.User user, String otpCode, int expiryMinutes);
 
     /**
+     * Send 6-digit OTP verification code to OAuth user requesting to set an account password.
+     */
+    void sendSetPasswordOtp(com.vionsys.hireai.user.entity.User user, String otpCode, int expiryMinutes);
+
+    /**
+     * Send 6-digit OTP verification code to OAuth user confirming account deletion.
+     */
+    void sendDeleteAccountOtp(com.vionsys.hireai.user.entity.User user, String otpCode, int expiryMinutes);
+
+    /**
      * Send generic HTML formatted email asynchronously.
      */
     void sendHtmlEmail(String toEmail, String subject, String htmlContent);

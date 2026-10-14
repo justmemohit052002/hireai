@@ -22,6 +22,9 @@ public final class UserMapper {
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
                 .role(user.getRole().getName().name())
+                .avatarUrl(user.getAvatarUrl())
+                .hasPassword(user.hasPassword())
+                .authProvider(user.getAuthProvider())
                 .build();
     }
 }

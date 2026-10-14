@@ -595,8 +595,14 @@ public class CandidateServiceImpl implements CandidateService {
         }
 
         String savedPath = photoStorageService.storePhoto(file);
+        String photoUrl = "/candidates/" + candidate.getId() + "/profile/photo";
         candidate.setProfilePhotoPath(savedPath);
-        candidate.setProfilePhotoUrl("/candidate/profile/photo");
+        candidate.setProfilePhotoUrl(photoUrl);
+
+        if (candidate.getUser() != null) {
+            candidate.getUser().setAvatarUrl(photoUrl);
+            userRepository.save(candidate.getUser());
+        }
 
         Candidate saved = candidateRepository.save(candidate);
         log.info("Updated profile photo for Candidate: {}", candidate.getCandidateId());
@@ -638,6 +644,11 @@ public class CandidateServiceImpl implements CandidateService {
             photoStorageService.deletePhoto(candidate.getProfilePhotoPath());
             candidate.setProfilePhotoPath(null);
             candidate.setProfilePhotoUrl(null);
+        }
+
+        if (candidate.getUser() != null) {
+            candidate.getUser().setAvatarUrl(null);
+            userRepository.save(candidate.getUser());
         }
 
         Candidate saved = candidateRepository.save(candidate);

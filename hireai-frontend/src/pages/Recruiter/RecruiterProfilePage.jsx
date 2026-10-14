@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Building2,
   Globe,
@@ -17,7 +17,8 @@ import {
   Layers,
   Sparkles,
   Link2,
-  Check
+  Check,
+  Camera
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Card } from '@/components/ui/Card';
@@ -26,6 +27,7 @@ import { PhoneInput } from '@/components/ui/PhoneInput';
 import { Textarea } from '@/components/ui/Textarea';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { Avatar } from '@/components/ui/Avatar';
 import { recruiterApi } from '@/services/api/recruiter.api';
 import { useJobs } from '@/context/JobsContext';
 
@@ -56,11 +58,14 @@ const INDUSTRY_PRESETS = [
 ];
 
 export const RecruiterProfilePage = () => {
-  const { user } = useAuth();
+  const { user, updateUserAvatar } = useAuth();
   const { jobs } = useJobs();
+  const photoInputRef = useRef(null);
   const [activeTab, setActiveTab] = useState('edit'); // 'edit' | 'preview'
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPhotoUploading, setIsPhotoUploading] = useState(false);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -88,6 +93,10 @@ export const RecruiterProfilePage = () => {
       try {
         const profile = await recruiterApi.getMyProfile();
         if (profile) {
+          if (profile.profilePhotoUrl) {
+            setProfilePhotoUrl(profile.profilePhotoUrl);
+            updateUserAvatar(profile.profilePhotoUrl);
+          }
           if (profile.companyName) setCompanyName(profile.companyName);
           if (profile.designation) setDesignation(profile.designation);
           if (profile.industry) setIndustry(profile.industry);
@@ -109,6 +118,41 @@ export const RecruiterProfilePage = () => {
     }
     loadProfile();
   }, []);
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
+      setErrorMsg('Invalid file format. Allowed formats: JPG, PNG, and WebP.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMsg('File size exceeds the 5MB limit.');
+      return;
+    }
+
+    setIsPhotoUploading(true);
+    setErrorMsg('');
+    try {
+      const response = await recruiterApi.uploadPhoto(file);
+      const photoUrl =
+        response?.profilePhotoUrl ||
+        (user?.id ? `/recruiter/profile/${user.id}/photo` : null) ||
+        '/recruiter/profile/photo';
+      const timestamped = `${photoUrl}?t=${Date.now()}`;
+      setProfilePhotoUrl(timestamped);
+      updateUserAvatar(timestamped);
+      setSuccessMsg('Company logo / photo updated successfully!');
+      setTimeout(() => setSuccessMsg(''), 3500);
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to upload photo.');
+    } finally {
+      setIsPhotoUploading(false);
+    }
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -205,8 +249,33 @@ export const RecruiterProfilePage = () => {
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
-            <div className="w-16 h-16 rounded-2xl bg-brand-navy/10 border border-brand-blue/30 flex items-center justify-center font-bold text-2xl text-brand-blue shrink-0 shadow-sm">
-              {companyInitial}
+            <div className="relative group shrink-0">
+              <Avatar
+                name={companyName || 'Company'}
+                src={profilePhotoUrl || user?.avatarUrl}
+                size="xl"
+                className="w-16 h-16 sm:w-20 sm:h-20 text-2xl rounded-2xl border-2"
+              />
+              <input
+                type="file"
+                ref={photoInputRef}
+                onChange={handlePhotoUpload}
+                accept=".jpg,.jpeg,.png,.webp"
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => photoInputRef.current?.click()}
+                disabled={isPhotoUploading}
+                title="Upload Company Logo / Photo"
+                className="absolute inset-0 rounded-2xl bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-md"
+              >
+                {isPhotoUploading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Camera className="w-5 h-5" />
+                )}
+              </button>
             </div>
 
             <div className="space-y-1">
