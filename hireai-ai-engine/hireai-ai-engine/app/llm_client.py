@@ -55,7 +55,13 @@ def get_active_provider_info() -> tuple[str, str]:
 import uuid
 from datetime import datetime, timezone
 
-def call_llm(prompt: str, task_type: str = "general", provider_override: str = None, model_override: str = None) -> str:
+def call_llm(
+    prompt: str,
+    task_type: str = "general",
+    provider_override: str = None,
+    model_override: str = None,
+    temperature: float = None,
+) -> str:
     last_error = None
     provider = provider_override or ACTIVE_PROVIDER or LLM_PROVIDER
     model = model_override or ACTIVE_MODEL
@@ -64,11 +70,11 @@ def call_llm(prompt: str, task_type: str = "general", provider_override: str = N
         start = time.time()
         try:
             if provider == "ollama":
-                text = _call_ollama(prompt, model=model)
+                text = _call_ollama(prompt, model=model, temperature=temperature)
             elif provider == "gemini":
-                text = _call_gemini(prompt)
+                text = _call_gemini(prompt, temperature=temperature)
             elif provider == "groq":
-                text = _call_groq(prompt, model=model)
+                text = _call_groq(prompt, model=model, temperature=temperature)
             else:
                 raise LLMCallError(f"Unknown LLM_PROVIDER: {provider}")
 
@@ -98,18 +104,19 @@ def call_llm(prompt: str, task_type: str = "general", provider_override: str = N
     raise LLMCallError(f"LLM call failed after {LLM_MAX_RETRIES + 1} attempts: {last_error}")
 
 
-def _call_ollama(prompt: str, model: str = None) -> str:
+def _call_ollama(prompt: str, model: str = None, temperature: float = None) -> str:
     use_model = model or OLLAMA_MODEL
     
     # Detect if prompt requests structured JSON output
     is_json_request = "json" in prompt.lower() or "{" in prompt
 
+    temp = temperature if temperature is not None else (0.1 if is_json_request else 0.3)
     payload = {
         "model": use_model,
         "prompt": prompt,
         "stream": False,
         "options": {
-            "temperature": 0.1 if is_json_request else 0.3,
+            "temperature": temp,
             "top_p": 0.9,
             "num_ctx": 8192,
             "num_predict": 2048,
@@ -144,7 +151,7 @@ from app.config import (
 )
 from app.context import get_current_request_id, get_current_candidate_ref
 
-def _call_gemini(prompt: str) -> str:
+def _call_gemini(prompt: str, temperature: float = None) -> str:
     if not GEMINI_API_KEY:
         raise LLMCallError("GEMINI_API_KEY not set - required when LLM_PROVIDER=gemini.")
     model_name = GEMINI_MODEL or "gemini-1.5-flash"
@@ -154,8 +161,13 @@ def _call_gemini(prompt: str) -> str:
     )
     is_json = "json" in prompt.lower() or "{" in prompt
     body: dict = {"contents": [{"parts": [{"text": prompt}]}]}
+    gen_config: dict = {}
     if is_json:
-        body["generationConfig"] = {"response_mime_type": "application/json"}
+        gen_config["response_mime_type"] = "application/json"
+    if temperature is not None:
+        gen_config["temperature"] = temperature
+    if gen_config:
+        body["generationConfig"] = gen_config
 
     response = requests.post(
         url, json=body, timeout=LLM_TIMEOUT_SECONDS
@@ -164,7 +176,7 @@ def _call_gemini(prompt: str) -> str:
     return response.json()["candidates"][0]["content"]["parts"][0]["text"]
 
 
-def _call_groq(prompt: str, model: str = None) -> str:
+def _call_groq(prompt: str, model: str = None, temperature: float = None) -> str:
     if not GROQ_API_KEY:
         raise LLMCallError("GROQ_API_KEY not set - required when LLM_PROVIDER=groq.")
     use_model = model or GROQ_MODEL
@@ -172,6 +184,8 @@ def _call_groq(prompt: str, model: str = None) -> str:
     body: dict = {"model": use_model, "messages": [{"role": "user", "content": prompt}]}
     if is_json:
         body["response_format"] = {"type": "json_object"}
+    if temperature is not None:
+        body["temperature"] = temperature
 
     response = requests.post(
         "https://api.groq.com/openai/v1/chat/completions",

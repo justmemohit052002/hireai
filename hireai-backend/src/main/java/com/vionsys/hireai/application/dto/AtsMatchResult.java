@@ -18,6 +18,7 @@ public class AtsMatchResult {
     private int matchScore;
     private List<String> matchingSkills;
     private List<String> missingSkills;
+    private List<String> relatedSkills;
     private double skillMatchPercentage;
     private double experienceMatchPercentage;
 }

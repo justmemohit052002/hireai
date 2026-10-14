@@ -222,5 +222,35 @@
     "containerization": ["docker", "podman", "containerd"],
     "container orchestration": ["kubernetes", "k8s", "docker swarm", "openshift"],
     "frontend frameworks": ["react", "angular", "vue", "svelte", "next.js", "nuxt.js"]
+  },
+  "specific_tools": [
+    "docker", "kubernetes", "typescript", "javascript", "python", "java",
+    "c++", "c#", ".net", "golang", "rust", "php", "ruby", "kotlin", "swift", "dart",
+    "mysql", "postgresql", "mongodb", "redis", "cassandra", "sqlite", "oracle", "sql server",
+    "spring boot", "hibernate", "jpa", "react", "angular", "vue", "node.js", "express",
+    "aws", "azure", "gcp", "git", "github", "gitlab", "bitbucket", "junit", "mockito",
+    "kafka", "rabbitmq", "tailwind css", "bootstrap", "next.js"
+  ],
+  "related_skills": {
+    "typescript": ["javascript"],
+    "javascript": ["typescript"],
+    "azure": ["aws", "gcp"],
+    "aws": ["azure", "gcp"],
+    "gcp": ["aws", "azure"],
+    "docker": ["podman", "containerd"],
+    "podman": ["docker"],
+    "kubernetes": ["docker swarm", "openshift"],
+    "mongodb": ["cassandra", "couchdb", "dynamodb"],
+    "kafka": ["rabbitmq", "activemq"],
+    "rabbitmq": ["kafka", "activemq"],
+    "react": ["angular", "vue", "svelte", "react native"],
+    "angular": ["react", "vue"],
+    "vue": ["react", "angular"],
+    "postgresql": ["mysql", "oracle", "sql server"],
+    "mysql": ["postgresql", "oracle", "sql server"],
+    "oracle": ["mysql", "postgresql", "sql server"],
+    "c#": ["java"],
+    "java": ["c#", "kotlin"],
+    "kotlin": ["java"]
   }
 }

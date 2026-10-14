@@ -301,3 +301,85 @@ def test_negative_case_unrelated_resume():
     assert result["match_score"] == 0
     assert result["auto_action"] == "reject"
     assert len(result["missing_skills"]) == 5
+
+
+def test_mohit_backend_developer_real_case_no_false_matches():
+    """
+    Verifies the real evidence from the user prompt:
+    Mohit's resume PDF contains:
+    Java, JavaScript, SQL, Spring Boot, Spring MVC, Spring Security, Spring Data JPA,
+    Hibernate, JDBC, REST APIs, JWT, OAuth, MySQL, PostgreSQL, React.js, JUnit,
+    Mockito, Git, GitHub, Maven, Postman, AWS, Python (in HireAI project), FastAPI,
+    Microservices, DSA, OOP, etc.
+    The resume does NOT contain: Docker, Kubernetes, TypeScript.
+    
+    Job: 'Backend Developer'
+    Required: Java, Python, JavaScript, SQL, Git, Docker, AWS, Kubernetes, TypeScript, RESTful APIs, Microservices
+    
+    MUST NOT match: Docker, Kubernetes, TypeScript in matched_skills.
+    TypeScript may have related credit under related_skills (via JavaScript), but NOT in matched_skills.
+    Docker and Kubernetes MUST be in missing_skills.
+    Total matched: exactly 8 skills (Java, Python, JavaScript, SQL, Git, AWS, RESTful APIs, Microservices).
+    Match score must not be 100%, and auto_action must NOT be shortlist if under threshold.
+    """
+    resume_skills = [
+        "Core Java", "OOP", "Collections", "Multithreading", "Spring Boot",
+        "Spring MVC", "Spring Security", "Spring Data JPA", "Hibernate", "REST APIs",
+        "JWT", "OAuth", "MySQL", "PostgreSQL", "React.js", "JUnit", "Mockito",
+        "Git", "GitHub", "Maven", "Postman", "AWS (EC2)", "DSA", "DBMS", "OS",
+        "Microservices", "Design Patterns", "SDLC", "Agile Methodologies",
+        "Python", "FastAPI", "JavaScript", "SQL"
+    ]
+    
+    resume_text = """
+    MOHIT SINGH CHOUHAN
+    Java Developer | Spring Boot | REST APIs
+    TECHNICAL SKILLS
+    Languages: Java (Core Java, Java 8+), JavaScript, SQL
+    Backend: Spring Boot, Spring MVC, Spring Security, Spring Data JPA, Hibernate, JDBC, REST APIs, JWT, OAuth
+    Databases: MySQL, PostgreSQL
+    Frontend: React.js, HTML5, CSS3, Tailwind CSS
+    Testing: JUnit, Mockito, API Testing
+    Tools: Git, GitHub, Maven, Postman, Swagger/OpenAPI, AWS (EC2), IntelliJ IDEA, VS Code
+    Concepts: OOP, Data Structures & Algorithms (DSA), DBMS, OS, Collections, Streams, Exception Handling, Multithreading,
+    Microservices Architecture, Design Patterns, SDLC, Agile Methodologies
+    PROJECTS
+    HireAI | Java, Spring Boot, Spring Security, PostgreSQL, React.js, Tailwind CSS, Python, FastAPI, LLM, AWS Jul 2026
+    """
+
+    job_skills = [
+        "Java", "Python", "JavaScript", "SQL", "Git", "Docker", "AWS",
+        "Kubernetes", "TypeScript", "RESTful APIs", "Microservices"
+    ]
+
+    result = calculate_match_score(
+        resume_skills=resume_skills,
+        job_skills=job_skills,
+        resume_text=resume_text,
+        candidate_experience_years=3.5,
+        required_experience_years=3.0,
+        candidate_role="Java Developer",
+        job_title="Backend Developer"
+    )
+
+    # 1. Verify exact 8 matched skills
+    expected_matches = {"Java", "Python", "JavaScript", "SQL", "Git", "AWS", "RESTful APIs", "Microservices"}
+    assert set(result["matched_skills"]) == expected_matches
+
+    # 2. Strict anti-false-positives: Docker, Kubernetes, TypeScript MUST NOT be in matched_skills
+    assert "Docker" not in result["matched_skills"]
+    assert "Kubernetes" not in result["matched_skills"]
+    assert "TypeScript" not in result["matched_skills"]
+
+    # 3. Docker, Kubernetes, TypeScript MUST be in missing_skills
+    assert "Docker" in result["missing_skills"]
+    assert "Kubernetes" in result["missing_skills"]
+    assert "TypeScript" in result["missing_skills"]
+
+    # 4. Related skills list records TypeScript via JavaScript with partial credit
+    assert any("TypeScript" in r and "JavaScript" in r for r in result["related_skills"])
+
+    # 5. Score is explainable and strictly not 100%
+    assert result["match_score"] <= 80
+    assert result["match_score"] >= 65
+

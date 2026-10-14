@@ -240,22 +240,19 @@ public class ResumeServiceImpl implements ResumeService {
             log.warn("Could not serialize parsedDataJson: {}", ex.getMessage());
         }
 
-        // Auto-enrich Candidate profile with skills if present
+        // Auto-enrich Candidate profile with verified grounded skills from resume
         Candidate candidate = resume.getCandidate();
         if (candidate != null && parsedResult.getSkills() != null && !parsedResult.getSkills().isEmpty()) {
-            Set<Skill> existingSkills = candidate.getSkills() != null
-                    ? new HashSet<>(candidate.getSkills())
-                    : new HashSet<>();
-
+            Set<Skill> resumeSkills = new HashSet<>();
             for (String skillName : parsedResult.getSkills()) {
                 if (skillName == null || skillName.isBlank())
                     continue;
                 String trimmedName = skillName.trim();
                 Skill skill = skillRepository.findByNameIgnoreCase(trimmedName)
                         .orElseGet(() -> skillRepository.save(Skill.builder().name(trimmedName).build()));
-                existingSkills.add(skill);
+                resumeSkills.add(skill);
             }
-            candidate.setSkills(existingSkills);
+            candidate.setSkills(resumeSkills);
 
             if (candidate.getCurrentDesignation() == null && parsedResult.getCurrentRole() != null) {
                 candidate.setCurrentDesignation(parsedResult.getCurrentRole());

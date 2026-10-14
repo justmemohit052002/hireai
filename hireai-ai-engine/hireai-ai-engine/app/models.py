@@ -50,16 +50,22 @@ class JobStatusResponse(CamelModel):
 # ---- 3. Match Engine ----
 class MatchDetail(CamelModel):
     required_skill: str
-    status: str  # "matched" | "missing"
+    status: str  # "matched" | "missing" | "related"
     matched_with: Optional[str] = None
-    match_type: Optional[str] = None  # "exact" | "alias" | "example" | "alternative" | "category" | "token" | "semantic" | "text_evidence"
+    match_type: Optional[str] = None  # "exact" | "alias" | "category" | "example" | "alternative" | "related"
     confidence: float = 1.0
+    credit: float = 1.0
     evidence: Optional[str] = None
+    method: Optional[str] = None
+    related_skill: Optional[str] = None
 
 
 class ScoreBreakdown(CamelModel):
-    skill_score: int
+    skill_score: int  # legacy/composite skill score
+    required_skill_score: Optional[int] = None
+    preferred_skill_score: Optional[int] = None
     experience_score: Optional[int] = None
+    role_score: Optional[int] = None
 
 
 class MatchScoreRequest(CamelModel):
@@ -69,6 +75,9 @@ class MatchScoreRequest(CamelModel):
     resume_text: Optional[str] = Field(default=None, max_length=25000)
     candidate_experience_years: Optional[float] = None
     required_experience_years: Optional[float] = None
+    candidate_role: Optional[str] = None
+    job_title: Optional[str] = None
+    domain: Optional[str] = None
     shortlist_threshold: Optional[float] = None
 
     @field_validator("resume_skills", "job_skills", "nice_to_have_skills", mode="after")
@@ -87,10 +96,12 @@ class MatchScoreResponse(CamelModel):
     auto_action: str
     matched_skills: list[str]
     missing_skills: list[str]
+    related_skills: list[str] = []
     bonus_skills: list[str] = []
     match_details: list[MatchDetail] = []
     skill_coverage_percent: float = 0.0
     experience_match_percent: Optional[float] = None
+    role_match_percent: Optional[float] = None
     score_breakdown: ScoreBreakdown
     rationale: str = ""
     engine_version: str = "match-v2"

@@ -22,4 +22,7 @@ public class AiMatchScoreRequest {
     private Double candidateExperienceYears;
     private Double requiredExperienceYears;
     private Double shortlistThreshold;
+    private String candidateRole;
+    private String jobTitle;
+    private String domain;
 }

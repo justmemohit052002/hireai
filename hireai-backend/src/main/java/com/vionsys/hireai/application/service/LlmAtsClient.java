@@ -63,6 +63,8 @@ public class LlmAtsClient {
                     .shortlistThreshold((double) atsProperties.getShortlistThreshold())
                     .candidateExperienceYears(candExpYears)
                     .requiredExperienceYears(reqExpYears)
+                    .candidateRole(candidate.getCurrentDesignation())
+                    .jobTitle(job.getTitle())
                     .build();
 
             Optional<AiMatchScoreResponse> aiResponse = aiEngineClient.calculateMatchScore(request);
@@ -76,6 +78,7 @@ public class LlmAtsClient {
                         .atsScore(res.getMatchScore())
                         .matchingSkills(res.getMatchedSkills() != null ? res.getMatchedSkills() : Collections.emptyList())
                         .missingSkills(res.getMissingSkills() != null ? res.getMissingSkills() : Collections.emptyList())
+                        .relatedSkills(res.getRelatedSkills() != null ? res.getRelatedSkills() : Collections.emptyList())
                         .bonusSkills(res.getBonusSkills() != null ? res.getBonusSkills() : Collections.emptyList())
                         .skillCoveragePercent(res.getSkillCoveragePercent())
                         .experienceMatchPercent(res.getExperienceMatchPercent())

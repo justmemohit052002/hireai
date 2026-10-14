@@ -18,6 +18,7 @@ public class AiMatchScoreResponse {
     private int matchScore;
     private List<String> matchedSkills;
     private List<String> missingSkills;
+    private List<String> relatedSkills;
     private List<String> bonusSkills;
     private String autoAction; // "shortlist" | "review" | "reject"
     private List<AiMatchDetailDto> matchDetails;

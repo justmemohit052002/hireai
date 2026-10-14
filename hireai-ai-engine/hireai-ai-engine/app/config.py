@@ -52,9 +52,14 @@ GEMINI_DAILY_LIMIT = int(os.getenv("GEMINI_DAILY_LIMIT", "250"))
 ADMIN_TIMEZONE = os.getenv("ADMIN_TIMEZONE", os.getenv("TIMEZONE", "Asia/Kolkata"))
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
 
-# ---- Match Engine ATS Thresholds ----
+# ---- Match Engine ATS Thresholds & Weights ----
 ATS_SHORTLIST_THRESHOLD = int(os.getenv("ATS_SHORTLIST_THRESHOLD", "70"))
 ATS_REJECT_THRESHOLD = int(os.getenv("ATS_REJECT_THRESHOLD", "40"))
+ATS_WEIGHT_REQUIRED_SKILLS = float(os.getenv("ATS_WEIGHT_REQUIRED_SKILLS", "0.60"))
+ATS_WEIGHT_PREFERRED_SKILLS = float(os.getenv("ATS_WEIGHT_PREFERRED_SKILLS", "0.15"))
+ATS_WEIGHT_EXPERIENCE = float(os.getenv("ATS_WEIGHT_EXPERIENCE", "0.15"))
+ATS_WEIGHT_ROLE = float(os.getenv("ATS_WEIGHT_ROLE", "0.10"))
+ATS_RELATED_SKILL_CREDIT = float(os.getenv("ATS_RELATED_SKILL_CREDIT", "0.25"))
 
 # ---- CORS ----
 # During local development, frontend may call this service directly, so default local ports are allowed.

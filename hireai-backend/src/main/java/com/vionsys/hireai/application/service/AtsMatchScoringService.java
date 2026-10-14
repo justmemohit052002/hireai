@@ -29,6 +29,25 @@ import lombok.extern.slf4j.Slf4j;
 public class AtsMatchScoringService {
 
     private final LlmAtsClient llmAtsClient;
+    private final com.vionsys.hireai.application.config.AtsProperties atsProperties;
+
+    private static final Set<String> SPECIFIC_TOOLS = Set.of(
+            "docker", "kubernetes", "k8s", "typescript", "ts", "javascript", "js",
+            "python", "py", "java", "c++", "c#", ".net", "golang", "go", "rust",
+            "mysql", "postgresql", "postgres", "mongodb", "redis", "cassandra",
+            "oracle", "sql server", "spring boot", "hibernate", "react", "angular",
+            "vue", "node.js", "aws", "azure", "gcp", "git", "github", "gitlab",
+            "junit", "mockito", "kafka", "rabbitmq"
+    );
+
+    private static final Map<String, Set<String>> RELATED_SKILLS = Map.of(
+            "typescript", Set.of("javascript", "js"),
+            "javascript", Set.of("typescript", "ts"),
+            "azure", Set.of("aws", "gcp"),
+            "aws", Set.of("azure", "gcp"),
+            "docker", Set.of("podman", "containerd"),
+            "kubernetes", Set.of("docker swarm", "openshift")
+    );
 
     private static final Map<String, String> COMMON_ALIASES = Map.ofEntries(
             Map.entry("dsa", "data structures and algorithms"),
@@ -66,6 +85,22 @@ public class AtsMatchScoringService {
             "object-oriented", Set.of("oop", "oops", "object-oriented programming", "java", "c++", "c#", "python")
     );
 
+    public enum MatchStatus {
+        MATCHED, RELATED, MISSING
+    }
+
+    public static class SkillEvaluation {
+        public final MatchStatus status;
+        public final String matchedWith;
+        public final double credit;
+
+        public SkillEvaluation(MatchStatus status, String matchedWith, double credit) {
+            this.status = status;
+            this.matchedWith = matchedWith;
+            this.credit = credit;
+        }
+    }
+
     /**
      * Compute ATS match score (0-100) between a Candidate profile and a Job posting.
      * Uses AI Engine microservice if enabled/available, with graceful intelligent rule-based fallback.
@@ -91,6 +126,7 @@ public class AtsMatchScoringService {
                     .matchScore(Math.min(100, Math.max(0, res.getAtsScore())))
                     .matchingSkills(res.getMatchingSkills() != null ? res.getMatchingSkills() : Collections.emptyList())
                     .missingSkills(res.getMissingSkills() != null ? res.getMissingSkills() : Collections.emptyList())
+                    .relatedSkills(res.getRelatedSkills() != null ? res.getRelatedSkills() : Collections.emptyList())
                     .skillMatchPercentage(skillPercent)
                     .experienceMatchPercentage(expPercent)
                     .build();
@@ -114,52 +150,61 @@ public class AtsMatchScoringService {
 
         String rawResumeText = candidate.getResume() != null ? candidate.getResume().getRawText() : null;
 
+        // Ground candidate skills against resume text if provided
+        List<String> groundedSkills = new ArrayList<>();
+        if (rawResumeText != null && !rawResumeText.isBlank()) {
+            for (String c : candidateSkillNames) {
+                if (tokenMatches(c, rawResumeText) || tokenMatches(normalize(c), rawResumeText)) {
+                    groundedSkills.add(c);
+                }
+            }
+            // Add any deterministically recognized skills directly from resume text
+            for (Map.Entry<String, String> entry : COMMON_ALIASES.entrySet()) {
+                if (tokenMatches(entry.getKey(), rawResumeText) && !groundedSkills.contains(entry.getValue())) {
+                    groundedSkills.add(entry.getValue());
+                }
+            }
+        } else {
+            groundedSkills.addAll(candidateSkillNames);
+        }
+
         List<String> matchedSkills = new ArrayList<>();
         List<String> missingSkills = new ArrayList<>();
+        List<String> relatedSkills = new ArrayList<>();
         double totalMatchedUnits = 0.0;
         double totalRequiredUnits = 0.0;
 
         if (jobSkills.isEmpty()) {
-            matchedSkills.addAll(candidateSkillNames);
+            matchedSkills.addAll(groundedSkills);
         } else {
             for (String required : jobSkills) {
                 List<String> subItems = splitOutsideParens(required);
-                if (subItems.size() > 1) {
-                    // Bundled requirement (e.g. "Git, SVN, Spring Framework experience, Azure")
-                    totalRequiredUnits += subItems.size();
-                    for (String sub : subItems) {
-                        if (isSkillMatched(sub, candidateSkillNames, rawResumeText)) {
-                            matchedSkills.add(sub);
-                            totalMatchedUnits += 1.0;
-                        } else {
-                            missingSkills.add(sub);
-                        }
-                    }
-                } else {
+                for (String sub : subItems) {
                     totalRequiredUnits += 1.0;
-                    if (isSkillMatched(required, candidateSkillNames, rawResumeText)) {
-                        matchedSkills.add(required);
-                        totalMatchedUnits += 1.0;
+                    SkillEvaluation eval = evaluateSkill(sub, groundedSkills, rawResumeText);
+                    if (eval.status == MatchStatus.MATCHED) {
+                        matchedSkills.add(sub);
+                        totalMatchedUnits += eval.credit;
+                    } else if (eval.status == MatchStatus.RELATED) {
+                        missingSkills.add(sub);
+                        relatedSkills.add(sub + " (via " + eval.matchedWith + ", " + (int)(eval.credit * 100) + "% credit)");
+                        totalMatchedUnits += eval.credit;
                     } else {
-                        missingSkills.add(required);
+                        missingSkills.add(sub);
                     }
                 }
             }
         }
 
-        double skillScore = 60.0;
-        if (totalRequiredUnits > 0) {
-            double skillRatio = totalMatchedUnits / totalRequiredUnits;
-            skillScore = skillRatio * 60.0;
-        }
+        double skillScore = totalRequiredUnits > 0 ? (totalMatchedUnits / totalRequiredUnits) * 100.0 : 100.0;
+        double expPercent = calculateExperiencePercent(candidate.getExperience(), job.getExperienceLevel());
+        double titlePercent = calculateTitlePercent(candidate.getCurrentDesignation(), job.getTitle());
 
-        // Experience Level Matching (Weight: 25%)
-        double expScore = calculateExperienceScore(candidate.getExperience(), job.getExperienceLevel());
+        double wReq = atsProperties.getWeightRequiredSkills() + atsProperties.getWeightPreferredSkills();
+        double wExp = atsProperties.getWeightExperience();
+        double wRole = atsProperties.getWeightRole();
 
-        // Designation / Title Relevance (Weight: 15%)
-        double titleScore = calculateTitleScore(candidate.getCurrentDesignation(), job.getTitle());
-
-        int finalScore = (int) Math.min(100, Math.round(skillScore + expScore + titleScore));
+        int finalScore = (int) Math.min(100, Math.round((skillScore * wReq) + (expPercent * wExp) + (titlePercent * wRole)));
 
         log.info("ATS score computed via rule-based intelligent fallback: {}% for Candidate {}",
                 finalScore, candidate.getCandidateId());
@@ -168,8 +213,9 @@ public class AtsMatchScoringService {
                 .matchScore(finalScore)
                 .matchingSkills(matchedSkills)
                 .missingSkills(missingSkills)
-                .skillMatchPercentage(totalRequiredUnits == 0 ? 100.0 : (totalMatchedUnits / totalRequiredUnits) * 100.0)
-                .experienceMatchPercentage((expScore / 25.0) * 100.0)
+                .relatedSkills(relatedSkills)
+                .skillMatchPercentage(skillScore)
+                .experienceMatchPercentage(expPercent)
                 .build();
     }
 
@@ -218,14 +264,15 @@ public class AtsMatchScoringService {
         return result.isEmpty() ? List.of(s.trim()) : result;
     }
 
-    private boolean isSkillMatched(String required, List<String> candidateSkills, String rawResumeText) {
+    private SkillEvaluation evaluateSkill(String required, List<String> candidateSkills, String rawResumeText) {
         String reqNorm = normalize(required);
+        boolean isSpecific = SPECIFIC_TOOLS.contains(reqNorm);
 
         // 1. Exact or alias match against candidate skill list
         for (String c : candidateSkills) {
             String cNorm = normalize(c);
             if (reqNorm.equals(cNorm)) {
-                return true;
+                return new SkillEvaluation(MatchStatus.MATCHED, c, 1.0);
             }
         }
 
@@ -240,11 +287,11 @@ public class AtsMatchScoringService {
                 if (!exTrim.isBlank()) {
                     for (String c : candidateSkills) {
                         if (tokenMatches(exTrim, c) || normalize(exTrim).equals(normalize(c))) {
-                            return true;
+                            return new SkillEvaluation(MatchStatus.MATCHED, c, 1.0);
                         }
                     }
                     if (rawResumeText != null && tokenMatches(exTrim, rawResumeText)) {
-                        return true;
+                        return new SkillEvaluation(MatchStatus.MATCHED, exTrim, 1.0);
                     }
                 }
             }
@@ -258,59 +305,68 @@ public class AtsMatchScoringService {
                 if (!partTrim.isBlank()) {
                     for (String c : candidateSkills) {
                         if (tokenMatches(partTrim, c) || normalize(partTrim).equals(normalize(c))) {
-                            return true;
+                            return new SkillEvaluation(MatchStatus.MATCHED, c, 1.0);
                         }
                     }
                     if (rawResumeText != null && tokenMatches(partTrim, rawResumeText)) {
-                        return true;
+                        return new SkillEvaluation(MatchStatus.MATCHED, partTrim, 1.0);
                     }
                 }
             }
         }
 
-        // 4. Category checks
-        for (Map.Entry<String, Set<String>> cat : CATEGORY_MEMBERS.entrySet()) {
-            if (reqNorm.contains(cat.getKey())) {
-                for (String c : candidateSkills) {
-                    String cNorm = normalize(c);
-                    if (cat.getValue().contains(cNorm)) {
-                        return true;
+        // 4. Category checks (ONLY if requirement is NOT a specific technology!)
+        if (!isSpecific) {
+            for (Map.Entry<String, Set<String>> cat : CATEGORY_MEMBERS.entrySet()) {
+                if (reqNorm.contains(cat.getKey()) || required.toLowerCase().contains(cat.getKey())) {
+                    for (String c : candidateSkills) {
+                        String cNorm = normalize(c);
+                        if (cat.getValue().contains(cNorm)) {
+                            return new SkillEvaluation(MatchStatus.MATCHED, c, 1.0);
+                        }
                     }
-                }
-                if (rawResumeText != null) {
-                    for (String member : cat.getValue()) {
-                        if (tokenMatches(member, rawResumeText)) {
-                            return true;
+                    if (rawResumeText != null) {
+                        for (String member : cat.getValue()) {
+                            if (tokenMatches(member, rawResumeText)) {
+                                return new SkillEvaluation(MatchStatus.MATCHED, member, 1.0);
+                            }
                         }
                     }
                 }
             }
         }
 
-        // 5. Strict token matching against candidate skills
-        for (String c : candidateSkills) {
-            if (tokenMatches(reqNorm, c) || tokenMatches(c, required)) {
-                return true;
+        // 5. Related but different technology (e.g. JavaScript for TypeScript)
+        if (RELATED_SKILLS.containsKey(reqNorm)) {
+            Set<String> relatedSet = RELATED_SKILLS.get(reqNorm);
+            for (String c : candidateSkills) {
+                String cNorm = normalize(c);
+                if (relatedSet.contains(cNorm)) {
+                    return new SkillEvaluation(MatchStatus.RELATED, c, atsProperties.getRelatedSkillCredit());
+                }
             }
-        }
-
-        // 6. Whole resume text search for base required skill or alias
-        if (rawResumeText != null) {
-            if (tokenMatches(reqNorm, rawResumeText)) {
-                return true;
-            }
-            if (COMMON_ALIASES.containsKey(reqNorm) && tokenMatches(COMMON_ALIASES.get(reqNorm), rawResumeText)) {
-                return true;
-            }
-            // Check reverse alias
-            for (Map.Entry<String, String> entry : COMMON_ALIASES.entrySet()) {
-                if (entry.getValue().equals(reqNorm) && tokenMatches(entry.getKey(), rawResumeText)) {
-                    return true;
+            if (rawResumeText != null) {
+                for (String rel : relatedSet) {
+                    if (tokenMatches(rel, rawResumeText)) {
+                        return new SkillEvaluation(MatchStatus.RELATED, rel, atsProperties.getRelatedSkillCredit());
+                    }
                 }
             }
         }
 
-        return false;
+        // 6. Direct token match only for non-specific items
+        if (!isSpecific) {
+            for (String c : candidateSkills) {
+                if (tokenMatches(reqNorm, c) || tokenMatches(c, required)) {
+                    return new SkillEvaluation(MatchStatus.MATCHED, c, 1.0);
+                }
+            }
+            if (rawResumeText != null && tokenMatches(reqNorm, rawResumeText)) {
+                return new SkillEvaluation(MatchStatus.MATCHED, reqNorm, 1.0);
+            }
+        }
+
+        return new SkillEvaluation(MatchStatus.MISSING, null, 0.0);
     }
 
     private String normalize(String skill) {
@@ -337,22 +393,34 @@ public class AtsMatchScoringService {
         String tLow = token.trim().toLowerCase();
         String tarLow = target.trim().toLowerCase();
 
-        // Negative guards against common false positives
-        if (tLow.equals("java") && tarLow.contains("javascript")) return false;
-        if (tLow.equals("sql") && tarLow.contains("nosql")) return false;
-        if (tLow.equals("go") && tarLow.contains("mongodb")) return false;
-
         String escaped = Pattern.quote(tLow);
         Pattern p = Pattern.compile("(?<![a-zA-Z0-9_])" + escaped + "(?![a-zA-Z0-9_])");
+
+        // Specific negative guard for SQL vs NoSQL: match only if sql exists outside of nosql
+        if (tLow.equals("sql") && tarLow.contains("nosql")) {
+            String withoutNosql = tarLow.replaceAll("(?i)\\bnosql\\b", " ");
+            return p.matcher(withoutNosql).find();
+        }
+
+        // Specific negative guard for Go vs MongoDB / Algo / Django
+        if (tLow.equals("go") && (tarLow.contains("mongodb") || tarLow.contains("django") || tarLow.contains("algo"))) {
+            Matcher m = p.matcher(tarLow);
+            while (m.find()) {
+                int start = Math.max(0, m.start() - 5);
+                int end = Math.min(tarLow.length(), m.end() + 5);
+                String surrounding = tarLow.substring(start, end);
+                if (!surrounding.contains("mongo") && !surrounding.contains("django") && !surrounding.contains("algo")) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         return p.matcher(tarLow).find();
     }
 
-    private double calculateExperienceScore(BigDecimal candidateExp, ExperienceLevel requiredLevel) {
-        if (candidateExp == null || requiredLevel == null) {
-            return 15.0; // Moderate default
-        }
-
-        double exp = candidateExp.doubleValue();
+    private double calculateExperiencePercent(BigDecimal candidateExp, ExperienceLevel requiredLevel) {
+        if (requiredLevel == null) return 100.0;
         double minExpected = switch (requiredLevel) {
             case FRESHER -> 0.0;
             case JUNIOR -> 1.0;
@@ -360,35 +428,28 @@ public class AtsMatchScoringService {
             case SENIOR -> 5.0;
             case LEAD -> 8.0;
         };
-
-        if (exp >= minExpected) {
-            return 25.0;
-        } else if (exp >= minExpected - 1.0) {
-            return 18.0;
-        } else {
-            return Math.max(5.0, (exp / Math.max(1.0, minExpected)) * 25.0);
-        }
+        if (minExpected <= 0.0) return 100.0;
+        if (candidateExp == null) return 50.0;
+        double exp = candidateExp.doubleValue();
+        return Math.min(100.0, Math.max(0.0, (exp / minExpected) * 100.0));
     }
 
-    private double calculateTitleScore(String candidateDesignation, String jobTitle) {
+    private double calculateTitlePercent(String candidateDesignation, String jobTitle) {
         if (candidateDesignation == null || jobTitle == null) {
-            return 10.0;
+            return 50.0;
         }
-
-        String candLower = candidateDesignation.toLowerCase();
-        String jobLower = jobTitle.toLowerCase();
-
-        String[] jobWords = jobLower.split("\\s+");
-        int matchedWords = 0;
-        for (String word : jobWords) {
-            if (word.length() > 2 && candLower.contains(word)) {
-                matchedWords++;
+        String cLow = candidateDesignation.toLowerCase();
+        String jLow = jobTitle.toLowerCase();
+        if (cLow.equals(jLow)) return 100.0;
+        String[] cTokens = cLow.split("\\s+");
+        String[] jTokens = jLow.split("\\s+");
+        int overlap = 0;
+        for (String ct : cTokens) {
+            for (String jt : jTokens) {
+                if (ct.equals(jt) && ct.length() > 2) overlap++;
             }
         }
-
-        if (matchedWords > 0) {
-            return 15.0;
-        }
-        return 7.0;
+        return overlap > 0 ? Math.min(100.0, 70.0 + overlap * 15.0) : 60.0;
     }
 }
+

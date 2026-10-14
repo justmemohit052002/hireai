@@ -50,6 +50,62 @@ def get_category_map() -> dict[str, set[str]]:
     return cat_map
 
 
+def get_specific_tools() -> set[str]:
+    """Returns set of specific technologies/tools that require exact or alias match."""
+    data = load_skill_knowledge()
+    tools = data.get("specific_tools", [])
+    alias_map = get_alias_map()
+    result = set()
+    for t in tools:
+        t_low = t.lower()
+        result.add(t_low)
+        canon = alias_map.get(t_low)
+        if canon:
+            result.add(canon.lower())
+    return result
+
+
+def get_related_skills_map() -> dict[str, list[str]]:
+    """Returns mapping of skill -> list of related-but-different skills."""
+    data = load_skill_knowledge()
+    return data.get("related_skills", {})
+
+
+def is_category_requirement(job_skill: str, base_concept: str = "") -> tuple[bool, Optional[str]]:
+    """
+    Determines if a job requirement is a CATEGORY requirement (e.g. 'database management systems',
+    'cloud platforms', 'version control', 'testing frameworks') vs a SPECIFIC technology (e.g. 'Docker', 'Kubernetes', 'TypeScript').
+    Returns (is_category, category_name).
+    """
+    specific_tools = get_specific_tools()
+    cat_map = get_category_map()
+
+    req_clean = job_skill.strip()
+    req_norm = normalize_skill(req_clean).lower()
+    base_clean = base_concept.strip() if base_concept else ""
+    base_norm = normalize_skill(base_clean).lower() if base_clean else req_norm
+
+    # If the exact requirement is a specific tool, it is NOT a category requirement
+    # unless it has parenthetical examples or explicit category wording
+    has_category_wording = any(
+        w in req_clean.lower() for w in ("systems", "platforms", "frameworks", "technologies", "methodologies", "e.g.", "such as")
+    )
+    if req_norm in specific_tools and not has_category_wording:
+        return False, None
+
+    # Check if base_concept or normalized requirement matches a known category
+    candidate_keys = [base_clean.lower(), base_norm, req_clean.lower(), req_norm]
+    for k in candidate_keys:
+        if k and k in cat_map:
+            return True, k
+
+    for k in cat_map:
+        if k and (k in base_clean.lower() or k in req_clean.lower()):
+            return True, k
+
+    return False, None
+
+
 FILLER_PATTERNS = [
     re.compile(r"^(?:proficient in|hands[- ]on experience with|experience with|knowledge of|working knowledge of|expertise in|familiar with)\s+", re.IGNORECASE),
     re.compile(r"\s+(?:programming language|language|frameworks?|concepts?|technologies?|tools?|platforms?|architecture)$", re.IGNORECASE),
@@ -283,3 +339,81 @@ def find_skill_evidence(skill_name: str, resume_text: str) -> str:
     if sections:
         return f"{skill_name} ({', '.join(sections)})"
     return skill_name
+
+
+def find_skill_verbatim_evidence(skill_name: str, resume_text: str) -> tuple[bool, Optional[str], Optional[str]]:
+    """
+    Finds exact line/sentence in resume_text containing the skill or any alias,
+    and identifies which section it belongs to.
+    Returns (is_found, verbatim_snippet, section_name).
+    """
+    if not skill_name or not resume_text:
+        return False, None, None
+
+    alias_map = get_alias_map()
+    s_clean = skill_name.lower().strip()
+    variants = [s_clean]
+    for v, c in alias_map.items():
+        if c.lower() == s_clean or v == s_clean:
+            variants.append(v)
+            variants.append(c.lower())
+    variants = list(dict.fromkeys(variants))
+
+    lines = [line.strip() for line in resume_text.split("\n") if line.strip()]
+
+    current_section = "summary"
+    section_headers = {
+        "summary": ["summary", "objective", "profile", "professional summary", "about"],
+        "skills": ["technical skills", "skills", "technologies", "proficiencies", "technical competencies", "core skills"],
+        "experience": ["experience", "work history", "employment", "professional experience", "work experience"],
+        "project": ["projects", "personal projects", "academic projects", "key projects"],
+        "education": ["education", "academic background", "qualifications"],
+        "certification": ["certifications", "certificates", "courses", "licenses"],
+    }
+
+    for line in lines:
+        lower_line = line.strip().lower()
+        for sec, headers in section_headers.items():
+            if any(lower_line == h or lower_line.startswith(h + ":") or lower_line.startswith(h + " -") for h in headers):
+                current_section = sec
+                break
+
+        for v in variants:
+            if len(v) <= 2 and v not in ("c#", "go", "js", "ts", "r"):
+                continue
+            if token_matches(v, line):
+                return True, line, current_section
+
+    return False, None, None
+
+
+def is_skill_grounded_in_text(skill_name: str, resume_text: str) -> tuple[bool, Optional[str], Optional[str]]:
+    """
+    Checks if a skill or any of its canonical aliases appears in resume_text
+    with strict word-boundary awareness.
+    Returns (is_grounded, verbatim_snippet, section).
+    """
+    return find_skill_verbatim_evidence(skill_name, resume_text)
+
+
+def filter_grounded_skills(skills: list[str], resume_text: Optional[str]) -> list[str]:
+    """
+    Filters a list of skills to only those grounded in resume_text (if resume_text is non-empty).
+    If resume_text is None or blank, returns the skills as-is.
+    """
+    if not resume_text or not resume_text.strip() or not skills:
+        return skills or []
+
+    grounded = []
+    seen = set()
+    for s in skills:
+        clean = str(s).strip()
+        if not clean:
+            continue
+        canon = normalize_skill(clean)
+        is_grounded, _, _ = is_skill_grounded_in_text(clean, resume_text)
+        if is_grounded:
+            if canon not in seen:
+                seen.add(canon)
+                grounded.append(clean)
+    return grounded

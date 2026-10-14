@@ -18,8 +18,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.vionsys.hireai.application.config.AtsProperties;
 import com.vionsys.hireai.application.dto.AtsMatchResult;
 import com.vionsys.hireai.application.dto.llm.LlmAtsResponse;
 import com.vionsys.hireai.candidate.entity.Candidate;
@@ -32,6 +34,9 @@ class AtsMatchScoringServiceTest {
 
     @Mock
     private LlmAtsClient llmAtsClient;
+
+    @Spy
+    private AtsProperties atsProperties = new AtsProperties();
 
     @InjectMocks
     private AtsMatchScoringService scoringService;
