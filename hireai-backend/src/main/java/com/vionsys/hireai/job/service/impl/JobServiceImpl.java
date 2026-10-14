@@ -237,6 +237,10 @@ public class JobServiceImpl implements JobService {
                 request.getSkills()
         );
 
+        job.setPreferredSkills(
+                request.getPreferredSkills()
+        );
+
         job.setEducation(
                 request.getEducation()
         );

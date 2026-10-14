@@ -62,6 +62,9 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT FALSE NOT NULL");
             jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP");
             jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS account_status VARCHAR(30) DEFAULT 'ACTIVE'");
+            jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS job_preferred_skills (job_id UUID NOT NULL, skill VARCHAR(255) NOT NULL, CONSTRAINT fk_job_preferred_skills_job FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE)");
+            jdbcTemplate.execute("ALTER TABLE jobs DROP CONSTRAINT IF EXISTS jobs_experience_level_check");
+            jdbcTemplate.execute("ALTER TABLE jobs ADD CONSTRAINT jobs_experience_level_check CHECK (experience_level IN ('FRESHER', 'JUNIOR', 'MID_LEVEL', 'SENIOR', 'LEAD', 'EXECUTIVE'))");
         } catch (Exception ex) {
             log.debug("[DataInitializer] Schema alignment notice: {}", ex.getMessage());
         }

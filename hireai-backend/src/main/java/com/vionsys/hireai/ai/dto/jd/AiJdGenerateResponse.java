@@ -18,4 +18,10 @@ public class AiJdGenerateResponse {
     private List<String> mustHaveSkills;
     private List<String> niceToHaveSkills;
     private List<String> interviewQuestions;
+    private List<String> required;
+    private List<String> preferred;
+    private java.util.Map<String, Double> experienceYears;
+    private String education;
+    private List<String> softSkills;
+    private String roleFamily;
 }

@@ -23,14 +23,15 @@ export function formatJobPayload(jobData) {
   else if (rawLevel === 'JUNIOR') experienceLevel = 'JUNIOR';
   else if (rawLevel === 'MID' || rawLevel === 'MID_LEVEL') experienceLevel = 'MID_LEVEL';
   else if (rawLevel === 'SENIOR') experienceLevel = 'SENIOR';
-  else if (rawLevel === 'LEAD' || rawLevel === 'EXECUTIVE' || rawLevel === 'PRINCIPAL') experienceLevel = 'LEAD';
+  else if (rawLevel === 'EXECUTIVE') experienceLevel = 'EXECUTIVE';
+  else if (rawLevel === 'LEAD' || rawLevel === 'PRINCIPAL') experienceLevel = 'LEAD';
 
   // Normalize currency
   const rawCurrency = (jobData.currency || jobData.salary?.currency || 'INR').toUpperCase();
   const validCurrencies = ['INR', 'USD', 'EUR', 'GBP', 'AED'];
   const currency = validCurrencies.includes(rawCurrency) ? rawCurrency : 'INR';
 
-  // Normalize skills (at least 1 non-empty skill)
+  // Normalize required skills (at least 1 non-empty skill)
   let skills = [];
   if (Array.isArray(jobData.skills)) {
     skills = jobData.skills.map((s) => (typeof s === 'string' ? s.trim() : '')).filter(Boolean);
@@ -39,6 +40,14 @@ export function formatJobPayload(jobData) {
   }
   if (skills.length === 0) {
     skills = ['General Engineering'];
+  }
+
+  // Normalize preferred skills
+  let preferredSkills = [];
+  if (Array.isArray(jobData.preferredSkills)) {
+    preferredSkills = jobData.preferredSkills.map((s) => (typeof s === 'string' ? s.trim() : '')).filter(Boolean);
+  } else if (typeof jobData.preferredSkills === 'string') {
+    preferredSkills = jobData.preferredSkills.split(',').map((s) => s.trim()).filter(Boolean);
   }
 
   // Normalize education (max 200 chars)
@@ -101,6 +110,7 @@ export function formatJobPayload(jobData) {
     salaryMax: maxSal,
     currency,
     skills,
+    preferredSkills,
     education: education || null,
     openings,
     applicationDeadline,
@@ -150,7 +160,7 @@ export const jobsApi = {
   },
 
   /** AI-powered Job Description and Interview Questions generator */
-  generateAiJd: async ({ jobTitle, requiredSkills, experienceLevel }) => {
+  generateAiJd: async ({ jobTitle, requiredSkills, experienceLevel, description, domain, yearsOfExperience }) => {
     const skillsList = Array.isArray(requiredSkills)
       ? requiredSkills
       : typeof requiredSkills === 'string'
@@ -161,6 +171,9 @@ export const jobsApi = {
       jobTitle: jobTitle,
       requiredSkills: skillsList,
       experienceLevel: experienceLevel,
+      description: description || '',
+      domain: domain || '',
+      yearsOfExperience: yearsOfExperience || null,
       job_title: jobTitle,
       required_skills: skillsList,
       experience_level: experienceLevel,

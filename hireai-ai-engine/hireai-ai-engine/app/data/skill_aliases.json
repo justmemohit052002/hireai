@@ -112,7 +112,7 @@
     "github": ["github", "git hub"],
     "gitlab": ["gitlab", "git lab"],
     "bitbucket": ["bitbucket"],
-    "junit": ["junit", "junit 4", "junit 5", "junit jupiter"],
+    "junit": ["junit", "junit 4", "junit 5", "junit jupiter", "junit testing", "junit testing framework", "junit framework"],
     "mockito": ["mockito"],
     "ci/cd": [
       "ci/cd",
@@ -196,6 +196,77 @@
     "testng": [
       "testng",
       "test ng"
+    ],
+    "system design": [
+      "system design",
+      "systems design",
+      "distributed system design",
+      "high-level design",
+      "hld",
+      "low-level design",
+      "lld"
+    ],
+    "distributed systems": [
+      "distributed systems",
+      "distributed system",
+      "distributed architecture",
+      "distributed computing"
+    ],
+    "rest apis": [
+      "rest apis",
+      "rest api",
+      "restful apis",
+      "restful api",
+      "restful web services",
+      "rest web services",
+      "rest"
+    ],
+    "postman": [
+      "postman",
+      "postman api"
+    ],
+    "maven": [
+      "maven",
+      "apache maven"
+    ],
+    "gradle": [
+      "gradle"
+    ],
+    "mentoring": [
+      "mentoring",
+      "mentor",
+      "mentorship",
+      "coaching",
+      "technical mentoring",
+      "engineering mentorship"
+    ],
+    "team leadership": [
+      "team leadership",
+      "technical leadership",
+      "tech lead",
+      "engineering leadership"
+    ],
+    "architecture ownership": [
+      "architecture ownership",
+      "software architecture",
+      "solution architecture",
+      "system architecture"
+    ],
+    "ci/cd": [
+      "ci/cd",
+      "ci cd",
+      "continuous integration",
+      "continuous delivery",
+      "continuous deployment",
+      "ci/cd pipelines"
+    ],
+    "linux": [
+      "linux",
+      "unix",
+      "linux/unix",
+      "ubuntu",
+      "redhat",
+      "centos"
     ]
   },
   "categories": {

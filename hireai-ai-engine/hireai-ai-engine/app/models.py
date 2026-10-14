@@ -20,6 +20,9 @@ class GenerateJDRequest(CamelModel):
     job_title: str
     required_skills: list[str] = []
     experience_level: str = "mid"
+    description: Optional[str] = None
+    domain: Optional[str] = None
+    years_of_experience: Optional[float] = None
 
 
 class GenerateJDResponse(CamelModel):
@@ -28,6 +31,12 @@ class GenerateJDResponse(CamelModel):
     must_have_skills: list[str]
     nice_to_have_skills: list[str]
     interview_questions: list[str]
+    required: list[str] = Field(default_factory=list)
+    preferred: list[str] = Field(default_factory=list)
+    experience_years: Optional[dict[str, float]] = None
+    education: Optional[str] = None
+    soft_skills: list[str] = Field(default_factory=list)
+    role_family: Optional[str] = None
 
 
 # ---- 2. Resume Parser (async/polling) ----

@@ -35,10 +35,8 @@ class AtsMatchScoringServiceTest {
     @Mock
     private LlmAtsClient llmAtsClient;
 
-    @Spy
     private AtsProperties atsProperties = new AtsProperties();
 
-    @InjectMocks
     private AtsMatchScoringService scoringService;
 
     private Candidate candidate;
@@ -46,6 +44,7 @@ class AtsMatchScoringServiceTest {
 
     @BeforeEach
     void setUp() {
+        scoringService = new AtsMatchScoringService(llmAtsClient, atsProperties);
         Skill java = Skill.builder().id(UUID.randomUUID()).name("Java (Core Java, Java 8+)").build();
         Skill spring = Skill.builder().id(UUID.randomUUID()).name("Spring Boot").build();
         Skill postgres = Skill.builder().id(UUID.randomUUID()).name("PostgreSQL").build();
@@ -199,5 +198,39 @@ class AtsMatchScoringServiceTest {
         assertEquals("Java", cleaned.get(0));
         assertEquals("Database management systems (e.g. MySQL, MongoDB)", cleaned.get(1));
         assertEquals("Version control systems (e.g. Git, SVN)", cleaned.get(2));
+    }
+
+    @Test
+    void testComputeScore_RequiredVsPreferredWeighting_MissingPreferredNotHardGap() {
+        when(llmAtsClient.scoreWithLlm(any(), any())).thenReturn(Optional.empty());
+
+        Skill java = Skill.builder().name("Java").build();
+        Skill spring = Skill.builder().name("Spring Boot").build();
+        Skill sql = Skill.builder().name("SQL").build();
+
+        Candidate candidateWithRequiredOnly = Candidate.builder()
+                .id(UUID.randomUUID())
+                .candidateId("CAND-REQ-ONLY")
+                .skills(Set.of(java, spring, sql))
+                .experience(BigDecimal.valueOf(3.0))
+                .currentDesignation("Software Engineer")
+                .build();
+
+        Job jobWithPreferred = Job.builder()
+                .id(UUID.randomUUID())
+                .title("Software Engineer")
+                .skills(List.of("Java", "Spring Boot", "SQL"))
+                .preferredSkills(List.of("Docker", "AWS", "Kafka"))
+                .experienceLevel(ExperienceLevel.MID_LEVEL)
+                .build();
+
+        AtsMatchResult result = scoringService.computeAtsScore(candidateWithRequiredOnly, jobWithPreferred);
+
+        assertNotNull(result);
+        assertFalse(result.getMissingSkills().contains("Docker"));
+        assertFalse(result.getMissingSkills().contains("AWS"));
+        assertFalse(result.getMissingSkills().contains("Kafka"));
+        assertEquals(0, result.getMissingSkills().size(), "Candidate has all required skills, so missingSkills should be empty");
+        assertEquals(80.0, result.getSkillMatchPercentage(), 0.01);
     }
 }

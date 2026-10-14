@@ -89,6 +89,13 @@ public class Job extends BaseEntity {
     @Column(name = "skill", nullable = false)
     private List<String> skills;
 
+    @ElementCollection
+    @CollectionTable(
+            name = "job_preferred_skills",
+            joinColumns = @JoinColumn(name = "job_id"))
+    @Column(name = "skill", nullable = false)
+    private List<String> preferredSkills;
+
     @Column(length = 200)
     private String education;
 

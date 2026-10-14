@@ -46,6 +46,10 @@ public class LlmAtsClient {
                     ? job.getSkills().stream().filter(s -> s != null && !s.isBlank()).toList()
                     : Collections.emptyList();
 
+            List<String> preferredSkills = job.getPreferredSkills() != null
+                    ? job.getPreferredSkills().stream().filter(s -> s != null && !s.isBlank()).toList()
+                    : Collections.emptyList();
+
             Double candExpYears = candidate.getExperience() != null
                     ? candidate.getExperience().doubleValue()
                     : null;
@@ -59,6 +63,7 @@ public class LlmAtsClient {
             AiMatchScoreRequest request = AiMatchScoreRequest.builder()
                     .resumeSkills(candidateSkills)
                     .jobSkills(jobSkills)
+                    .niceToHaveSkills(preferredSkills)
                     .resumeText(resumeText)
                     .shortlistThreshold((double) atsProperties.getShortlistThreshold())
                     .candidateExperienceYears(candExpYears)
@@ -105,6 +110,7 @@ public class LlmAtsClient {
             case MID_LEVEL -> 3.0;
             case SENIOR -> 5.0;
             case LEAD -> 8.0;
+            case EXECUTIVE -> 10.0;
         };
     }
 }

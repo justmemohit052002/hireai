@@ -50,6 +50,8 @@ public class JobResponse {
 
     private List<String> skills;
 
+    private List<String> preferredSkills;
+
     private String education;
 
     private Integer openings;

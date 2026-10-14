@@ -136,8 +136,12 @@ public class AtsMatchScoringService {
         List<String> rawJobSkills = job.getSkills() != null
                 ? job.getSkills().stream().map(String::trim).filter(s -> !s.isBlank()).toList()
                 : Collections.emptyList();
-
         List<String> jobSkills = repairAndCleanJobSkills(rawJobSkills);
+
+        List<String> rawPrefSkills = job.getPreferredSkills() != null
+                ? job.getPreferredSkills().stream().map(String::trim).filter(s -> !s.isBlank()).toList()
+                : Collections.emptyList();
+        List<String> prefSkills = repairAndCleanJobSkills(rawPrefSkills);
 
         List<String> candidateSkillNames = new ArrayList<>();
         if (candidate.getSkills() != null) {
@@ -174,6 +178,7 @@ public class AtsMatchScoringService {
         double totalMatchedUnits = 0.0;
         double totalRequiredUnits = 0.0;
 
+        // Evaluate Required Skills
         if (jobSkills.isEmpty()) {
             matchedSkills.addAll(groundedSkills);
         } else {
@@ -196,7 +201,36 @@ public class AtsMatchScoringService {
             }
         }
 
-        double skillScore = totalRequiredUnits > 0 ? (totalMatchedUnits / totalRequiredUnits) * 100.0 : 100.0;
+        // Evaluate Preferred Skills (Nice to have - missing preferred skills NEVER count as missing gaps)
+        double totalPrefMatchedUnits = 0.0;
+        double totalPrefUnits = 0.0;
+        for (String pref : prefSkills) {
+            List<String> subItems = splitOutsideParens(pref);
+            for (String sub : subItems) {
+                totalPrefUnits += 1.0;
+                SkillEvaluation eval = evaluateSkill(sub, groundedSkills, rawResumeText);
+                if (eval.status == MatchStatus.MATCHED) {
+                    totalPrefMatchedUnits += eval.credit;
+                    if (!matchedSkills.contains(sub)) {
+                        matchedSkills.add(sub + " (Preferred)");
+                    }
+                } else if (eval.status == MatchStatus.RELATED) {
+                    totalPrefMatchedUnits += eval.credit * 0.5;
+                }
+            }
+        }
+
+        double requiredSkillScore = totalRequiredUnits > 0 ? (totalMatchedUnits / totalRequiredUnits) * 100.0 : 100.0;
+        double skillScore;
+        if (totalPrefUnits > 0) {
+            double preferredSkillScore = (totalPrefMatchedUnits / totalPrefUnits) * 100.0;
+            // 80% required skills / 20% preferred skills
+            skillScore = (requiredSkillScore * 0.80) + (preferredSkillScore * 0.20);
+        } else {
+            // Legacy flat list compatibility: 100% required
+            skillScore = requiredSkillScore;
+        }
+
         double expPercent = calculateExperiencePercent(candidate.getExperience(), job.getExperienceLevel());
         double titlePercent = calculateTitlePercent(candidate.getCurrentDesignation(), job.getTitle());
 
@@ -427,6 +461,7 @@ public class AtsMatchScoringService {
             case MID_LEVEL -> 3.0;
             case SENIOR -> 5.0;
             case LEAD -> 8.0;
+            case EXECUTIVE -> 10.0;
         };
         if (minExpected <= 0.0) return 100.0;
         if (candidateExp == null) return 50.0;

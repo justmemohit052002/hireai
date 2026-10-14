@@ -10,6 +10,8 @@ public enum ExperienceLevel {
 
     SENIOR,
 
-    LEAD
+    LEAD,
+
+    EXECUTIVE
 
 }

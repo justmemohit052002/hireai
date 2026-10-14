@@ -30,6 +30,7 @@ public final class JobMapper {
                 .salaryMax(request.getSalaryMax())
                 .currency(request.getCurrency() != null ? request.getCurrency() : Currency.INR)
                 .skills(request.getSkills())
+                .preferredSkills(request.getPreferredSkills())
                 .education(request.getEducation())
                 .openings(request.getOpenings())
                 .applicationDeadline(request.getApplicationDeadline())
@@ -61,6 +62,9 @@ public final class JobMapper {
                 .currency(job.getCurrency())
                 .skills(job.getSkills() != null
                         ? new ArrayList<>(job.getSkills())
+                        : null)
+                .preferredSkills(job.getPreferredSkills() != null
+                        ? new ArrayList<>(job.getPreferredSkills())
                         : null)
                 .education(job.getEducation())
                 .openings(job.getOpenings())

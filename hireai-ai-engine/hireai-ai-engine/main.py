@@ -225,8 +225,15 @@ def admin_get_log(log_id: str):
 # ---- 1. JD Generator (sync) ----
 @api_v1.post("/jd/generate", response_model=GenerateJDResponse)
 def jd_generate(request: GenerateJDRequest):
-    logger.info(f"JD generation requested for '{request.job_title}'")
-    result = generate_jd(request.job_title, request.required_skills, request.experience_level)
+    logger.info(f"JD generation requested for '{request.job_title}' (level: {request.experience_level})")
+    result = generate_jd(
+        job_title=request.job_title,
+        required_skills=request.required_skills,
+        experience_level=request.experience_level,
+        description=request.description,
+        domain=request.domain,
+        years_of_experience=request.years_of_experience,
+    )
     return GenerateJDResponse(**result)
 
 

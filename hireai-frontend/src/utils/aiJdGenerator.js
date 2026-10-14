@@ -1,232 +1,365 @@
 import { formatSalary, formatDate, getJobTypeLabel, getExperienceLevelLabel } from '@/utils';
 
 /**
- * Intelligent domain knowledge base for generating high-quality ATS skills,
- * role-specific responsibilities, education, and perks.
+ * Curated, versioned role profile catalog fallback for client-side generation
+ * and offline resilience, strictly synchronized with the Python AI Engine catalog.
  */
-const DOMAIN_TEMPLATES = [
-  {
-    matches: ['data analyst', 'business analyst', 'bi analyst', 'analytics', 'data analysis', 'bi developer', 'data specialist', 'analyst', 'reporting analyst'],
-    skills: ['SQL', 'Python', 'Power BI', 'Tableau', 'Excel (Advanced)', 'Data Modeling', 'ETL Pipelines', 'Statistical Analysis', 'Dashboarding', 'JIRA'],
-    education: "Bachelor's degree in Data Science, Statistics, Computer Science, Mathematics, or related quantitative field.",
-    responsibilities: [
-      'Extract, clean, and transform complex datasets from multiple relational and non-relational sources.',
-      'Design, build, and maintain interactive business intelligence dashboards in Power BI/Tableau for leadership.',
-      'Perform exploratory data analysis to identify operational trends, bottlenecks, and revenue opportunities.',
-      'Collaborate closely with product, engineering, and operations stakeholders to translate business questions into actionable metrics.',
-      'Establish standardized data governance, metric definitions, and automated reporting pipelines.'
-    ],
+export const ROLE_CATALOG_FALLBACK = {
+  java_backend: {
+    name: 'Java / Backend Developer',
+    matches: ['java', 'spring', 'spring boot', 'jvm', 'kotlin backend', 'backend java'],
+    levels: {
+      entry: {
+        required: ['Java', 'Object-Oriented Programming', 'Data Structures and Algorithms', 'SQL', 'Spring Boot', 'REST APIs', 'JUnit', 'Maven', 'Git', 'Postman'],
+        preferred: ['Docker', 'Linux', 'Hibernate', 'Agile Methodologies', 'Mockito', 'AWS'],
+        education: "Bachelor's degree in Computer Science, Information Technology, or equivalent practical background",
+        experienceYears: { min: 0, max: 2 },
+      },
+      mid: {
+        required: ['Java', 'Spring Boot', 'Spring Security', 'Hibernate', 'PostgreSQL', 'REST APIs', 'Microservices', 'JUnit', 'Mockito', 'Docker', 'Git', 'CI/CD'],
+        preferred: ['Redis', 'Kafka', 'AWS', 'Linux', 'Performance Tuning', 'Agile Methodologies'],
+        education: "Bachelor's degree in Computer Science, Software Engineering, or related technical field",
+        experienceYears: { min: 2, max: 5 },
+      },
+      senior: {
+        required: ['Java', 'Spring Boot', 'Microservices', 'Distributed Systems', 'System Design', 'PostgreSQL', 'Redis', 'Kafka', 'Spring Security', 'Docker', 'Kubernetes', 'AWS', 'Mentoring'],
+        preferred: ['CI/CD', 'Observability', 'NoSQL', 'Performance Optimization', 'Database Tuning', 'Technical Leadership'],
+        education: "Bachelor's or Master's degree in Computer Science, Software Engineering, or equivalent experience",
+        experienceYears: { min: 5, max: 8 },
+      },
+      lead: {
+        required: ['Java', 'Spring Boot', 'System Design', 'Distributed Systems', 'Architecture Ownership', 'Team Leadership', 'Microservices', 'PostgreSQL', 'Kafka', 'Code Review', 'Delivery Management', 'Mentoring'],
+        preferred: ['AWS', 'Kubernetes', 'Technical Strategy', 'CI/CD', 'Observability', 'Agile Coaching'],
+        education: "Bachelor's or Master's degree with demonstrable engineering leadership track record",
+        experienceYears: { min: 8, max: 12 },
+      },
+      executive: {
+        required: ['Technology Strategy', 'Engineering Leadership', 'Technology Governance', 'System Architecture', 'Budgeting', 'Hiring', 'Vendor Management', 'Enterprise Security', 'Roadmap Planning', 'Stakeholder Management'],
+        preferred: ['Cloud Strategy', 'Distributed Systems', 'Software Quality Governance', 'Digital Transformation', 'Risk Management'],
+        education: "Bachelor's or Master's degree with executive credentials",
+        experienceYears: { min: 10, max: 20 },
+      },
+    },
   },
-  {
-    matches: ['data scientist', 'machine learning', 'ml engineer', 'ai engineer', 'nlp', 'computer vision', 'deep learning', 'ai specialist', 'artificial intelligence'],
-    skills: ['Python', 'PyTorch', 'TensorFlow', 'Scikit-Learn', 'SQL', 'LLM Fine-Tuning', 'Feature Engineering', 'MLOps', 'Docker', 'FastAPI'],
-    education: "Master's or Bachelor's degree in Computer Science, Artificial Intelligence, Data Science, or Mathematics.",
-    responsibilities: [
-      'Architect, train, evaluate, and deploy predictive models and deep learning pipelines into production.',
-      'Design advanced feature engineering strategies and benchmark model accuracy against real-world metrics.',
-      'Collaborate with backend engineers to integrate scalable machine learning inference APIs and microservices.',
-      'Monitor model performance, data drift, and latency in live production environments.',
-      'Keep abreast of emerging AI architectures, foundation models, and prompt engineering best practices.'
-    ],
+  full_stack_java_react: {
+    name: 'Full Stack Developer (Java + React)',
+    matches: ['full stack', 'fullstack', 'react java', 'java react'],
+    levels: {
+      entry: {
+        required: ['Java', 'JavaScript', 'React', 'HTML5', 'CSS3', 'SQL', 'Spring Boot', 'REST APIs', 'Git', 'Data Structures and Algorithms'],
+        preferred: ['TypeScript', 'JUnit', 'Postman', 'Maven', 'Tailwind CSS', 'Docker'],
+        education: "Bachelor's degree in Computer Science, Information Technology, or practical web experience",
+        experienceYears: { min: 0, max: 2 },
+      },
+      mid: {
+        required: ['Java', 'React', 'TypeScript', 'Spring Boot', 'Hibernate', 'PostgreSQL', 'REST APIs', 'Tailwind CSS', 'Redux', 'Docker', 'Git', 'Jest'],
+        preferred: ['Microservices', 'CI/CD', 'Redis', 'AWS', 'JUnit', 'Agile Methodologies'],
+        education: "Bachelor's degree in Computer Science or Software Engineering",
+        experienceYears: { min: 2, max: 5 },
+      },
+      senior: {
+        required: ['Java', 'Spring Boot', 'React', 'TypeScript', 'System Design', 'Microservices', 'Distributed Systems', 'PostgreSQL', 'State Management', 'Docker', 'AWS', 'CI/CD', 'Mentoring'],
+        preferred: ['Redis', 'Kafka', 'Kubernetes', 'GraphQL', 'Next.js', 'Web Performance', 'Testing Strategies'],
+        education: "Bachelor's or Master's degree in Computer Science or equivalent",
+        experienceYears: { min: 5, max: 8 },
+      },
+      lead: {
+        required: ['Java', 'React', 'TypeScript', 'System Design', 'Full Stack Architecture', 'Team Leadership', 'Microservices', 'PostgreSQL', 'Code Review', 'Delivery Management', 'Mentoring', 'Architecture Ownership'],
+        preferred: ['Cloud Architecture', 'CI/CD', 'Kafka', 'Technical Strategy', 'Observability', 'Agile Coaching'],
+        education: "Bachelor's or Master's degree with engineering lead experience",
+        experienceYears: { min: 8, max: 12 },
+      },
+      executive: {
+        required: ['Technology Strategy', 'Engineering Leadership', 'System Architecture', 'Roadmap Planning', 'Technology Governance', 'Hiring', 'Budgeting', 'Stakeholder Management', 'Vendor Management', 'Enterprise Security'],
+        preferred: ['Cloud Governance', 'Product Strategy', 'Engineering Culture', 'Operational Excellence', 'Scalability Strategy'],
+        education: "Bachelor's or Master's degree with executive track record",
+        experienceYears: { min: 10, max: 20 },
+      },
+    },
   },
-  {
-    matches: ['frontend', 'react', 'vue', 'angular', 'web developer', 'ui developer', 'javascript developer', 'frontend engineer', 'next.js'],
-    skills: ['React.js', 'TypeScript', 'Next.js', 'TailwindCSS', 'JavaScript (ES6+)', 'REST APIs', 'State Management (Redux/Zustand)', 'HTML5/CSS3', 'Jest/RTL', 'Git'],
-    education: "Bachelor's degree in Computer Science, Software Engineering, or equivalent practical web engineering experience.",
-    responsibilities: [
-      'Develop modern, ultra-responsive, and accessible user interfaces using modern frontend component frameworks.',
-      'Optimize web application performance, bundle size, and Core Web Vitals across desktop and mobile devices.',
-      'Collaborate with UI/UX designers to translate Figma designs and wireframes into pixel-perfect code.',
-      'Integrate RESTful and GraphQL APIs with robust client-side state management and error handling.',
-      'Write comprehensive unit and integration tests to ensure cross-browser compatibility and reliability.'
-    ],
+  frontend: {
+    name: 'Frontend Developer',
+    matches: ['frontend', 'front end', 'react', 'vue', 'angular', 'ui developer', 'javascript developer', 'web developer'],
+    levels: {
+      entry: {
+        required: ['JavaScript', 'React', 'HTML5', 'CSS3', 'Data Structures and Algorithms', 'REST APIs', 'Git', 'Responsive Web Design', 'Postman', 'Browser Developer Tools'],
+        preferred: ['TypeScript', 'Tailwind CSS', 'Jest', 'Webpack', 'Vite', 'Figma'],
+        education: "Bachelor's degree in Computer Science, Software Engineering, or digital portfolio",
+        experienceYears: { min: 0, max: 2 },
+      },
+      mid: {
+        required: ['JavaScript', 'TypeScript', 'React', 'HTML5', 'CSS3', 'Tailwind CSS', 'State Management', 'REST APIs', 'Jest', 'Vite', 'Git', 'Web Performance'],
+        preferred: ['Next.js', 'Redux', 'GraphQL', 'CI/CD', 'Responsive Web Design', 'Accessibility'],
+        education: "Bachelor's degree in Computer Science or Design Technology",
+        experienceYears: { min: 2, max: 5 },
+      },
+      senior: {
+        required: ['JavaScript', 'TypeScript', 'React', 'Next.js', 'State Management', 'Frontend Architecture', 'Web Performance', 'Core Web Vitals', 'Testing Library', 'CI/CD', 'Design Systems', 'REST APIs', 'Mentoring'],
+        preferred: ['GraphQL', 'Micro Frontends', 'WebSockets', 'Accessibility', 'Docker', 'Tailwind CSS'],
+        education: "Bachelor's or Master's degree in Computer Science",
+        experienceYears: { min: 5, max: 8 },
+      },
+      lead: {
+        required: ['JavaScript', 'TypeScript', 'React', 'Frontend Architecture', 'Design Systems', 'Team Leadership', 'Web Performance', 'Code Review', 'Delivery Management', 'Mentoring', 'Testing Strategy', 'Technical Strategy'],
+        preferred: ['Micro Frontends', 'CI/CD', 'Next.js', 'Accessibility', 'Cross-Browser Compatibility', 'Stakeholder Management'],
+        education: "Bachelor's or Master's degree with frontend leadership background",
+        experienceYears: { min: 8, max: 12 },
+      },
+      executive: {
+        required: ['Technology Strategy', 'Engineering Leadership', 'Frontend Platform Strategy', 'User Experience Strategy', 'Technology Governance', 'Hiring', 'Budgeting', 'Stakeholder Management', 'Vendor Management', 'Engineering Culture'],
+        preferred: ['Product Alignment', 'Digital Transformation', 'Web Standards', 'Operational Excellence', 'Performance Governance'],
+        education: "Bachelor's or Master's degree with executive credentials",
+        experienceYears: { min: 10, max: 20 },
+      },
+    },
   },
-  {
-    matches: ['python developer', 'python engineer', 'python backend', 'django', 'fastapi', 'flask', 'python'],
-    skills: ['Python', 'Django / FastAPI / Flask', 'RESTful APIs', 'PostgreSQL / MySQL', 'SQLAlchemy / ORM', 'Redis', 'Docker', 'Git', 'PyTest', 'Celery'],
-    education: "Bachelor's or Master's degree in Computer Science, Information Technology, Software Engineering, or related discipline.",
-    responsibilities: [
-      'Design, develop, and maintain robust, scalable backend microservices and RESTful APIs in Python.',
-      'Architect efficient database schemas, optimize queries with PostgreSQL/MySQL, and implement caching using Redis.',
-      'Write clean, modular, and maintainable Python code with comprehensive unit and integration test coverage.',
-      'Collaborate with cross-functional frontend, product, and DevOps teams to ship high-impact features.',
-      'Implement asynchronous task processing with Celery/Redis and integrate third-party APIs seamlessly.'
-    ],
+  python_backend: {
+    name: 'Python / Backend Developer',
+    matches: ['python', 'django', 'fastapi', 'flask'],
+    levels: {
+      entry: {
+        required: ['Python', 'Object-Oriented Programming', 'Data Structures and Algorithms', 'SQL', 'FastAPI', 'REST APIs', 'PyTest', 'Git', 'Postman', 'Linux'],
+        preferred: ['Django', 'PostgreSQL', 'Docker', 'Redis', 'Virtualenv', 'Agile Methodologies'],
+        education: "Bachelor's degree in Computer Science, Software Engineering, or equivalent",
+        experienceYears: { min: 0, max: 2 },
+      },
+      mid: {
+        required: ['Python', 'FastAPI', 'Django', 'PostgreSQL', 'SQLAlchemy', 'REST APIs', 'PyTest', 'Docker', 'Redis', 'Git', 'Microservices', 'CI/CD'],
+        preferred: ['Celery', 'Kafka', 'AWS', 'Linux', 'Performance Profiling', 'Asynchronous Programming'],
+        education: "Bachelor's degree in Computer Science, Information Systems, or related field",
+        experienceYears: { min: 2, max: 5 },
+      },
+      senior: {
+        required: ['Python', 'FastAPI', 'Microservices', 'Distributed Systems', 'System Design', 'PostgreSQL', 'Redis', 'Celery', 'Kafka', 'Docker', 'AWS', 'CI/CD', 'Mentoring'],
+        preferred: ['Kubernetes', 'SQLAlchemy', 'Asynchronous Programming', 'NoSQL', 'Database Optimization', 'Observability'],
+        education: "Bachelor's or Master's degree in Computer Science or Software Engineering",
+        experienceYears: { min: 5, max: 8 },
+      },
+      lead: {
+        required: ['Python', 'FastAPI', 'System Design', 'Distributed Systems', 'Architecture Ownership', 'Team Leadership', 'Microservices', 'PostgreSQL', 'Kafka', 'Code Review', 'Delivery Management', 'Mentoring'],
+        preferred: ['AWS', 'Kubernetes', 'Technical Strategy', 'CI/CD', 'Observability', 'Agile Coaching'],
+        education: "Bachelor's or Master's degree with technical leadership experience",
+        experienceYears: { min: 8, max: 12 },
+      },
+      executive: {
+        required: ['Technology Strategy', 'Engineering Leadership', 'System Architecture', 'Roadmap Planning', 'Technology Governance', 'Hiring', 'Budgeting', 'Stakeholder Management', 'Enterprise Security', 'Vendor Management'],
+        preferred: ['Cloud Strategy', 'Data Governance', 'Operational Excellence', 'Technical Due Diligence', 'Scalability Strategy'],
+        education: "Bachelor's or Master's degree with executive technical background",
+        experienceYears: { min: 10, max: 20 },
+      },
+    },
   },
-  {
-    matches: ['backend', 'java', 'spring', 'node', 'golang', 'c#', '.net', 'api developer', 'systems engineer', 'backend engineer', 'go developer'],
-    skills: ['Java', 'Spring Boot', 'Microservices', 'PostgreSQL', 'REST APIs', 'Redis', 'Docker', 'Kafka', 'System Design', 'Git'],
-    education: "Bachelor's or Master's degree in Computer Science, Information Technology, or related technical discipline.",
-    responsibilities: [
-      'Design, develop, and maintain high-throughput, low-latency microservices and distributed backend systems.',
-      'Architect scalable relational and NoSQL database schemas, indexing strategies, and query optimizations.',
-      'Implement secure RESTful APIs, JWT authentication, role-based access control, and rate limiting.',
-      'Collaborate with DevOps teams on containerization, CI/CD automated deployment pipelines, and observability.',
-      'Conduct rigorous code reviews, unit tests, and performance profiling to ensure 99.99% uptime.'
-    ],
+  devops_cloud: {
+    name: 'DevOps / Cloud Engineer',
+    matches: ['devops', 'cloud', 'sre', 'site reliability', 'infrastructure', 'platform engineer', 'kubernetes', 'aws'],
+    levels: {
+      entry: {
+        required: ['Linux', 'Bash Scripting', 'Git', 'Python', 'Networking Basics', 'Docker', 'CI/CD Basics', 'Cloud Fundamentals', 'Virtualization', 'Postman'],
+        preferred: ['AWS', 'Terraform', 'GitHub Actions', 'Nginx', 'YAML', 'Monitoring Basics'],
+        education: "Bachelor's degree in Computer Science, Information Technology, or Network Engineering",
+        experienceYears: { min: 0, max: 2 },
+      },
+      mid: {
+        required: ['Linux', 'Docker', 'Kubernetes', 'AWS', 'Terraform', 'CI/CD', 'Bash Scripting', 'Python', 'Git', 'Prometheus', 'Grafana', 'Infrastructure as Code'],
+        preferred: ['Ansible', 'Helm', 'GitHub Actions', 'GCP', 'Azure', 'Security Best Practices'],
+        education: "Bachelor's degree in Computer Science, Systems Engineering, or certification equivalent",
+        experienceYears: { min: 2, max: 5 },
+      },
+      senior: {
+        required: ['Kubernetes', 'Cloud Architecture', 'AWS', 'Terraform', 'Infrastructure as Code', 'CI/CD', 'Prometheus', 'Grafana', 'Observability', 'Security and Compliance', 'Distributed Systems', 'System Design', 'Mentoring'],
+        preferred: ['Helm', 'GitOps', 'Cost Optimization', 'Disaster Recovery', 'Linux', 'Azure', 'Site Reliability Engineering'],
+        education: "Bachelor's or Master's degree in Computer Science or significant cloud track record",
+        experienceYears: { min: 5, max: 8 },
+      },
+      lead: {
+        required: ['Cloud Architecture', 'Kubernetes', 'Terraform', 'Infrastructure as Code', 'Site Reliability Engineering', 'Team Leadership', 'Security and Compliance', 'Architecture Ownership', 'Disaster Recovery', 'Cost Optimization', 'Mentoring', 'Code Review'],
+        preferred: ['CI/CD', 'GitOps', 'Observability', 'Technical Strategy', 'AWS', 'Stakeholder Management'],
+        education: "Bachelor's or Master's degree with infrastructure leadership credentials",
+        experienceYears: { min: 8, max: 12 },
+      },
+      executive: {
+        required: ['Cloud Strategy', 'Infrastructure Governance', 'Engineering Leadership', 'Security and Compliance', 'Technology Governance', 'Budgeting', 'Vendor Management', 'Disaster Recovery Strategy', 'Hiring', 'Stakeholder Management'],
+        preferred: ['Site Reliability Engineering', 'Cost Optimization', 'Multi-Cloud Strategy', 'Operational Excellence', 'Risk Management'],
+        education: "Bachelor's or Master's degree with executive platform credentials",
+        experienceYears: { min: 10, max: 20 },
+      },
+    },
   },
-  {
-    matches: ['full stack', 'fullstack', 'software engineer', 'software developer', 'sde', 'mern', 'mean'],
-    skills: ['React.js', 'Node.js', 'TypeScript', 'Java / Spring Boot', 'PostgreSQL', 'Docker', 'RESTful APIs', 'AWS', 'TailwindCSS', 'Git'],
-    education: "Bachelor's degree in Computer Science, Information Systems, Engineering, or equivalent practical experience.",
-    responsibilities: [
-      'Own end-to-end feature delivery from responsive frontend interfaces to scalable backend microservices.',
-      'Build and maintain resilient APIs and database architectures supporting high-concurrency client applications.',
-      'Participate actively in architectural design discussions, sprint planning, and agile standups.',
-      'Automate unit, integration, and end-to-end testing across the full development lifecycle.',
-      'Identify and remediate performance bottlenecks across both client and server layers.'
-    ],
+  qa_automation: {
+    name: 'QA / Automation Engineer',
+    matches: ['qa', 'sdet', 'test engineer', 'automation engineer', 'quality assurance', 'tester'],
+    levels: {
+      entry: {
+        required: ['Software Testing Fundamentals', 'Test Case Design', 'Java', 'Selenium WebDriver', 'Test Execution', 'Bug Tracking', 'JIRA', 'SQL', 'Git', 'Postman'],
+        preferred: ['TestNG', 'JUnit', 'Python', 'API Testing', 'Agile Methodologies', 'CI/CD Basics'],
+        education: "Bachelor's degree in Computer Science, Software Engineering, or related technical field",
+        experienceYears: { min: 0, max: 2 },
+      },
+      mid: {
+        required: ['Test Automation', 'Selenium WebDriver', 'Java', 'TestNG', 'API Testing', 'Postman', 'REST Assured', 'SQL', 'JIRA', 'Git', 'CI/CD', 'Test Execution'],
+        preferred: ['Cypress', 'Playwright', 'Cucumber', 'Python', 'Docker', 'Performance Testing Basics'],
+        education: "Bachelor's degree in Computer Science or Software Engineering",
+        experienceYears: { min: 2, max: 5 },
+      },
+      senior: {
+        required: ['Test Automation Architecture', 'Framework Design', 'Selenium WebDriver', 'Playwright', 'API Testing', 'REST Assured', 'CI/CD Integration', 'Performance Testing', 'JMeter', 'SQL', 'Test Strategy', 'Git', 'Mentoring'],
+        preferred: ['Cypress', 'Docker', 'Security Testing', 'Cross-Browser Testing', 'TestNG', 'Agile Methodologies'],
+        education: "Bachelor's or Master's degree in Computer Science or extensive SDET experience",
+        experienceYears: { min: 5, max: 8 },
+      },
+      lead: {
+        required: ['Quality Engineering Leadership', 'Test Strategy', 'Test Automation Architecture', 'Framework Design', 'Team Leadership', 'CI/CD Integration', 'Delivery Management', 'Code Review', 'Mentoring', 'Defect Management', 'Performance Testing', 'Stakeholder Communication'],
+        preferred: ['Playwright', 'Security Testing', 'Test Metrics', 'Agile Coaching', 'Cloud Testing', 'Technical Strategy'],
+        education: "Bachelor's or Master's degree with QA / SDET leadership track record",
+        experienceYears: { min: 8, max: 12 },
+      },
+      executive: {
+        required: ['Quality Governance', 'Engineering Leadership', 'Technology Strategy', 'Software Quality Standards', 'Risk Management', 'Hiring', 'Budgeting', 'Stakeholder Management', 'Vendor Management', 'Technology Governance'],
+        preferred: ['Continuous Testing Strategy', 'Shift-Left Adoption', 'Test Operations', 'Compliance', 'Operational Excellence'],
+        education: "Bachelor's or Master's degree with executive quality governance background",
+        experienceYears: { min: 10, max: 20 },
+      },
+    },
   },
-  {
-    matches: ['mobile', 'android', 'ios', 'flutter', 'react native', 'swift', 'kotlin', 'app developer'],
-    skills: ['Flutter / React Native', 'Dart / JavaScript', 'iOS / Swift', 'Android / Kotlin', 'Mobile App Architecture', 'REST APIs', 'State Management (Bloc/Redux)', 'App Store & Play Store Deployment', 'Firebase', 'Git'],
-    education: "Bachelor's degree in Computer Science, Mobile Computing, or equivalent practical app development portfolio.",
-    responsibilities: [
-      'Architect, develop, and publish high-performance native and cross-platform mobile applications for iOS and Android.',
-      'Ensure smooth 60fps animations, responsive UI layouts, offline synchronization, and battery efficiency.',
-      'Integrate push notifications, device sensors, biometric authentication, and in-app purchase systems.',
-      'Manage app lifecycle, testing on diverse screen resolutions, and App Store / Google Play release pipelines.',
-      'Collaborate with product managers and UX designers to deliver delightful touch-first mobile experiences.'
-    ],
+  data_ml: {
+    name: 'Data / Machine Learning Engineer',
+    matches: ['data science', 'machine learning', 'ml engineer', 'ai engineer', 'data engineer', 'deep learning', 'nlp'],
+    levels: {
+      entry: {
+        required: ['Python', 'SQL', 'Data Structures and Algorithms', 'Pandas', 'NumPy', 'Scikit-Learn', 'Mathematics and Statistics', 'Git', 'Exploratory Data Analysis', 'Data Visualization'],
+        preferred: ['Matplotlib', 'Jupyter', 'PyTorch', 'Docker', 'Feature Engineering', 'REST APIs'],
+        education: "Bachelor's or Master's degree in Data Science, Computer Science, or Mathematics",
+        experienceYears: { min: 0, max: 2 },
+      },
+      mid: {
+        required: ['Python', 'SQL', 'Pandas', 'NumPy', 'Scikit-Learn', 'PyTorch', 'Machine Learning', 'Feature Engineering', 'Model Evaluation', 'Docker', 'Git', 'Data Pipelines'],
+        preferred: ['TensorFlow', 'MLOps', 'FastAPI', 'MLflow', 'AWS', 'PostgreSQL'],
+        education: "Bachelor's or Master's degree in Data Science, Computer Science, or quantitative field",
+        experienceYears: { min: 2, max: 5 },
+      },
+      senior: {
+        required: ['Python', 'Machine Learning', 'Deep Learning', 'PyTorch', 'MLOps', 'Model Deployment', 'Feature Engineering', 'Distributed Computing', 'System Design', 'SQL', 'Docker', 'Cloud Platforms', 'Mentoring'],
+        preferred: ['MLflow', 'Kubeflow', 'Apache Spark', 'Large Language Models', 'Data Pipelines', 'Observability'],
+        education: "Master's or Ph.D. in Computer Science or Artificial Intelligence",
+        experienceYears: { min: 5, max: 8 },
+      },
+      lead: {
+        required: ['Python', 'Machine Learning', 'Deep Learning', 'MLOps', 'AI Strategy', 'Architecture Ownership', 'Team Leadership', 'Data Governance', 'Model Deployment', 'Code Review', 'Mentoring', 'Delivery Management'],
+        preferred: ['Large Language Models', 'Cloud Platforms', 'Distributed Computing', 'Stakeholder Management', 'Kubeflow', 'Ethical AI'],
+        education: "Master's or Ph.D. with track record of leading applied ML / AI systems in production",
+        experienceYears: { min: 8, max: 12 },
+      },
+      executive: {
+        required: ['AI Strategy', 'Data Strategy', 'Engineering Leadership', 'Technology Governance', 'Ethical AI', 'Hiring', 'Budgeting', 'Roadmap Planning', 'Stakeholder Management', 'Vendor Management'],
+        preferred: ['Enterprise AI Adoption', 'Data Governance', 'Research Direction', 'Operational Excellence', 'Cloud Cost Optimization'],
+        education: "Advanced quantitative degree with executive data leadership credentials",
+        experienceYears: { min: 10, max: 20 },
+      },
+    },
   },
-  {
-    matches: ['data engineer', 'big data', 'etl developer', 'data pipeline', 'spark', 'snowflake', 'databricks', 'hadoop'],
-    skills: ['Apache Spark', 'Python', 'SQL (Advanced)', 'Data Warehousing (Snowflake / BigQuery)', 'ETL / ELT Pipelines', 'Airflow', 'Kafka', 'AWS / GCP Data Services', 'Docker', 'Git'],
-    education: "Bachelor's or Master's degree in Computer Science, Data Engineering, Information Systems, or quantitative field.",
-    responsibilities: [
-      'Architect, build, and scale automated data ingestion and transformation pipelines across petabyte-scale data lakes.',
-      'Optimize complex analytical SQL queries, data warehousing schemas, and distributed Spark jobs for efficiency.',
-      'Implement resilient workflow orchestration using Apache Airflow and real-time streaming with Apache Kafka.',
-      'Enforce data security, masking, compliance, and automated data quality validation at every pipeline stage.',
-      'Partner with analytics and data science teams to deliver clean, production-ready feature tables and marts.'
-    ],
+  mobile: {
+    name: 'Mobile Application Developer',
+    matches: ['mobile', 'android', 'ios', 'flutter', 'react native', 'swift', 'kotlin'],
+    levels: {
+      entry: {
+        required: ['Mobile Application Development', 'Kotlin', 'Java', 'Android SDK', 'Object-Oriented Programming', 'Data Structures and Algorithms', 'REST APIs', 'Git', 'UI Layouts', 'Postman'],
+        preferred: ['Swift', 'Flutter', 'SQLite', 'Firebase', 'Android Studio', 'Agile Methodologies'],
+        education: "Bachelor's degree in Computer Science, Mobile Computing, or app portfolio",
+        experienceYears: { min: 0, max: 2 },
+      },
+      mid: {
+        required: ['Kotlin', 'Android SDK', 'Flutter', 'Dart', 'REST APIs', 'State Management', 'SQLite', 'Git', 'Firebase', 'Unit Testing', 'App Store Deployment', 'Clean Architecture'],
+        preferred: ['Swift', 'iOS SDK', 'CI/CD', 'Jetpack Compose', 'GraphQL', 'Push Notifications'],
+        education: "Bachelor's degree in Computer Science or Mobile Engineering",
+        experienceYears: { min: 2, max: 5 },
+      },
+      senior: {
+        required: ['Mobile Architecture', 'Kotlin', 'Swift', 'Flutter', 'State Management', 'Performance Optimization', 'Offline Synchronization', 'CI/CD', 'App Store Deployment', 'Automated Testing', 'REST APIs', 'Security Best Practices', 'Mentoring'],
+        preferred: ['Jetpack Compose', 'SwiftUI', 'Reactive Programming', 'GraphQL', 'Firebase', 'Memory Management'],
+        education: "Bachelor's or Master's degree in Computer Science or significant mobile production history",
+        experienceYears: { min: 5, max: 8 },
+      },
+      lead: {
+        required: ['Mobile Architecture', 'Cross-Platform Architecture', 'Team Leadership', 'App Lifecycle Management', 'Code Review', 'Delivery Management', 'Mentoring', 'Performance Optimization', 'Security Best Practices', 'App Store Compliance', 'Release Management', 'Technical Strategy'],
+        preferred: ['Kotlin', 'Swift', 'Flutter', 'CI/CD', 'Stakeholder Management', 'Agile Coaching'],
+        education: "Bachelor's or Master's degree with mobile leadership track record",
+        experienceYears: { min: 8, max: 12 },
+      },
+      executive: {
+        required: ['Mobile Strategy', 'Technology Strategy', 'Engineering Leadership', 'Mobile Platform Governance', 'App Ecosystem Strategy', 'Hiring', 'Budgeting', 'Stakeholder Management', 'Vendor Management', 'Security and Compliance'],
+        preferred: ['Product Alignment', 'User Experience Governance', 'Digital Transformation', 'Operational Excellence', 'Release Governance'],
+        education: "Bachelor's or Master's degree with executive mobile credentials",
+        experienceYears: { min: 10, max: 20 },
+      },
+    },
   },
-  {
-    matches: ['devops', 'cloud', 'sre', 'infrastructure', 'platform engineer', 'kubernetes', 'aws', 'azure', 'gcp', 'site reliability'],
-    skills: ['AWS / Cloud Infrastructure', 'Kubernetes', 'Docker', 'Terraform', 'CI/CD Pipelines (GitHub Actions)', 'Linux / Bash', 'Prometheus & Grafana', 'Helm', 'Security Best Practices'],
-    education: "Bachelor's degree in Computer Science, Network Engineering, or equivalent cloud platform certifications (AWS/GCP/CKA).",
-    responsibilities: [
-      'Architect, provision, and maintain secure, multi-region cloud infrastructure using Terraform and Infrastructure as Code.',
-      'Build and optimize automated CI/CD deployment pipelines ensuring rapid, zero-downtime releases.',
-      'Manage container orchestration clusters using Kubernetes with robust scaling and self-healing policies.',
-      'Implement observability, distributed tracing, alerting, and log aggregation using Prometheus, Grafana, and ELK.',
-      'Perform disaster recovery rehearsals, vulnerability scans, and continuous infrastructure cost optimization.'
-    ],
+  generic: {
+    name: 'Software Engineer (General)',
+    matches: ['software engineer', 'software developer', 'sde', 'developer', 'engineer', 'programmer'],
+    levels: {
+      entry: {
+        required: ['Programming Fundamentals', 'Object-Oriented Programming', 'Data Structures and Algorithms', 'SQL', 'REST APIs', 'Version Control', 'Git', 'Software Testing', 'Problem Solving', 'Command Line'],
+        preferred: ['Relational Databases', 'Agile Methodologies', 'Postman', 'CI/CD Basics', 'Docker Basics', 'Code Quality'],
+        education: "Bachelor's degree in Computer Science, Information Technology, or practical experience",
+        experienceYears: { min: 0, max: 2 },
+      },
+      mid: {
+        required: ['Software Engineering', 'Object-Oriented Programming', 'Relational Databases', 'SQL', 'REST APIs', 'Microservices Basics', 'Unit Testing', 'Git', 'Docker', 'CI/CD', 'Code Review', 'Problem Solving'],
+        preferred: ['Cloud Platforms', 'Caching', 'Linux', 'Database Optimization', 'Agile Methodologies', 'Software Architecture'],
+        education: "Bachelor's degree in Computer Science, Software Engineering, or related field",
+        experienceYears: { min: 2, max: 5 },
+      },
+      senior: {
+        required: ['System Design', 'Software Architecture', 'Distributed Systems', 'Microservices', 'Relational Databases', 'NoSQL', 'API Design', 'Security Best Practices', 'CI/CD', 'Docker', 'Cloud Computing', 'Code Review', 'Mentoring'],
+        preferred: ['Observability', 'Performance Optimization', 'Messaging Systems', 'Database Tuning', 'High Availability', 'Kubernetes', 'Agile Methodologies'],
+        education: "Bachelor's or Master's degree in Computer Science or equivalent",
+        experienceYears: { min: 5, max: 8 },
+      },
+      lead: {
+        required: ['System Architecture', 'System Design', 'Distributed Systems', 'Architecture Ownership', 'Team Leadership', 'Code Review', 'Delivery Management', 'Mentoring', 'Cross-Team Collaboration', 'Technical Strategy', 'Software Quality Standards', 'Stakeholder Communication'],
+        preferred: ['Cloud Platforms', 'Microservices', 'CI/CD', 'Cost Optimization', 'Agile Coaching', 'Risk Management'],
+        education: "Bachelor's or Master's degree with engineering leadership track record",
+        experienceYears: { min: 8, max: 12 },
+      },
+      executive: {
+        required: ['Technology Strategy', 'Engineering Leadership', 'System Architecture', 'Roadmap Planning', 'Technology Governance', 'Hiring', 'Budgeting', 'Stakeholder Management', 'Vendor Management', 'Enterprise Security'],
+        preferred: ['Cloud Governance', 'Organizational Design', 'Technical Due Diligence', 'Digital Transformation', 'Operational Excellence'],
+        education: "Bachelor's or Master's degree with executive engineering credentials",
+        experienceYears: { min: 10, max: 20 },
+      },
+    },
   },
-  {
-    matches: ['cybersecurity', 'security engineer', 'infosec', 'soc analyst', 'penetration tester', 'security analyst', 'information security'],
-    skills: ['Network Security', 'Vulnerability Assessment & Pen Testing', 'SIEM & SOC Tools', 'Threat Modeling', 'OWASP Top 10', 'Incident Response', 'IAM & Zero Trust Architecture', 'Python / Bash Scripting', 'Compliance (SOC2 / ISO 27001)'],
-    education: "Bachelor's degree in Cybersecurity, Information Security, Computer Science, or certifications (CISSP, CEH, CompTIA Security+).",
-    responsibilities: [
-      'Conduct regular vulnerability assessments, code audits, and penetration testing across cloud and application infrastructure.',
-      'Configure and monitor Security Information and Event Management (SIEM) systems for intrusion detection.',
-      'Lead incident response investigations, forensic analysis, and post-mortem mitigation strategies.',
-      'Implement Zero Trust identity and access management (IAM) policies and encryption standards across all environments.',
-      'Ensure adherence to global cybersecurity compliance frameworks including SOC 2, ISO 27001, and GDPR.'
-    ],
-  },
-  {
-    matches: ['qa', 'test', 'sdet', 'quality assurance', 'automation engineer', 'tester'],
-    skills: ['Selenium WebDriver', 'Cypress / Playwright', 'Test Automation Frameworks', 'Java / Python / JS', 'API Testing (Postman/RestAssured)', 'JIRA', 'CI/CD Integration', 'SQL', 'Performance Testing (JMeter)'],
-    education: "Bachelor's degree in Computer Science, Software Engineering, or related technical field.",
-    responsibilities: [
-      'Design, maintain, and execute comprehensive end-to-end automated test suites for web, mobile, and API layers.',
-      'Participate in requirements grooming to identify test scenarios, edge cases, and acceptance criteria early.',
-      'Integrate test automation suites into CI/CD release pipelines to prevent regressions before production deployment.',
-      'Perform load, stress, and security testing to validate non-functional system benchmarks.',
-      'Document detailed defect reports, collaborate with engineers on triage, and verify bug fixes.'
-    ],
-  },
-  {
-    matches: ['product manager', 'product owner', 'tpm', 'program manager', 'product lead'],
-    skills: ['Product Roadmap & Strategy', 'Agile & Scrum Methodologies', 'User Story Mapping', 'JIRA & Confluence', 'Data Analytics (Mixpanel/GA)', 'Customer Discovery & User Research', 'A/B Testing', 'Stakeholder Management'],
-    education: "Bachelor's or Master's degree in Business, Computer Science, Engineering, or equivalent product leadership experience.",
-    responsibilities: [
-      'Define product vision, strategic roadmap, and quarterly KPI milestones aligned with company objectives.',
-      'Work closely with engineering, design, and business teams to prioritize backlog and deliver customer-centric features.',
-      'Conduct user interviews, market research, and telemetry analysis to uncover unmet user needs.',
-      'Write clear, concise product requirement documents (PRDs) and user stories with measurable acceptance criteria.',
-      'Lead go-to-market launches and iterate rapidly based on user feedback and quantitative engagement metrics.'
-    ],
-  },
-  {
-    matches: ['ui', 'ux', 'designer', 'product designer', 'visual designer', 'ux researcher'],
-    skills: ['Figma', 'UI/UX Design', 'Design Systems', 'Wireframing & Prototyping', 'User Research & Usability Testing', 'Interaction Design', 'Responsive Design', 'Design Thinking'],
-    education: "Bachelor's degree in Design, Human-Computer Interaction (HCI), Fine Arts, or equivalent digital portfolio.",
-    responsibilities: [
-      'Create intuitive, aesthetically pleasing UI flows, wireframes, prototypes, and high-fidelity mockups in Figma.',
-      'Maintain and evolve the scalable design system token library across dark and light modes.',
-      'Conduct usability tests, user interviews, and cognitive walkthroughs to validate design hypotheses.',
-      'Collaborate closely with frontend engineers to ensure design fidelity and fluid micro-interactions.',
-      'Advocate for design accessibility (WCAG) and seamless user experience across mobile and desktop interfaces.'
-    ],
-  },
-  {
-    matches: ['recruiter', 'talent acquisition', 'hr', 'human resources', 'people operations', 'hr generalist'],
-    skills: ['Talent Sourcing & Headhunting', 'Technical Screening & Interviewing', 'Applicant Tracking Systems (ATS)', 'Candidate Experience', 'Offer Negotiation', 'Employer Branding', 'HR Operations & Compliance', 'LinkedIn Recruiter'],
-    education: "Bachelor's degree in Human Resources, Business Administration, Psychology, or relevant operational experience.",
-    responsibilities: [
-      'Manage full-cycle recruitment from sourcing and candidate screening to offer negotiation and onboarding.',
-      'Partner closely with hiring managers to calibrate candidate profiles, interview loops, and evaluation criteria.',
-      'Build robust talent pipelines across multiple sourcing channels, community networks, and platforms.',
-      'Deliver an exemplary, transparent, and empathetic candidate experience throughout the entire hiring journey.',
-      'Track recruitment metrics (time-to-hire, offer acceptance rate, source efficiency) to continuously improve workflows.'
-    ],
-  },
-  {
-    matches: ['marketing', 'digital marketing', 'growth', 'seo', 'content', 'social media', 'brand'],
-    skills: ['Growth Marketing & Acquisition', 'SEO & SEM Strategies', 'Content Strategy & Copywriting', 'Google Analytics & Tag Manager', 'Social Media Marketing', 'Email Marketing & Automation', 'Campaign ROI Optimization', 'A/B Testing'],
-    education: "Bachelor's degree in Marketing, Communications, Business, Journalism, or equivalent digital marketing background.",
-    responsibilities: [
-      'Develop and execute multi-channel inbound and outbound marketing campaigns to drive user acquisition and engagement.',
-      'Optimize organic search engine rankings (SEO), content strategy, and paid acquisition funnels.',
-      'Analyze customer funnels, conversion rates, and campaign performance using Google Analytics and BI dashboards.',
-      'Collaborate with design and product teams to craft compelling copy, landing pages, and email nurturing sequences.',
-      'Oversee social media channels, community engagement, and brand storytelling to build strong industry presence.'
-    ],
-  },
-  {
-    matches: ['sales', 'business development', 'bdr', 'sdr', 'account executive', 'account manager'],
-    skills: ['B2B Sales & Prospecting', 'CRM Management (Salesforce / HubSpot)', 'Lead Qualification (BANT / MEDDIC)', 'Cold Outreach & Follow-up', 'Product Demonstrations & Pitching', 'Contract & Pricing Negotiation', 'Pipeline Management', 'Customer Relationship Building'],
-    education: "Bachelor's degree in Business, Marketing, Communications, or demonstrable high-achievement sales track record.",
-    responsibilities: [
-      'Identify, qualify, and engage prospective enterprise clients through outbound prospecting and inbound follow-up.',
-      'Deliver persuasive product demonstrations and value presentations addressing specific client pain points.',
-      'Manage end-to-end sales cycle from initial discovery to contract closing, meeting or exceeding quota targets.',
-      'Maintain rigorous CRM records and pipeline forecasts in Salesforce/HubSpot with up-to-date deal velocity notes.',
-      'Collaborate with customer success and solutions engineering teams to ensure seamless client onboarding.'
-    ],
-  },
-];
+};
 
-/**
- * Match best domain template based on title and department
- */
-function findMatchingTemplate(title = '', department = '') {
+export function detectRoleFamilyFrontend(title = '', department = '') {
   const query = `${title} ${department}`.toLowerCase();
-  for (const t of DOMAIN_TEMPLATES) {
-    if (t.matches.some((m) => query.includes(m))) {
-      return t;
+  for (const [key, family] of Object.entries(ROLE_CATALOG_FALLBACK)) {
+    if (family.matches.some((m) => query.includes(m))) {
+      return key;
     }
   }
-  return null;
+  return 'generic';
 }
 
-/**
- * Format workplace label
- */
 function formatWorkplaceModel(type) {
   if (type === 'on_site' || type === 'on-site') return 'On-Site';
   if (type === 'remote') return 'Remote';
   return 'Hybrid';
 }
 
+function normalizeLevelKey(level) {
+  if (!level) return 'mid';
+  const l = String(level).toLowerCase().replace(/[-\s]/g, '_');
+  if (l.includes('fresher') || l.includes('entry') || l.includes('junior')) return 'entry';
+  if (l.includes('lead') || l.includes('staff') || l.includes('principal')) return 'lead';
+  if (l.includes('executive') || l.includes('director') || l.includes('vp')) return 'executive';
+  if (l.includes('senior') || l.includes('sr')) return 'senior';
+  return 'mid';
+}
+
 /**
  * Generates tailored, comprehensive Job Requirements, Skills, Education,
  * Benefits, and Job Description using all entered Job Details + Compensation & Timeline parameters.
- *
- * If skills are entered prior by the user, AI incorporates those specific skills into the description.
- * If skills are left blank, AI automatically deduces and generates the skills from the job role & department.
  */
 export function generateRoleRequirements({
   title = '',
@@ -240,77 +373,59 @@ export function generateRoleRequirements({
   salaryMax = '',
   deadline = '',
   existingSkills = '',
+  existingPreferredSkills = '',
   backendData = null,
 }) {
   const cleanTitle = title.trim() || 'Software Engineer';
   const cleanDept = department.trim() || 'Engineering';
   const jobTypeLabel = getJobTypeLabel(jobType) || 'Full-time';
   const workplaceLabel = formatWorkplaceModel(workplaceType);
+  const normLevel = normalizeLevelKey(level);
   const levelLabel = getExperienceLevelLabel(level) || 'Mid Level';
 
-  const matchedTemplate = findMatchingTemplate(cleanTitle, cleanDept);
+  const roleFamKey = detectRoleFamilyFrontend(cleanTitle, cleanDept);
+  const familyData = ROLE_CATALOG_FALLBACK[roleFamKey] || ROLE_CATALOG_FALLBACK.generic;
+  const levelBaseline = familyData.levels[normLevel] || familyData.levels.mid;
+
   const hasUserSkills = Boolean(existingSkills && existingSkills.trim().length > 0);
+  const hasUserPrefSkills = Boolean(existingPreferredSkills && existingPreferredSkills.trim().length > 0);
 
-  // 1. Determine Skills:
-  // If user entered skills, honor and prioritize their exact entered skills.
-  // If user left skills blank, deduce from backend AI data, matched domain template, or smart role inference.
-  let skillsArray = [];
-
+  // 1. Required Skills
+  let requiredList = [];
   if (hasUserSkills) {
-    const userEnteredList = existingSkills
+    requiredList = existingSkills
       .split(/,\s*(?![^()]*\))/)
       .map((s) => s.trim())
       .filter(Boolean);
-    skillsArray = userEnteredList;
+  } else if (backendData?.required?.length || backendData?.mustHaveSkills?.length || backendData?.must_have_skills?.length) {
+    const raw = backendData.required || backendData.mustHaveSkills || backendData.must_have_skills || [];
+    requiredList = Array.from(new Set(raw.map((s) => (typeof s === 'string' ? s.trim() : '')).filter(Boolean)));
   } else {
-    // Collect from backend AI first if available
-    if (backendData?.mustHaveSkills?.length || backendData?.must_have_skills?.length) {
-      const raw = backendData.mustHaveSkills || backendData.must_have_skills || [];
-      skillsArray.push(...raw);
-    }
-    if (backendData?.niceToHaveSkills?.length || backendData?.nice_to_have_skills?.length) {
-      const raw = backendData.niceToHaveSkills || backendData.nice_to_have_skills || [];
-      skillsArray.push(...raw);
-    }
-
-    // If backend did not provide skills, use domain templates
-    if (skillsArray.length === 0) {
-      if (matchedTemplate?.skills) {
-        skillsArray = [...matchedTemplate.skills];
-      } else {
-        // Smart fallback derived from title and foundational industry standards
-        const titleWords = cleanTitle
-          .split(/[\s/-]+/)
-          .filter((w) => w.length > 2 && !['and', 'the', 'for', 'lead', 'senior', 'junior', 'staff', 'principal', 'intern'].includes(w.toLowerCase()));
-        
-        const dynamicTitleSkills = titleWords.map((w) => w.charAt(0).toUpperCase() + w.slice(1));
-        const standardCoreSkills = [
-          'Problem Solving',
-          'System Architecture',
-          'Team Collaboration',
-          'Agile Methodologies',
-          'Git & Version Control',
-          'RESTful APIs',
-          'Continuous Integration'
-        ];
-
-        skillsArray = Array.from(new Set([...dynamicTitleSkills, ...standardCoreSkills]));
-      }
-    }
+    requiredList = [...levelBaseline.required];
   }
 
-  const generatedSkillsText = skillsArray.join(', ');
-
-  // 2. Generate Education Requirements
-  let generatedEducation = matchedTemplate?.education ||
-    `Bachelor's or Master's degree in Computer Science, Information Technology, Engineering, or equivalent practical industry experience.`;
-  if (level === 'entry') {
-    generatedEducation = `Bachelor's degree in Computer Science, Engineering, Mathematics, or equivalent freshly graduated / entry-level background.`;
-  } else if (level === 'senior' || level === 'lead' || level === 'executive') {
-    generatedEducation = `Bachelor's or Master's degree in relevant discipline with 5+ years of demonstrable track record in ${cleanTitle} leadership.`;
+  // 2. Preferred Skills
+  let preferredList = [];
+  if (hasUserPrefSkills) {
+    preferredList = existingPreferredSkills
+      .split(/,\s*(?![^()]*\))/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  } else if (backendData?.preferred?.length || backendData?.niceToHaveSkills?.length || backendData?.nice_to_have_skills?.length) {
+    const raw = backendData.preferred || backendData.niceToHaveSkills || backendData.nice_to_have_skills || [];
+    preferredList = Array.from(new Set(raw.map((s) => (typeof s === 'string' ? s.trim() : '')).filter(Boolean)));
+  } else {
+    preferredList = [...levelBaseline.preferred];
   }
 
-  // 3. Generate Perks & Benefits based on work model and type
+  // Deduplicate preferred from required
+  const reqLower = new Set(requiredList.map((s) => s.toLowerCase()));
+  preferredList = preferredList.filter((p) => !reqLower.has(p.toLowerCase()));
+
+  // 3. Education
+  const education = backendData?.education || levelBaseline.education;
+
+  // 4. Perks & Benefits based on work model and type
   const defaultPerks = [];
   if (workplaceType === 'remote') {
     defaultPerks.push('100% Remote Flexibility', 'Home Office Stipend', 'Flexible Working Hours');
@@ -327,7 +442,7 @@ export function generateRoleRequirements({
   }
   const generatedBenefitsText = defaultPerks.join(', ');
 
-  // 4. Generate Structured Comprehensive Job Description
+  // 5. Structured Comprehensive Job Description
   const formattedSalary = (salaryMin || salaryMax)
     ? formatSalary({ min: salaryMin, max: salaryMax, currency, period: 'year' })
     : 'Competitive Market Compensation (Negotiable)';
@@ -341,21 +456,17 @@ export function generateRoleRequirements({
     : 'Open until filled (Immediate Hiring)';
 
   // Build responsibilities
-  const responsibilities = (backendData?.responsibilities?.length ? backendData.responsibilities : null) ||
-    matchedTemplate?.responsibilities || [
-      `Lead the architecture, implementation, and optimization of core ${cleanTitle} initiatives.`,
-      `Collaborate with cross-functional product, design, and operations teams to translate strategic goals into technical deliverables.`,
-      `Ensure robust test coverage, performance benchmarking, and clean code documentation.`,
-      `Continuously innovate and incorporate modern industry best practices into our development workflows.`
-    ];
+  const responsibilities = (backendData?.responsibilities?.length ? backendData.responsibilities : null) || [
+    `Lead the architecture, implementation, and optimization of core ${cleanTitle} initiatives.`,
+    `Collaborate with cross-functional product, design, and operations teams to translate strategic goals into technical deliverables.`,
+    `Ensure robust test coverage, performance benchmarking, and clean code documentation adhering to ${normLevel} engineering standards.`,
+    `Continuously innovate and incorporate modern industry best practices into our development workflows.`
+  ];
 
   const respBullets = responsibilities.map((r) => `• ${r}`).join('\n');
+  const skillsDisplay = requiredList.slice(0, 8).join(', ');
 
-  const skillsDisplay = skillsArray.length > 0
-    ? skillsArray.slice(0, 8).join(', ')
-    : `${cleanTitle} core technologies & tools`;
-
-  const generatedDescription = `### Role Overview
+  const generatedDescription = backendData?.description || `### Role Overview
 We are looking for a skilled and motivated **${cleanTitle}** (${levelLabel}) to join our growing **${cleanDept}** division on a **${jobTypeLabel}** basis (${locationSnippet}).
 
 In this role, you will collaborate with cross-functional talent to design, build, and deliver high-quality solutions, solve complex challenges, and contribute directly to our product roadmap and business growth.
@@ -365,7 +476,8 @@ ${respBullets}
 
 ### What We Are Looking For
 • Proven hands-on experience as a ${cleanTitle} (${levelLabel} level) or in a directly related role.
-• Strong practical proficiency in core technologies: ${skillsDisplay}.
+• Strong practical proficiency in core required technologies: ${skillsDisplay}.
+• Preferred experience in: ${preferredList.slice(0, 6).join(', ')}.
 • Demonstrated analytical thinking, problem-solving mindset, and clear communication skills.
 • Ability to thrive in a fast-paced, collaborative team environment and take ownership of deliverables.
 
@@ -378,9 +490,15 @@ ${respBullets}
 If you are eager to make a tangible impact and grow with a forward-thinking organization, we encourage you to submit your application!`;
 
   return {
-    skills: generatedSkillsText,
-    education: generatedEducation,
+    skills: requiredList.join(', '),
+    preferredSkills: preferredList.join(', '),
+    requiredList,
+    preferredList,
+    education,
     benefits: generatedBenefitsText,
     description: generatedDescription,
+    roleFamilyName: familyData.name,
+    levelLabel,
+    experienceYears: backendData?.experienceYears || backendData?.experience_years || levelBaseline.experienceYears,
   };
 }
