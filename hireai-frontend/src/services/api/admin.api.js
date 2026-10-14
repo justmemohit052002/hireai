@@ -90,4 +90,27 @@ export const adminApi = {
    * @param {Object} statusData - { enabled: boolean, accountNonLocked?: boolean }
    */
   updateUserStatus: (userId, statusData) => apiClient.put(`/admin/users/${userId}/status`, statusData),
+
+  /**
+   * Comprehensive aggregate platform metrics (cached 1-5 mins)
+   * @param {string} range - 'today' | '7d' | '30d'
+   */
+  getPlatformMetrics: (range = 'today') => apiClient.get(`/admin/platform-metrics?range=${encodeURIComponent(range)}`),
+
+  /**
+   * Creates a new sub-administrator account (ADMIN only)
+   * @param {Object} payload - { name, email, password, confirmPassword }
+   */
+  createSubAdmin: (payload) => apiClient.post('/admin/sub-admins', payload),
+
+  /**
+   * Changes current user's password (used for forced first-login password change or self-service)
+   * @param {Object} payload - { currentPassword, newPassword, confirmPassword }
+   */
+  changePassword: (payload) => apiClient.post('/admin/change-password', payload),
+
+  /**
+   * Test outbound email notification delivery
+   */
+  testEmail: (recipientEmail) => apiClient.post(`/admin/email/test?recipientEmail=${encodeURIComponent(recipientEmail)}`),
 };

@@ -16,6 +16,8 @@ public class ModuleHealthDto {
     private String name;
     private String status;
     private String taskType;
+    private String provider;
+    private String model;
     private String lastSuccessAt;
     private String lastFailureAt;
     private Integer recentFailureCount;

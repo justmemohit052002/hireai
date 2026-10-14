@@ -208,14 +208,11 @@ def check_ollama_reachable() -> bool:
 
 def mask_key(key: str | None) -> str:
     """
-    Exposes only a safe hint of at most the last 4 chars for keys > 12 chars.
-    Never exposes raw prefixes like AIza, gsk, sk, or plaintext secrets.
+    Returns read-only presence status ('Configured' or 'Not Configured').
+    Never exposes any characters, slices, or plaintext of API keys.
     """
     if not key or not str(key).strip():
         return "Not Configured"
-    cleaned = str(key).strip()
-    if len(cleaned) > 12:
-        return f"...{cleaned[-4:]}"
     return "Configured"
 
 

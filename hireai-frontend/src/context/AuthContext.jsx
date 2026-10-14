@@ -15,6 +15,7 @@ export function normalizeRole(backendRole) {
     roleStr = String(backendRole);
   }
   const upper = roleStr.toUpperCase();
+  if (upper.includes('SUB_ADMIN')) return 'sub_admin';
   if (upper.includes('ADMIN')) return 'admin';
   if (upper.includes('RECRUITER') || upper.includes('HR')) return 'recruiter';
   if (upper.includes('CANDIDATE') || upper.includes('USER') || upper.includes('JOB_SEEKER')) return 'candidate';
@@ -69,6 +70,7 @@ export function AuthProvider({ children }) {
             avatarUrl: avatar || prev?.avatarUrl || null,
             hasPassword: me.hasPassword !== undefined ? Boolean(me.hasPassword) : (prev?.hasPassword ?? true),
             authProvider: me.authProvider || prev?.authProvider || 'LOCAL',
+            mustChangePassword: me.mustChangePassword !== undefined ? Boolean(me.mustChangePassword) : Boolean(prev?.mustChangePassword),
           };
           localStorage.setItem('hireai_user', JSON.stringify(updated));
           return updated;
@@ -84,6 +86,15 @@ export function AuthProvider({ children }) {
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  const updateMustChangePassword = useCallback((mustChange) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, mustChangePassword: Boolean(mustChange) };
+      localStorage.setItem('hireai_user', JSON.stringify(updated));
+      return updated;
+    });
   }, []);
 
   const updateUserAvatar = useCallback((newAvatarUrl) => {
@@ -128,10 +139,11 @@ export function AuthProvider({ children }) {
         companyName: response.companyName,
         avatarUrl: response.avatarUrl || response.profilePhotoUrl || null,
         hasPassword: response.hasPassword !== undefined ? Boolean(response.hasPassword) : true,
+        mustChangePassword: Boolean(response.mustChangePassword),
         authProvider: response.authProvider || 'LOCAL',
       };
       setUser(loggedUser);
-      return { success: true, user: loggedUser, role: normalizeRole(response.role) };
+      return { success: true, user: loggedUser, role: normalizeRole(response.role), mustChangePassword: Boolean(response.mustChangePassword) };
     } catch (error) {
       console.error('[AuthContext] Login failed:', error);
       throw error;
@@ -288,6 +300,7 @@ export function AuthProvider({ children }) {
         refreshUserProfile,
         updateUserAvatar,
         updateUserPasswordStatus,
+        updateMustChangePassword,
       }}
     >
       {children}

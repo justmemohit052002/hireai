@@ -26,7 +26,18 @@ public class CustomUserDetails implements UserDetails {
     private final String password;
     private final boolean enabled;
     private final boolean accountNonLocked;
+    private final boolean mustChangePassword;
     private final Collection<? extends GrantedAuthority> authorities;
+
+    public CustomUserDetails(
+            UUID id,
+            String email,
+            String password,
+            boolean enabled,
+            boolean accountNonLocked,
+            Collection<? extends GrantedAuthority> authorities) {
+        this(id, email, password, enabled, accountNonLocked, false, authorities);
+    }
 
     public static CustomUserDetails fromUser(User user) {
         List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
@@ -49,6 +60,7 @@ public class CustomUserDetails implements UserDetails {
                 user.getPassword() != null ? user.getPassword() : "",
                 Boolean.TRUE.equals(user.getEnabled()) && !Boolean.TRUE.equals(user.getDeleted()),
                 isNonLocked,
+                Boolean.TRUE.equals(user.getMustChangePassword()),
                 grantedAuthorities
         );
     }

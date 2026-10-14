@@ -182,8 +182,75 @@ class AdminSecurityTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    @WithMockUser(username = "admin@vionsys.com", roles = {"ADMIN"})
+    @DisplayName("GET /admin/platform-metrics with ADMIN role returns 200")
+    void testGetPlatformMetrics_AdminRole_Returns200() throws Exception {
+        mockMvc.perform(get("/admin/platform-metrics"))
+                .andExpect(status().isOk());
+    }
+
     // ==========================================
-    // 5. Immediate Access Token Invalidation Tests
+    // 5. Sub-Admin Role Permissions & Restrictions
+    // ==========================================
+
+    @Test
+    @WithMockUser(username = "subadmin@vionsys.com", roles = {"SUB_ADMIN"})
+    @DisplayName("GET /admin/health with SUB_ADMIN role returns 200")
+    void testGetHealth_SubAdminRole_Returns200() throws Exception {
+        mockMvc.perform(get("/admin/health"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "subadmin@vionsys.com", roles = {"SUB_ADMIN"})
+    @DisplayName("GET /admin/platform-metrics with SUB_ADMIN role returns 200")
+    void testGetPlatformMetrics_SubAdminRole_Returns200() throws Exception {
+        mockMvc.perform(get("/admin/platform-metrics"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "subadmin@vionsys.com", roles = {"SUB_ADMIN"})
+    @DisplayName("GET /admin/users with SUB_ADMIN role returns 200")
+    void testGetUsers_SubAdminRole_Returns200() throws Exception {
+        mockMvc.perform(get("/admin/users"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(username = "subadmin@vionsys.com", roles = {"SUB_ADMIN"})
+    @DisplayName("PUT /admin/users/{id}/role with SUB_ADMIN role is forbidden (403)")
+    void testPutUserRole_SubAdminRole_Returns403() throws Exception {
+        UpdateUserRoleRequest req = new UpdateUserRoleRequest();
+        req.setRole(RoleType.ROLE_RECRUITER);
+
+        mockMvc.perform(put("/admin/users/" + UUID.randomUUID() + "/role")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "subadmin@vionsys.com", roles = {"SUB_ADMIN"})
+    @DisplayName("POST /admin/sub-admins with SUB_ADMIN role is forbidden (403)")
+    void testCreateSubAdmin_SubAdminRole_Returns403() throws Exception {
+        com.vionsys.hireai.admin.dto.CreateSubAdminRequest req = com.vionsys.hireai.admin.dto.CreateSubAdminRequest.builder()
+                .firstName("New")
+                .lastName("SubAdmin")
+                .email("newsub@vionsys.com")
+                .password("Password123!")
+                .confirmPassword("Password123!")
+                .build();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/admin/sub-admins")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isForbidden());
+    }
+
+    // ==========================================
+    // 6. Immediate Access Token Invalidation Tests
     // ==========================================
 
     @Test

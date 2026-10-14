@@ -20,10 +20,10 @@ def test_sanitize_error_message():
     assert sanitized_long.endswith("...")
 
 def test_mask_key():
-    # Long key > 12 chars
+    # Long key > 12 chars: returns Configured without exposing partial characters
     long_key = "AIzaSyD1234567890abcdef"
     masked = mask_key(long_key)
-    assert masked == "...cdef"
+    assert masked == "Configured"
 
     # Short key <= 12 chars
     short_key = "12345678"

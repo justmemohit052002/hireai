@@ -46,4 +46,7 @@ public class AuthResponse {
     private Boolean hasPassword = true;
 
     private String authProvider;
+
+    @Builder.Default
+    private Boolean mustChangePassword = false;
 }

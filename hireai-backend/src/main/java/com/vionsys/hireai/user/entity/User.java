@@ -89,6 +89,13 @@ public class User extends BaseEntity {
     @Column(name = "deleted_at")
     private java.time.LocalDateTime deletedAt;
 
+    @Column(name = "last_login_at")
+    private java.time.LocalDateTime lastLoginAt;
+
+    @Column(name = "must_change_password", nullable = false, columnDefinition = "boolean default false")
+    @Builder.Default
+    private Boolean mustChangePassword = false;
+
     public Integer getFailedLoginAttempts() {
         return failedLoginAttempts != null ? failedLoginAttempts : 0;
     }

@@ -111,8 +111,11 @@ class JsonlLogSource(LogSource):
         except Exception as e:
             logger.error(f"Failed streaming from {self.file_path}: {e}")
 
-    def read_all(self) -> List[Dict[str, Any]]:
-        return list(self.stream_entries())
+    def read_all(self, max_entries: int = 10000) -> List[Dict[str, Any]]:
+        entries = list(self.stream_entries())
+        if len(entries) > max_entries:
+            return entries[-max_entries:]
+        return entries
 
     def get_entry_by_id(self, log_id: str) -> Optional[Dict[str, Any]]:
         if not log_id:
@@ -348,7 +351,10 @@ def get_llm_statistics(range_param: str = "all") -> Dict[str, Any]:
     try:
         admin_tz = ZoneInfo(ADMIN_TIMEZONE)
     except Exception:
-        admin_tz = ZoneInfo("Asia/Kolkata")
+        try:
+            admin_tz = ZoneInfo("Asia/Kolkata")
+        except Exception:
+            admin_tz = timezone(timedelta(hours=5, minutes=30))
 
     now_tz = datetime.now(admin_tz)
     today_date_str = now_tz.strftime("%Y-%m-%d")

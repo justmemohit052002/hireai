@@ -61,7 +61,10 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN password DROP NOT NULL");
             jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT FALSE NOT NULL");
             jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP");
-            jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS account_status VARCHAR(30) DEFAULT 'ACTIVE'");
+            jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP");
+            jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN DEFAULT FALSE NOT NULL");
+            jdbcTemplate.execute("ALTER TABLE roles DROP CONSTRAINT IF EXISTS roles_name_check");
+            jdbcTemplate.execute("ALTER TABLE roles ADD CONSTRAINT roles_name_check CHECK (((name)::text = ANY ((ARRAY['ROLE_ADMIN'::character varying, 'ROLE_RECRUITER'::character varying, 'ROLE_CANDIDATE'::character varying, 'ROLE_SUB_ADMIN'::character varying])::text[])))");
             jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS job_preferred_skills (job_id UUID NOT NULL, skill VARCHAR(255) NOT NULL, CONSTRAINT fk_job_preferred_skills_job FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE)");
             jdbcTemplate.execute("ALTER TABLE jobs DROP CONSTRAINT IF EXISTS jobs_experience_level_check");
             jdbcTemplate.execute("ALTER TABLE jobs ADD CONSTRAINT jobs_experience_level_check CHECK (experience_level IN ('FRESHER', 'JUNIOR', 'MID_LEVEL', 'SENIOR', 'LEAD', 'EXECUTIVE'))");
@@ -71,6 +74,7 @@ public class DataInitializer implements CommandLineRunner {
 
         // 1. Initialize Essential Roles
         Role adminRole = createRoleIfNotExists(RoleType.ROLE_ADMIN, "System Administrator");
+        Role subAdminRole = createRoleIfNotExists(RoleType.ROLE_SUB_ADMIN, "Sub Administrator");
         Role recruiterRole = createRoleIfNotExists(RoleType.ROLE_RECRUITER, "Recruiter");
         Role candidateRole = createRoleIfNotExists(RoleType.ROLE_CANDIDATE, "Candidate");
 

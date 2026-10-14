@@ -37,10 +37,18 @@ public class AdminHealthPollerService {
 
     private final AtomicReference<AdminHealthResponse> latestSnapshot = new AtomicReference<>();
     private volatile Instant lastCheckedInstant = Instant.EPOCH;
+    private volatile Instant lastSuccessfulHealthPollInstant = null;
+    private final Instant backendStartedInstant = Instant.now();
+
+    public record ModuleState(String status, Instant since) {}
+    private final java.util.concurrent.ConcurrentHashMap<String, ModuleState> moduleStateMap = new java.util.concurrent.ConcurrentHashMap<>();
 
     @PostConstruct
     public void init() {
-        log.info("Initialized AdminHealthPollerService with poll rate {}ms (deferred until scheduled run or first request).", pollRateMs);
+        // Pre-populate with fallback so first page load NEVER blocks on live health check
+        latestSnapshot.set(createFallbackAiHealth());
+        log.info("Initialized AdminHealthPollerService with poll rate {}ms. Performing background initial poll.", pollRateMs);
+        java.util.concurrent.CompletableFuture.runAsync(this::pollHealth);
     }
 
     @Scheduled(fixedRateString = "${admin.health.poll-rate-ms:45000}")
@@ -62,11 +70,26 @@ public class AdminHealthPollerService {
 
             if (engineHealthOpt.isPresent()) {
                 snapshot = engineHealthOpt.get();
+                lastSuccessfulHealthPollInstant = now;
                 if (snapshot.getModules() == null) {
                     snapshot.setModules(createDefaultModules("HEALTHY"));
                 }
             } else {
                 snapshot = createFallbackAiHealth();
+            }
+
+            // Track module state changes and timestamps
+            if (snapshot.getModules() != null) {
+                for (ModuleHealthDto mod : snapshot.getModules()) {
+                    String modId = mod.getId() != null ? mod.getId() : mod.getTaskType();
+                    String currentStatus = mod.getStatus() != null ? mod.getStatus().toUpperCase() : "UNKNOWN";
+                    moduleStateMap.compute(modId, (id, prev) -> {
+                        if (prev == null || !prev.status().equalsIgnoreCase(currentStatus)) {
+                            return new ModuleState(currentStatus, now);
+                        }
+                        return prev;
+                    });
+                }
             }
 
             snapshot.setBackendStatus("UP");
@@ -84,15 +107,27 @@ public class AdminHealthPollerService {
         }
     }
 
+    public Instant getLastSuccessfulHealthPollInstant() {
+        return lastSuccessfulHealthPollInstant;
+    }
+
+    public Instant getBackendStartedInstant() {
+        return backendStartedInstant;
+    }
+
+    public long getModuleStateDurationSeconds(String moduleId) {
+        ModuleState state = moduleStateMap.get(moduleId);
+        if (state == null || state.since() == null) {
+            return java.time.Duration.between(backendStartedInstant, Instant.now()).toSeconds();
+        }
+        return Math.max(0, java.time.Duration.between(state.since(), Instant.now()).toSeconds());
+    }
+
     public AdminHealthResponse getCachedHealthSnapshot() {
         AdminHealthResponse snapshot = latestSnapshot.get();
         if (snapshot == null) {
-            pollHealth();
-            snapshot = latestSnapshot.get();
-        }
-
-        if (snapshot == null) {
-            return createFallbackAiHealth();
+            snapshot = createFallbackAiHealth();
+            latestSnapshot.set(snapshot);
         }
 
         // Check if snapshot is older than 3x the poll interval

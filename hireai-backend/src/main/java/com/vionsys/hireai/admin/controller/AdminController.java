@@ -23,12 +23,17 @@ import com.vionsys.hireai.admin.dto.AdminCallLogsResponse;
 import com.vionsys.hireai.admin.dto.AdminHealthResponse;
 import com.vionsys.hireai.admin.dto.AdminStatsResponse;
 import com.vionsys.hireai.admin.dto.AdminUserResponse;
+import com.vionsys.hireai.admin.dto.CreateSubAdminRequest;
+import com.vionsys.hireai.admin.dto.PlatformMetricsResponse;
 import com.vionsys.hireai.admin.dto.ProvidersConfigDto;
 import com.vionsys.hireai.admin.dto.UpdateUserRoleRequest;
 import com.vionsys.hireai.admin.dto.UpdateUserStatusRequest;
 import com.vionsys.hireai.admin.service.AdminService;
 import com.vionsys.hireai.common.dto.ApiResponse;
 import com.vionsys.hireai.common.enums.RoleType;
+import com.vionsys.hireai.security.CustomUserDetails;
+import com.vionsys.hireai.security.annotation.CurrentUser;
+import com.vionsys.hireai.user.dto.ChangePasswordRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -40,13 +45,16 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/admin")
-@RequiredArgsConstructor
 @Validated
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUB_ADMIN')")
 @Tag(name = "System Administration & Health", description = "Operations and IT administrative endpoints for AI engine health, LLM metrics, audit logs, and user access control")
 public class AdminController {
 
     private final AdminService adminService;
+
+    public AdminController(AdminService adminService) {
+        this.adminService = adminService;
+    }
 
     @Operation(summary = "Get AI Module Health Summary", description = "Returns cached operational status of all 6 AI engine modules, background poller snapshot, and database liveness")
     @GetMapping("/health")
@@ -128,14 +136,46 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(users, "User accounts retrieved successfully"));
     }
 
+    @Operation(summary = "Get Comprehensive Platform Metrics", description = "Returns cached aggregate metrics: user growth, daily active users, AI performance, system health, and endpoint stats")
+    @GetMapping("/platform-metrics")
+    public ResponseEntity<ApiResponse<PlatformMetricsResponse>> getPlatformMetrics(
+            @Parameter(description = "Time range scope (today, 7d, 30d)", example = "today")
+            @RequestParam(name = "range", defaultValue = "today", required = false) String range) {
+
+        PlatformMetricsResponse metrics = adminService.getPlatformMetrics(range);
+        return ResponseEntity.ok(ApiResponse.success(metrics, "Platform metrics retrieved successfully"));
+    }
+
     @Operation(summary = "Update User Role", description = "Assign a new role to an existing user account with self-demotion and last-admin protection")
     @PutMapping("/users/{userId}/role")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<AdminUserResponse>> updateUserRole(
             @PathVariable UUID userId,
             @Valid @RequestBody UpdateUserRoleRequest request) {
 
         AdminUserResponse updated = adminService.updateUserRole(userId, request);
         return ResponseEntity.ok(ApiResponse.success(updated, "User role updated successfully"));
+    }
+
+    @Operation(summary = "Create Sub-Administrator Account", description = "Provision a new sub-administrator with forced first-login password change")
+    @PostMapping("/sub-admins")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<AdminUserResponse>> createSubAdmin(
+            @Valid @RequestBody CreateSubAdminRequest request) {
+
+        AdminUserResponse created = adminService.createSubAdmin(request);
+        return ResponseEntity.ok(ApiResponse.success(created, "Sub-admin account created successfully"));
+    }
+
+    @Operation(summary = "Change Password", description = "Self-service password update or required password change on first sign-in")
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse<String>> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request,
+            @CurrentUser CustomUserDetails currentUser) {
+
+        String email = currentUser != null ? currentUser.getUsername() : null;
+        adminService.changePassword(email, request);
+        return ResponseEntity.ok(ApiResponse.success("Password changed successfully", "Password changed successfully"));
     }
 
     @Operation(summary = "Update User Account Status", description = "Soft-deactivate/activate or lock/unlock a user account with self-protection and last-admin protection")

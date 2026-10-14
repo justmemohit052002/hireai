@@ -21,14 +21,14 @@ export const ProtectedRoute = ({ allowedRole }) => {
   }
 
   if (allowedRole && role) {
-    // If route requires admin, only admin is allowed
-    if (allowedRole === 'admin' && role !== 'admin') {
+    // If route requires admin, admin and sub_admin are allowed
+    if (allowedRole === 'admin' && role !== 'admin' && role !== 'sub_admin') {
       const fallback = role === 'candidate' ? ROUTES.CANDIDATE_JOBS : ROUTES.RECRUITER_DASHBOARD;
       return <Navigate to={fallback} replace />;
     }
 
     // If route requires recruiter or candidate, ensure match
-    if (allowedRole !== 'admin' && role !== allowedRole && role !== 'admin') {
+    if (allowedRole !== 'admin' && role !== allowedRole && role !== 'admin' && role !== 'sub_admin') {
       const fallback = role === 'candidate' ? ROUTES.CANDIDATE_JOBS : ROUTES.RECRUITER_DASHBOARD;
       return <Navigate to={fallback} replace />;
     }

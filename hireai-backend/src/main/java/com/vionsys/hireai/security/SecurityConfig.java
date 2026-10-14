@@ -38,6 +38,7 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final com.vionsys.hireai.security.ratelimit.RateLimitingFilter rateLimitingFilter;
+    private final MustChangePasswordFilter mustChangePasswordFilter;
 
     @Value("${app.cors.allowed-origins:http://localhost:5173}")
     private String allowedOrigins;
@@ -130,8 +131,8 @@ public class SecurityConfig {
                         // ADMIN APIs
                         // =====================================================
 
-                        .requestMatchers("/admin/**")
-                        .hasRole("ADMIN")
+                        .requestMatchers("/admin", "/admin/**")
+                        .hasAnyRole("ADMIN", "SUB_ADMIN")
 
 
                         // =====================================================
@@ -191,8 +192,11 @@ public class SecurityConfig {
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(
+                        mustChangePasswordFilter,
+                        JwtAuthenticationFilter.class)
+                .addFilterAfter(
                         rateLimitingFilter,
-                        JwtAuthenticationFilter.class);
+                        MustChangePasswordFilter.class);
 
         return http.build();
     }

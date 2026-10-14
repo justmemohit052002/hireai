@@ -478,8 +478,8 @@ public class AuthService {
         }
 
         // 4. If caller explicitly requested a specific role (e.g. user toggled RECRUITER tab on login screen)
-        // Note: Never downgrade or alter ROLE_ADMIN
-        if (user.getRole().getName() != RoleType.ROLE_ADMIN && request.getRole() != null && !request.getRole().isBlank()) {
+        // Note: Never downgrade or alter ROLE_ADMIN or ROLE_SUB_ADMIN
+        if (user.getRole().getName() != RoleType.ROLE_ADMIN && user.getRole().getName() != RoleType.ROLE_SUB_ADMIN && request.getRole() != null && !request.getRole().isBlank()) {
             String requestedRole = request.getRole().trim().toUpperCase();
             if (requestedRole.contains("RECRUITER")) {
                 if (user.getRole().getName() != RoleType.ROLE_RECRUITER) {
@@ -501,6 +501,10 @@ public class AuthService {
                 ensureCandidateProfile(user);
             }
         }
+
+        // Record last login activity
+        user.setLastLoginAt(LocalDateTime.now());
+        user = userRepository.save(user);
 
         // 5. Send security login notification email & in-app alerts post-commit
         final User finalLoginUser = user;
@@ -554,6 +558,7 @@ public class AuthService {
                 .avatarUrl(resolveUserAvatar(user))
                 .hasPassword(user.hasPassword())
                 .authProvider(user.getAuthProvider())
+                .mustChangePassword(Boolean.TRUE.equals(user.getMustChangePassword()))
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
@@ -681,6 +686,10 @@ public class AuthService {
             }
         });
 
+        // Record last login activity
+        user.setLastLoginAt(LocalDateTime.now());
+        user = userRepository.save(user);
+
         // Generate JWT session tokens
         CustomUserDetails userDetails = CustomUserDetails.fromUser(user);
         String accessToken = jwtService.generateAccessToken(userDetails);
@@ -695,6 +704,7 @@ public class AuthService {
                 .avatarUrl(resolveUserAvatar(user))
                 .hasPassword(user.hasPassword())
                 .authProvider(user.getAuthProvider())
+                .mustChangePassword(Boolean.TRUE.equals(user.getMustChangePassword()))
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .requiresVerification(false)

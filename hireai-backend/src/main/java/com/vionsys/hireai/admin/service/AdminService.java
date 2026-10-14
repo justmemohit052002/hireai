@@ -67,6 +67,21 @@ public interface AdminService {
     Page<AdminAuditLogResponse> getAuditLogs(Pageable pageable);
 
     /**
+     * Provision a new sub-administrator with initial credentials and forced password change flag
+     */
+    AdminUserResponse createSubAdmin(com.vionsys.hireai.admin.dto.CreateSubAdminRequest request);
+
+    /**
+     * Enforce and execute password change for sub-admin first login or self-service update
+     */
+    void changePassword(String userEmail, com.vionsys.hireai.user.dto.ChangePasswordRequest request);
+
+    /**
+     * Return comprehensive platform metrics (overview counts, time-series, AI performance, system health, endpoint metrics)
+     */
+    com.vionsys.hireai.admin.dto.PlatformMetricsResponse getPlatformMetrics(String range);
+
+    /**
      * Diagnostic: Send a test email to verify outbound SMTP reachability and credentials
      */
     java.util.Map<String, Object> testEmailDelivery(String recipientEmail);
