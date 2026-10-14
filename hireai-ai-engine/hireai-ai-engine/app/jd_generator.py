@@ -31,14 +31,34 @@ def generate_jd(job_title: str, required_skills: list[str], experience_level: st
     if parsed is None or not isinstance(parsed, dict):
         raise ValueError(f"Model did not return valid JSON:\n{raw_text}")
 
+    from app.skill_normalizer import clean_skill_string, decompose_requirement, split_outside_parens
+
+    def clean_atomic_skills(skills: list[str]) -> list[str]:
+        atomic = []
+        seen = set()
+        for s in skills:
+            for part in split_outside_parens(s):
+                decomp = decompose_requirement(part)
+                # If parenthetical examples exist (e.g. AWS), extract atomic examples
+                items_to_add = decomp["examples"] if decomp["examples"] else ([decomp["base_concept"]] if decomp["base_concept"] else [part])
+                for item in items_to_add:
+                    clean = clean_skill_string(item)
+                    if clean and clean.lower() not in seen:
+                        seen.add(clean.lower())
+                        atomic.append(clean)
+        return atomic
+
     req_skills_list = to_str_list(required_skills)
+    must_have = clean_atomic_skills(to_str_list(parsed.get("must_have_skills")) or req_skills_list)
+    nice_to_have = clean_atomic_skills(to_str_list(parsed.get("nice_to_have_skills", [])))
+
     normalized = {
         "job_title": str(job_title or ""),
         "experience_level": str(experience_level or ""),
         "description": to_str(parsed.get("description", "")),
         "responsibilities": to_str_list(parsed.get("responsibilities", [])),
-        "must_have_skills": to_str_list(parsed.get("must_have_skills")) or req_skills_list,
-        "nice_to_have_skills": to_str_list(parsed.get("nice_to_have_skills", [])),
+        "must_have_skills": must_have,
+        "nice_to_have_skills": nice_to_have,
         "interview_questions": to_str_list(parsed.get("interview_questions", [])),
     }
     return normalized

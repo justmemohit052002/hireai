@@ -125,4 +125,74 @@ class AtsMatchScoringServiceTest {
         assertFalse(result.getMatchingSkills().contains("SQL"), "NoSQL must not match SQL");
         assertEquals(2, result.getMissingSkills().size());
     }
+
+    @Test
+    void testComputeScore_RealExample_MatchesConceptsAndRecognizesGaps() {
+        when(llmAtsClient.scoreWithLlm(any(), any())).thenReturn(Optional.empty());
+
+        List<String> resumeSkillList = List.of(
+                "Core Java", "OOP", "Collections", "Multithreading", "Spring Boot",
+                "Spring MVC", "Spring Security", "Spring Data JPA", "Hibernate",
+                "REST APIs", "JWT", "OAuth", "MySQL", "PostgreSQL", "React.js",
+                "JUnit", "Mockito", "Git", "GitHub", "Maven", "Postman", "AWS (EC2)",
+                "DSA", "DBMS", "OS", "Microservices", "Design Patterns", "SDLC", "Agile Methodologies"
+        );
+
+        java.util.Set<Skill> skillEntities = new java.util.HashSet<>();
+        for (String s : resumeSkillList) {
+            skillEntities.add(Skill.builder().id(UUID.randomUUID()).name(s).build());
+        }
+
+        Candidate fullCandidate = Candidate.builder()
+                .id(UUID.randomUUID())
+                .candidateId("CAND-MOHIT")
+                .firstName("Mohit")
+                .lastName("Kumar")
+                .skills(skillEntities)
+                .experience(BigDecimal.valueOf(3.5))
+                .currentDesignation("Java Developer")
+                .build();
+
+        Job realisticJob = Job.builder()
+                .id(UUID.randomUUID())
+                .title("Java Backend Developer")
+                .skills(List.of(
+                        "Java programming language",
+                        "Cloud computing platforms (e.g. AWS)",
+                        "Java-based testing frameworks (e.g. JUnit)",
+                        "Object-Oriented Programming (OOP) concepts",
+                        "Data structures and algorithms",
+                        "Database management systems (e.g. MySQL, MongoDB)",
+                        "Version control systems (e.g. Git, SVN), Spring Framework experience, Azure",
+                        "Agile development methodologies (e.g. Scrum, Kanban, TestNG)"
+                ))
+                .experienceLevel(ExperienceLevel.MID_LEVEL)
+                .build();
+
+        AtsMatchResult result = scoringService.computeAtsScore(fullCandidate, realisticJob);
+
+        assertNotNull(result);
+        assertTrue(result.getMatchScore() >= 75, "Expected high ATS score for real candidate resume skills, got: " + result.getMatchScore());
+
+        boolean hasMissingAzureOrSvn = result.getMissingSkills().stream()
+                .anyMatch(s -> s.toLowerCase().contains("azure") || s.toLowerCase().contains("svn"));
+        assertTrue(hasMissingAzureOrSvn, "Azure and SVN must remain gaps when candidate does not possess them");
+    }
+
+    @Test
+    void testRepairAndCleanJobSkills_ReunitesBrokenParentheses() {
+        List<String> broken = List.of(
+                "Java",
+                "Database management systems (e.g. MySQL",
+                "MongoDB)",
+                "Version control systems (e.g. Git",
+                "SVN)"
+        );
+
+        List<String> cleaned = AtsMatchScoringService.repairAndCleanJobSkills(broken);
+        assertEquals(3, cleaned.size());
+        assertEquals("Java", cleaned.get(0));
+        assertEquals("Database management systems (e.g. MySQL, MongoDB)", cleaned.get(1));
+        assertEquals("Version control systems (e.g. Git, SVN)", cleaned.get(2));
+    }
 }

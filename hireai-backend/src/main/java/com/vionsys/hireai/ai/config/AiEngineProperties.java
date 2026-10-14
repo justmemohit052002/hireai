@@ -20,7 +20,7 @@ public class AiEngineProperties {
     /**
      * HTTP request timeout in milliseconds.
      */
-    private int timeoutMs = 120000;
+    private int timeoutMs = 180000;
 
     /**
      * Polling interval in milliseconds for async jobs (e.g. resume parsing).
@@ -30,7 +30,7 @@ public class AiEngineProperties {
     /**
      * Maximum polling attempts before timeout.
      */
-    private int pollingMaxAttempts = 30;
+    private int pollingMaxAttempts = 60;
 
     /**
      * Shared secret key for authenticating admin microservice requests to the AI Engine.

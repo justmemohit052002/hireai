@@ -50,4 +50,14 @@ public interface JobApplicationService {
      * Candidate withdraws their job application.
      */
     JobApplicationResponse withdrawApplication(UUID candidateUserId, UUID applicationId);
+
+    /**
+     * Recalculate ATS match score and skill breakdown for an application.
+     */
+    JobApplicationResponse rescoreApplication(UUID applicationId);
+
+    /**
+     * Recalculate ATS match score and skill breakdown for all applications to a job.
+     */
+    List<JobApplicationResponse> rescoreJobApplications(UUID jobId);
 }

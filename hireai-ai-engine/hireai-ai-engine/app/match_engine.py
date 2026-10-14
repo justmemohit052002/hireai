@@ -13,8 +13,11 @@ from app.logger import get_logger
 from app.skill_normalizer import (
     normalize_skill,
     decompose_requirement,
+    repair_and_clean_job_skills,
     get_category_map,
     token_matches,
+    extract_skills_from_text,
+    find_skill_evidence,
 )
 
 logger = get_logger(__name__)
@@ -56,6 +59,145 @@ def is_semantic_model_available() -> bool:
     return _model_available
 
 
+def evaluate_single_requirement(
+    req: str,
+    resume_canonical_map: dict[str, str],
+    clean_resume_skills: list[str],
+    category_map: dict[str, set[str]],
+    model: Any,
+    resume_text: Optional[str] = None,
+) -> tuple[bool, Optional[str], Optional[str], float, float, Optional[str]]:
+    """
+    Evaluates a single requirement through tiers:
+      1. Exact canonical equality
+      2. Alias canonical equivalence
+      3. Example / alternative decomposition (e.g. "X (e.g. Y)", "A / B")
+      4. Category membership (e.g. "Version control" satisfied by "Git", "Spring Framework" by "Spring Boot")
+      5. Strict token-boundary match
+      6. Per-skill semantic cosine similarity (threshold 0.72)
+      7. Whole resume text evidence
+    Returns: (match_found, matched_item, matched_type, match_credit, match_confidence, evidence_label)
+    """
+    j_norm = normalize_skill(req)
+    decomp = decompose_requirement(req)
+    base_concept = decomp["base_concept"]
+    base_norm = normalize_skill(base_concept)
+    examples = decomp["examples"]
+    alternatives = decomp["alternatives"]
+
+    match_found = False
+    matched_item = None
+    matched_type = None
+    match_credit = 0.0
+    match_confidence = 0.0
+
+    # Tier 1 & 2: Exact or Alias Canonical Match
+    for r_orig, r_norm in resume_canonical_map.items():
+        if j_norm and r_norm and j_norm == r_norm:
+            match_found = True
+            matched_item = r_orig
+            matched_type = "exact" if req.lower() == r_orig.lower() else "alias"
+            match_credit = 1.0
+            match_confidence = 1.0
+            break
+        if base_norm and r_norm and base_norm == r_norm:
+            match_found = True
+            matched_item = r_orig
+            matched_type = "alias"
+            match_credit = 1.0
+            match_confidence = 1.0
+            break
+
+    # Tier 3: Decomposed Examples or Alternatives Match
+    if not match_found and (examples or alternatives):
+        candidates_to_check = examples + alternatives
+        for cand in candidates_to_check:
+            cand_norm = normalize_skill(cand)
+            for r_orig, r_norm in resume_canonical_map.items():
+                if (cand_norm and r_norm and cand_norm == r_norm) or token_matches(cand, r_orig):
+                    match_found = True
+                    matched_item = r_orig
+                    matched_type = "example" if cand in examples else "alternative"
+                    match_credit = 1.0
+                    match_confidence = 1.0
+                    break
+            if match_found:
+                break
+
+    # Tier 4: Category Membership Match
+    if not match_found:
+        cat_keys = [base_concept.lower(), base_norm.lower(), req.lower(), j_norm.lower()]
+        for cat_k in cat_keys:
+            if cat_k in category_map:
+                members = category_map[cat_k]
+                for r_orig, r_norm in resume_canonical_map.items():
+                    if r_norm in members or r_orig.lower() in members:
+                        match_found = True
+                        matched_item = r_orig
+                        matched_type = "category"
+                        match_credit = 0.95
+                        match_confidence = 0.95
+                        break
+            if match_found:
+                break
+
+    # Tier 5: Strict Token-Boundary Match (avoids "java" in "javascript")
+    if not match_found:
+        for r_orig in clean_resume_skills:
+            target_word = base_norm if base_norm else j_norm
+            if target_word and len(target_word) > 2:
+                if token_matches(target_word, r_orig) or token_matches(r_orig, req):
+                    match_found = True
+                    matched_item = r_orig
+                    matched_type = "token"
+                    match_credit = 0.90
+                    match_confidence = 0.90
+                    break
+
+    # Tier 6: Per-Skill Semantic Cosine Similarity
+    if not match_found and model is not None and clean_resume_skills:
+        try:
+            from sentence_transformers import util
+            j_embed = model.encode(base_concept if base_concept else req, convert_to_tensor=True)
+            r_embeds = model.encode(clean_resume_skills, convert_to_tensor=True)
+            cos_sims = util.cos_sim(j_embed, r_embeds)[0]
+            best_idx = int(cos_sims.argmax().item())
+            best_sim = float(cos_sims[best_idx].item())
+
+            if best_sim >= 0.72:
+                match_found = True
+                matched_item = clean_resume_skills[best_idx]
+                matched_type = "semantic"
+                match_credit = round(min(0.90, best_sim), 2)
+                match_confidence = round(best_sim, 2)
+        except Exception as ex:
+            logger.debug(f"Per-skill semantic similarity skipped: {ex}")
+
+    # Tier 7: Resume Text Evidence (search across whole resume sections)
+    if not match_found and resume_text and resume_text.strip():
+        evidence_targets = [base_norm if base_norm else j_norm] + examples + alternatives
+        # Also check category members against resume text
+        cat_keys = [base_concept.lower(), base_norm.lower(), req.lower(), j_norm.lower()]
+        for cat_k in cat_keys:
+            if cat_k in category_map:
+                evidence_targets.extend(list(category_map[cat_k]))
+
+        for target in evidence_targets:
+            if target and len(target) > 2 and token_matches(target, resume_text):
+                match_found = True
+                matched_item = target
+                matched_type = "text_evidence"
+                match_credit = 0.85
+                match_confidence = 0.85
+                break
+
+    evidence_label = None
+    if match_found and matched_item:
+        evidence_label = find_skill_evidence(matched_item, resume_text) if resume_text else matched_item
+
+    return (match_found, matched_item, matched_type, match_credit, match_confidence, evidence_label)
+
+
 def calculate_match_score(
     resume_skills: list[str],
     job_skills: list[str],
@@ -63,21 +205,31 @@ def calculate_match_score(
     resume_text: Optional[str] = None,
     candidate_experience_years: Optional[float] = None,
     required_experience_years: Optional[float] = None,
+    shortlist_threshold: Optional[float] = None,
 ) -> dict[str, Any]:
     """
-    Computes deterministic ATS match score between candidate resume skills and job requirements.
-    Multi-tier evaluation:
-      1. Exact canonical equality
-      2. Alias canonical equivalence
-      3. Example / alternative decomposition (e.g. "X (e.g. Y)", "A / B")
-      4. Category membership (e.g. "Version control" satisfied by "Git")
-      5. Strict token-boundary match
-      6. Per-skill semantic cosine similarity (if model available)
-      7. Whole-word text evidence in raw resume text
+    Computes deterministic, accurate ATS match score between candidate skills/resume and job requirements.
+    - Repairs broken parenthetical splits in job requirements.
+    - Decomposes bundled requirements ("A, B, C") into atomic skills with proportional credit.
+    - Searches whole resume text as evidence.
+    - Evaluates required skills across exact, alias, example, category, token, and semantic tiers.
     """
-    clean_job_skills = [str(s).strip() for s in (job_skills or []) if str(s).strip()]
+    raw_job_skills = [str(s).strip() for s in (job_skills or []) if str(s).strip()]
+    # Repair broken comma splits inside parentheses
+    clean_job_skills = repair_and_clean_job_skills(raw_job_skills)
+
     clean_resume_skills = [str(s).strip() for s in (resume_skills or []) if str(s).strip()]
     clean_nice_skills = [str(s).strip() for s in (nice_to_have_skills or []) if str(s).strip()]
+
+    # If raw resume text is provided, extract all verified skills across entire resume
+    if resume_text and resume_text.strip():
+        text_skills = extract_skills_from_text(resume_text)
+        existing_canonical = {normalize_skill(s) for s in clean_resume_skills}
+        for ts in text_skills:
+            ts_norm = normalize_skill(ts)
+            if ts_norm not in existing_canonical:
+                existing_canonical.add(ts_norm)
+                clean_resume_skills.append(ts)
 
     # Guard: No job requirements
     if not clean_job_skills:
@@ -99,7 +251,7 @@ def calculate_match_score(
             "semantic_model_available": is_semantic_model_available(),
         }
 
-    # Guard: Empty candidate skills
+    # Guard: Empty candidate skills and no text
     if not clean_resume_skills and not (resume_text and resume_text.strip()):
         return {
             "match_score": 0,
@@ -114,6 +266,7 @@ def calculate_match_score(
                     "matched_with": None,
                     "match_type": None,
                     "confidence": 0.0,
+                    "evidence": None,
                 }
                 for j in clean_job_skills
             ],
@@ -143,141 +296,91 @@ def calculate_match_score(
     matched_resume_skills = set()
     total_credit = 0.0
 
-    # Evaluate each required job skill across tiers
+    # Evaluate each required job skill
     for j_orig in clean_job_skills:
-        j_norm = normalize_skill(j_orig)
         decomp = decompose_requirement(j_orig)
-        base_concept = decomp["base_concept"]
-        base_norm = normalize_skill(base_concept)
-        examples = decomp["examples"]
-        alternatives = decomp["alternatives"]
 
-        match_found = False
-        matched_item = None
-        matched_type = None
-        match_credit = 0.0
-        match_confidence = 0.0
+        # Handle bundled requirements (e.g. "Git, SVN, Spring Framework, Azure")
+        if decomp.get("is_bundled") and len(decomp.get("bundled_items", [])) > 1:
+            sub_items = decomp["bundled_items"]
+            sub_matched_names = []
+            sub_missing_names = []
+            sub_credit_sum = 0.0
 
-        # Tier 1 & 2: Exact or Alias Canonical Match
-        for r_orig, r_norm in resume_canonical_map.items():
-            if j_norm and r_norm and j_norm == r_norm:
-                match_found = True
-                matched_item = r_orig
-                matched_type = "exact" if j_orig.lower() == r_orig.lower() else "alias"
-                match_credit = 1.0
-                match_confidence = 1.0
-                break
-            if base_norm and r_norm and base_norm == r_norm:
-                match_found = True
-                matched_item = r_orig
-                matched_type = "alias"
-                match_credit = 1.0
-                match_confidence = 1.0
-                break
+            for sub_req in sub_items:
+                m_found, m_item, m_type, m_cred, m_conf, m_ev = evaluate_single_requirement(
+                    sub_req, resume_canonical_map, clean_resume_skills, category_map, model, resume_text
+                )
+                if m_found:
+                    sub_matched_names.append(sub_req)
+                    sub_credit_sum += (m_cred / len(sub_items))
+                    if m_item:
+                        matched_resume_skills.add(m_item)
+                    matched_details.append(
+                        {
+                            "required_skill": sub_req,
+                            "status": "matched",
+                            "matched_with": m_item,
+                            "match_type": m_type,
+                            "confidence": m_conf,
+                            "evidence": m_ev,
+                        }
+                    )
+                else:
+                    sub_missing_names.append(sub_req)
+                    matched_details.append(
+                        {
+                            "required_skill": sub_req,
+                            "status": "missing",
+                            "matched_with": None,
+                            "match_type": None,
+                            "confidence": 0.0,
+                            "evidence": None,
+                        }
+                    )
 
-        # Tier 3: Decomposed Examples or Alternatives Match
-        if not match_found and (examples or alternatives):
-            candidates_to_check = examples + alternatives
-            for cand in candidates_to_check:
-                cand_norm = normalize_skill(cand)
-                for r_orig, r_norm in resume_canonical_map.items():
-                    if (cand_norm and r_norm and cand_norm == r_norm) or token_matches(cand, r_orig):
-                        match_found = True
-                        matched_item = r_orig
-                        matched_type = "example" if cand in examples else "alternative"
-                        match_credit = 1.0
-                        match_confidence = 1.0
-                        break
-                if match_found:
-                    break
+            if sub_matched_names:
+                matched_job_skills.extend(sub_matched_names)
+                total_credit += sub_credit_sum
+            if sub_missing_names:
+                missing_job_skills.extend(sub_missing_names)
 
-        # Tier 4: Category Membership Match
-        if not match_found:
-            cat_keys = [base_concept.lower(), base_norm.lower(), j_orig.lower(), j_norm.lower()]
-            for cat_k in cat_keys:
-                if cat_k in category_map:
-                    members = category_map[cat_k]
-                    for r_orig, r_norm in resume_canonical_map.items():
-                        if r_norm in members or r_orig.lower() in members:
-                            match_found = True
-                            matched_item = r_orig
-                            matched_type = "category"
-                            match_credit = 0.95
-                            match_confidence = 0.95
-                            break
-                if match_found:
-                    break
-
-        # Tier 5: Strict Token-Boundary Match (avoids "java" in "javascript")
-        if not match_found:
-            for r_orig in clean_resume_skills:
-                target_word = base_norm if base_norm else j_norm
-                if target_word and len(target_word) > 2:
-                    if token_matches(target_word, r_orig) or token_matches(r_orig, j_orig):
-                        match_found = True
-                        matched_item = r_orig
-                        matched_type = "token"
-                        match_credit = 0.90
-                        match_confidence = 0.90
-                        break
-
-        # Tier 6: Per-Skill Semantic Cosine Similarity
-        if not match_found and model is not None and clean_resume_skills:
-            try:
-                from sentence_transformers import util
-                j_embed = model.encode(base_concept if base_concept else j_orig, convert_to_tensor=True)
-                r_embeds = model.encode(clean_resume_skills, convert_to_tensor=True)
-                cos_sims = util.cos_sim(j_embed, r_embeds)[0]
-                best_idx = int(cos_sims.argmax().item())
-                best_sim = float(cos_sims[best_idx].item())
-
-                # Conservative threshold to avoid semantic hallucinations
-                if best_sim >= 0.74:
-                    match_found = True
-                    matched_item = clean_resume_skills[best_idx]
-                    matched_type = "semantic"
-                    match_credit = round(min(0.85, best_sim), 2)
-                    match_confidence = round(best_sim, 2)
-            except Exception as ex:
-                logger.debug(f"Per-skill semantic similarity skipped: {ex}")
-
-        # Tier 7: Resume Text Evidence (if resume_text provided)
-        if not match_found and resume_text and resume_text.strip():
-            evidence_targets = [base_norm if base_norm else j_norm] + examples + alternatives
-            for target in evidence_targets:
-                if target and len(target) > 2 and token_matches(target, resume_text):
-                    match_found = True
-                    matched_item = target
-                    matched_type = "text_evidence"
-                    match_credit = 0.85
-                    match_confidence = 0.85
-                    break
-
-        # Record outcome for this requirement
-        if match_found:
-            matched_job_skills.append(j_orig)
-            matched_resume_skills.add(matched_item)
-            total_credit += match_credit
-            matched_details.append(
-                {
-                    "required_skill": j_orig,
-                    "status": "matched",
-                    "matched_with": matched_item,
-                    "match_type": matched_type,
-                    "confidence": match_confidence,
-                }
-            )
         else:
-            missing_job_skills.append(j_orig)
-            matched_details.append(
-                {
-                    "required_skill": j_orig,
-                    "status": "missing",
-                    "matched_with": None,
-                    "match_type": None,
-                    "confidence": 0.0,
-                }
+            # Single atomic requirement
+            m_found, m_item, m_type, m_cred, m_conf, m_ev = evaluate_single_requirement(
+                j_orig, resume_canonical_map, clean_resume_skills, category_map, model, resume_text
             )
+            if m_found:
+                matched_job_skills.append(j_orig)
+                if m_item:
+                    matched_resume_skills.add(m_item)
+                total_credit += m_cred
+                matched_details.append(
+                    {
+                        "required_skill": j_orig,
+                        "status": "matched",
+                        "matched_with": m_item,
+                        "match_type": m_type,
+                        "confidence": m_conf,
+                        "evidence": m_ev,
+                    }
+                )
+            else:
+                missing_job_skills.append(j_orig)
+                matched_details.append(
+                    {
+                        "required_skill": j_orig,
+                        "status": "missing",
+                        "matched_with": None,
+                        "match_type": None,
+                        "confidence": 0.0,
+                        "evidence": None,
+                    }
+                )
+
+    # Deduplicate matched and missing lists
+    matched_job_skills = list(dict.fromkeys(matched_job_skills))
+    missing_job_skills = list(dict.fromkeys(missing_job_skills))
 
     # Calculate bonus skills (candidate skills not used to fulfill required skills)
     bonus_skills = [
@@ -312,8 +415,9 @@ def calculate_match_score(
         composite = (skill_score * 0.85) + (exp_score * 0.15)
         final_score = max(0, min(100, round(composite)))
 
-    # Determine autoAction using configured thresholds (shortlist >= 70, reject < 40)
-    if final_score >= ATS_SHORTLIST_THRESHOLD:
+    # Determine autoAction using configured thresholds
+    cutoff = shortlist_threshold if shortlist_threshold is not None else ATS_SHORTLIST_THRESHOLD
+    if final_score >= cutoff:
         auto_action = "shortlist"
     elif final_score < ATS_REJECT_THRESHOLD:
         auto_action = "reject"
@@ -324,12 +428,12 @@ def calculate_match_score(
     matched_count = len(matched_job_skills)
     total_count = len(clean_job_skills)
     if not missing_job_skills:
-        rationale = f"Matched all {total_count} required skills ({skill_coverage:.1f}% coverage)."
+        rationale = f"Matched all required skills ({skill_coverage:.1f}% coverage)."
     else:
         missing_preview = ", ".join(missing_job_skills[:3])
         if len(missing_job_skills) > 3:
             missing_preview += f" (+{len(missing_job_skills) - 3} more)"
-        rationale = f"Matched {matched_count} of {total_count} required skills ({skill_coverage:.1f}% coverage). Missing: {missing_preview}."
+        rationale = f"Matched {matched_count} skills ({skill_coverage:.1f}% coverage). Missing: {missing_preview}."
 
     return {
         "match_score": final_score,

@@ -17,12 +17,14 @@ def parse_resume(resume_text: str) -> dict:
     with open(prompt_file, encoding="utf-8") as f:
         template = f.read()
 
-    prompt = template.replace("{resume_text}", resume_text)
-    raw_text = call_llm(prompt, task_type="resume_parse")
+    try:
+        raw_text = call_llm(prompt, task_type="resume_parse")
+        parsed = extract_json(raw_text)
+    except Exception as ex:
+        parsed = None
 
-    parsed = extract_json(raw_text)
     if parsed is None or not isinstance(parsed, dict):
-        raise ValueError(f"Model did not return a valid JSON object:\n{raw_text}")
+        parsed = {}
 
     # 1. Standardize keys from LLM response
     llm_skills = parsed.get("skills", [])

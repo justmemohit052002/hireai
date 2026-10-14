@@ -54,9 +54,13 @@ public class LlmAtsClient {
                     ? getMinExpectedExperience(job.getExperienceLevel())
                     : null;
 
+            String resumeText = candidate.getResume() != null ? candidate.getResume().getRawText() : null;
+
             AiMatchScoreRequest request = AiMatchScoreRequest.builder()
                     .resumeSkills(candidateSkills)
                     .jobSkills(jobSkills)
+                    .resumeText(resumeText)
+                    .shortlistThreshold((double) atsProperties.getShortlistThreshold())
                     .candidateExperienceYears(candExpYears)
                     .requiredExperienceYears(reqExpYears)
                     .build();

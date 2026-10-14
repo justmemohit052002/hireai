@@ -20,10 +20,11 @@ Use exactly this structure:
 
 Rules:
 - If a field cannot be found, use null (for single values) or an empty array (for lists). Never omit a key.
-- "skills" MUST contain only atomic technical skills (languages, frameworks, databases, platforms, tools, architectures like Java, Spring Boot, MySQL, Docker, Git, REST APIs, OOP, DSA).
+- "skills" MUST contain all atomic technical skills, tools, architectures, and computer science concepts (e.g. Java, Spring Boot, MySQL, Docker, Git, REST APIs, OOP, DSA, DBMS, OS, Agile Methodologies, SDLC, Microservices, Design Patterns, Multithreading, JUnit, Mockito, AWS).
+- NEVER skip skills listed under "Concepts" or technical foundations lines (OOP, Data Structures & Algorithms, DBMS, Operating Systems, Agile, SDLC, etc.).
 - Do NOT mix soft skills into "skills". Place communication, leadership, teamwork, etc. into "softSkills".
-- Include all technical skills evidenced anywhere in the resume, including project descriptions, responsibilities, tools used, and work experience.
-- Keep skill names concise and canonical (e.g. "Python", "MySQL", "AWS", "Git" - never "Proficient in Python").
+- Include all technical skills evidenced anywhere in the resume, including project descriptions, responsibilities, tools used, certifications, and work experience bullets.
+- Keep skill names concise and canonical (e.g. "Python", "MySQL", "AWS", "Git", "OOP", "DSA", "Agile" - never "Proficient in Python").
 - For yearsExperience, calculate from the earliest job start date to the most recent job end date (or "present") if a total isn't stated explicitly. Exclude any explicitly stated employment gaps from the count.
 
 Resume text:

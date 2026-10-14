@@ -97,20 +97,71 @@ def normalize_skill(skill: str) -> str:
     return cleaned
 
 
+def split_outside_parens(s: str) -> list[str]:
+    """
+    Splits text by comma or semicolon, but only when not enclosed within parentheses.
+    Prevents splitting parenthetical examples like '(e.g. MySQL, MongoDB)'.
+    """
+    if not s or not str(s).strip():
+        return []
+    tokens = re.split(r"[,;]\s*(?![^()]*\))", str(s).strip())
+    return [t.strip() for t in tokens if t.strip()]
+
+
+def repair_and_clean_job_skills(skills: list[str]) -> list[str]:
+    """
+    Repairs broken requirements caused by naive comma splitting inside parentheses.
+    E.g. ['Database management systems (e.g. MySQL', 'MongoDB)'] -> ['Database management systems (e.g. MySQL, MongoDB)']
+    Also cleans stray unclosed or unopened parentheses.
+    """
+    repaired = []
+    i = 0
+    clean_list = [str(s).strip() for s in (skills or []) if str(s).strip()]
+    while i < len(clean_list):
+        item = clean_list[i]
+        # Open paren without close paren, followed by close paren without open paren
+        if "(" in item and ")" not in item and i + 1 < len(clean_list):
+            next_item = clean_list[i + 1]
+            if ")" in next_item and "(" not in next_item:
+                merged = f"{item}, {next_item}"
+                repaired.append(merged)
+                i += 2
+                continue
+        # Clean stray trailing close paren if no open paren
+        if item.endswith(")") and "(" not in item:
+            item = item[:-1].strip()
+        # Clean stray leading open paren if no close paren
+        if item.startswith("(") and ")" not in item:
+            item = item[1:].strip()
+        if item:
+            repaired.append(item)
+        i += 1
+    return repaired
+
+
 def decompose_requirement(job_skill: str) -> dict[str, Any]:
     """
-    Decomposes a descriptive requirement into its base concept, examples, and alternatives.
+    Decomposes a descriptive requirement into its base concept, examples, alternatives,
+    and bundled sub-requirements.
     Examples:
     - "Cloud computing platforms (e.g. AWS)" -> concept: "cloud computing platforms", examples: ["aws"]
     - "PostgreSQL / MySQL" -> alternatives: ["postgresql", "mysql"]
-    - "Java-based testing frameworks (e.g. JUnit)" -> concept: "java-based testing frameworks", examples: ["junit"]
+    - "Version control systems (e.g. Git, SVN), Spring Framework experience, Azure" -> bundled items
     """
     text = job_skill.strip()
+    # Check for stray unbalanced close paren
+    if text.endswith(")") and "(" not in text:
+        text = text[:-1].strip()
+
+    # Check if this single requirement bundles multiple distinct sub-requirements separated by commas outside parens
+    bundled_items = split_outside_parens(text)
+    is_bundled = len(bundled_items) > 1
+
     examples = []
     alternatives = []
 
     # 1. Check for parenthesized examples "(e.g. AWS)", "(such as Docker, K8s)"
-    eg_pattern = re.search(r"\((?:e\.?g\.?|eg:?|such as|including)\s*([^)]+)\)", text, flags=re.IGNORECASE)
+    eg_pattern = re.search(r"\((?:e\.?g\.?|eg:?|such as|including)\s*([^)]+)(?:\)|$)", text, flags=re.IGNORECASE)
     base_text = text
     if eg_pattern:
         raw_examples = eg_pattern.group(1)
@@ -128,6 +179,8 @@ def decompose_requirement(job_skill: str) -> dict[str, Any]:
         "base_concept": clean_skill_string(base_text),
         "examples": examples,
         "alternatives": alternatives,
+        "is_bundled": is_bundled,
+        "bundled_items": bundled_items if is_bundled else [text],
     }
 
 
@@ -193,3 +246,40 @@ def extract_skills_from_text(text: str) -> list[str]:
             found_canonicals.add(canonical)
 
     return sorted(list(found_canonicals))
+
+
+def find_skill_evidence(skill_name: str, resume_text: str) -> str:
+    """
+    Identifies sections in the resume where the skill or its aliases appear as evidence.
+    Returns e.g. "Spring Boot (Skills, Experience, Projects)".
+    """
+    if not skill_name or not resume_text:
+        return skill_name or ""
+
+    lower_text = resume_text.lower()
+    alias_map = get_alias_map()
+    variants = [skill_name.lower()]
+    for v, c in alias_map.items():
+        if c.lower() == skill_name.lower():
+            variants.append(v)
+
+    sections = []
+    section_patterns = [
+        ("Skills", r"(?:technical skills|skills|technologies|proficiencies)[\s\S]*?(?=(?:experience|projects|education|certifications|extracurricular|$))"),
+        ("Experience", r"(?:experience|work history|employment)[\s\S]*?(?=(?:projects|education|certifications|extracurricular|$))"),
+        ("Projects", r"(?:projects|personal projects|key projects)[\s\S]*?(?=(?:education|certifications|extracurricular|$))"),
+        ("Summary", r"(?:summary|objective|profile)[\s\S]*?(?=(?:technical skills|skills|experience|$))"),
+        ("Education", r"(?:education|academic background)[\s\S]*?(?=(?:certifications|extracurricular|$))"),
+        ("Certifications", r"(?:certifications|certificates)[\s\S]*?(?=(?:extracurricular|$))"),
+    ]
+
+    for sec_name, pattern in section_patterns:
+        match = re.search(pattern, lower_text)
+        if match:
+            sec_content = match.group(0)
+            if any(token_matches(v, sec_content) for v in variants):
+                sections.append(sec_name)
+
+    if sections:
+        return f"{skill_name} ({', '.join(sections)})"
+    return skill_name

@@ -261,6 +261,7 @@ def match_score(request: MatchScoreRequest):
         resume_text=request.resume_text,
         candidate_experience_years=request.candidate_experience_years,
         required_experience_years=request.required_experience_years,
+        shortlist_threshold=request.shortlist_threshold,
     )
     return MatchScoreResponse(**result)
 

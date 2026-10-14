@@ -54,6 +54,7 @@ class MatchDetail(CamelModel):
     matched_with: Optional[str] = None
     match_type: Optional[str] = None  # "exact" | "alias" | "example" | "alternative" | "category" | "token" | "semantic" | "text_evidence"
     confidence: float = 1.0
+    evidence: Optional[str] = None
 
 
 class ScoreBreakdown(CamelModel):
@@ -68,6 +69,7 @@ class MatchScoreRequest(CamelModel):
     resume_text: Optional[str] = Field(default=None, max_length=25000)
     candidate_experience_years: Optional[float] = None
     required_experience_years: Optional[float] = None
+    shortlist_threshold: Optional[float] = None
 
     @field_validator("resume_skills", "job_skills", "nice_to_have_skills", mode="after")
     @classmethod

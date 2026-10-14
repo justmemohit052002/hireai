@@ -138,20 +138,86 @@
     "postman": ["postman"],
     "swagger/openapi": ["swagger", "openapi", "swagger/openapi", "open api"],
     "kafka": ["kafka", "apache kafka"],
-    "rabbitmq": ["rabbitmq", "rabbit mq"]
+    "rabbitmq": ["rabbitmq", "rabbit mq"],
+    "agile": [
+      "agile",
+      "agile methodologies",
+      "agile methodology",
+      "agile development",
+      "agile development methodologies",
+      "agile development methodology",
+      "scrum",
+      "kanban",
+      "sprint planning",
+      "scrum master"
+    ],
+    "sdlc": [
+      "sdlc",
+      "software development life cycle",
+      "software development lifecycle"
+    ],
+    "design patterns": [
+      "design patterns",
+      "design pattern",
+      "gang of four",
+      "gof patterns"
+    ],
+    "operating systems": [
+      "os",
+      "operating systems",
+      "operating system"
+    ],
+    "multithreading": [
+      "multithreading",
+      "concurrency",
+      "multi-threading",
+      "thread safety",
+      "threads"
+    ],
+    "collections": [
+      "collections",
+      "java collections",
+      "collections framework"
+    ],
+    "streams": [
+      "streams",
+      "java streams",
+      "stream api"
+    ],
+    "exception handling": [
+      "exception handling",
+      "error handling"
+    ],
+    "svn": [
+      "svn",
+      "apache subversion",
+      "subversion"
+    ],
+    "testng": [
+      "testng",
+      "test ng"
+    ]
   },
   "categories": {
     "version control": ["git", "github", "gitlab", "bitbucket", "svn", "mercurial"],
     "version control systems": ["git", "github", "gitlab", "bitbucket", "svn", "mercurial"],
     "cloud computing platforms": ["aws", "azure", "gcp", "ec2", "s3", "lambda", "cloudwatch", "google cloud", "amazon web services", "microsoft azure"],
     "cloud computing": ["aws", "azure", "gcp", "ec2", "s3", "lambda", "cloudwatch", "google cloud", "amazon web services", "microsoft azure"],
-    "database management systems": ["mysql", "postgresql", "postgres", "oracle", "sql server", "sqlite", "mariadb", "sql", "dbms"],
-    "database management": ["mysql", "postgresql", "postgres", "oracle", "sql server", "sqlite", "mariadb", "sql", "dbms"],
-    "relational databases": ["mysql", "postgresql", "postgres", "oracle", "sql server", "sqlite", "mariadb", "sql", "dbms"],
+    "database management systems": ["mysql", "postgresql", "postgres", "oracle", "sql server", "sqlite", "mariadb", "sql", "dbms", "rdbms", "mongodb", "redis"],
+    "database management": ["mysql", "postgresql", "postgres", "oracle", "sql server", "sqlite", "mariadb", "sql", "dbms", "rdbms", "mongodb", "redis"],
+    "relational databases": ["mysql", "postgresql", "postgres", "oracle", "sql server", "sqlite", "mariadb", "sql", "dbms", "rdbms"],
     "nosql": ["mongodb", "cassandra", "couchdb", "dynamodb", "redis", "neo4j"],
     "testing frameworks": ["junit", "testng", "mockito", "pytest", "jest", "cypress", "selenium", "mocha"],
     "java testing frameworks": ["junit", "testng", "mockito", "powermock", "assertj"],
     "java-based testing frameworks": ["junit", "testng", "mockito", "powermock", "assertj"],
+    "spring framework": ["spring", "spring boot", "spring mvc", "spring security", "spring data jpa", "spring framework", "spring framework experience"],
+    "spring framework experience": ["spring", "spring boot", "spring mvc", "spring security", "spring data jpa", "spring framework"],
+    "spring": ["spring", "spring boot", "spring mvc", "spring security", "spring data jpa", "spring framework"],
+    "agile development methodologies": ["agile", "agile methodologies", "scrum", "kanban", "sdlc"],
+    "agile development methodology": ["agile", "agile methodologies", "scrum", "kanban", "sdlc"],
+    "agile methodologies": ["agile", "agile methodologies", "scrum", "kanban", "sdlc"],
+    "agile development": ["agile", "agile methodologies", "scrum", "kanban", "sdlc"],
+    "agile": ["agile", "agile methodologies", "scrum", "kanban", "sdlc"],
     "orm frameworks": ["hibernate", "jpa", "spring data jpa", "sqlalchemy", "prisma", "typeorm"],
     "containerization": ["docker", "podman", "containerd"],
     "container orchestration": ["kubernetes", "k8s", "docker swarm", "openshift"],

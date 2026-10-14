@@ -71,4 +71,14 @@ export const applicationsApi = {
   computeAtsScore: async (jobId, candidateId) => {
     return apiClient.post(`/recruiter/ai/match/${jobId}/${candidateId}`);
   },
+
+  /** Recalculate ATS match score for an application */
+  rescoreApplication: async (applicationId) => {
+    return apiClient.post(`/applications/${applicationId}/rescore`);
+  },
+
+  /** Recalculate ATS match scores for all applications to a job */
+  rescoreJobApplications: async (jobId) => {
+    return apiClient.post(`/jobs/${jobId}/applications/rescore`);
+  },
 };

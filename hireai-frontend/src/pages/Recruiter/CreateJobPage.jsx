@@ -137,7 +137,8 @@ export const CreateJobPage = () => {
       return;
     }
 
-    let skillArray = skills.split(',').map((s) => s.trim()).filter(Boolean);
+    const splitSkillsSafely = (s) => (s ? s.split(/,\s*(?![^()]*\))/).map((x) => x.trim()).filter(Boolean) : []);
+    let skillArray = splitSkillsSafely(skills);
     if (skillArray.length === 0) {
       // Auto-generate skills as per job role data entered prior if user left it blank
       const generated = generateRoleRequirements({
@@ -155,7 +156,7 @@ export const CreateJobPage = () => {
       });
 
       if (generated?.skills) {
-        skillArray = generated.skills.split(',').map((s) => s.trim()).filter(Boolean);
+        skillArray = splitSkillsSafely(generated.skills);
         setSkills(generated.skills);
       }
 

@@ -21,4 +21,5 @@ public class AiMatchScoreRequest {
     private String resumeText;
     private Double candidateExperienceYears;
     private Double requiredExperienceYears;
+    private Double shortlistThreshold;
 }

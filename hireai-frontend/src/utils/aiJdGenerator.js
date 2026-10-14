@@ -258,7 +258,7 @@ export function generateRoleRequirements({
 
   if (hasUserSkills) {
     const userEnteredList = existingSkills
-      .split(',')
+      .split(/,\s*(?![^()]*\))/)
       .map((s) => s.trim())
       .filter(Boolean);
     skillsArray = userEnteredList;

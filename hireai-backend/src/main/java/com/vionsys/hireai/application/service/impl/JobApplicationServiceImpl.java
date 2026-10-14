@@ -1,5 +1,6 @@
 package com.vionsys.hireai.application.service.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -429,5 +430,69 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         JobApplication updated = jobApplicationRepository.save(application);
         log.info("Candidate user {} withdrew application {}", candidateUserId, applicationId);
         return JobApplicationMapper.toResponse(updated);
+    }
+
+    @Override
+    @Transactional
+    public JobApplicationResponse rescoreApplication(UUID applicationId) {
+        JobApplication application = jobApplicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ApplicationNotFoundException("Job application not found"));
+
+        Candidate candidate = application.getCandidate();
+        Job job = application.getJob();
+
+        AtsMatchResult atsResult = atsMatchScoringService.computeAtsScore(candidate, job);
+        int matchScore = atsResult.getMatchScore();
+
+        application.setAtsMatchScore(matchScore);
+        application.setMatchingSkills(String.join(", ", atsResult.getMatchingSkills()));
+        application.setMissingSkills(String.join(", ", atsResult.getMissingSkills()));
+
+        if (application.getStatus() == ApplicationStatus.APPLIED && matchScore >= atsProperties.getShortlistThreshold()) {
+            application.setStatus(ApplicationStatus.SHORTLISTED);
+            application.setRecruiterNotes(String.format("Shortlisted for interview by AI ATS (Match Score: %d%% >= %d%% threshold)",
+                    matchScore, atsProperties.getShortlistThreshold()));
+        } else if (application.getRecruiterNotes() != null && application.getRecruiterNotes().startsWith("Application Received: ATS Match Score")) {
+            application.setRecruiterNotes(String.format("Application Received: ATS Match Score %d%%. Under review by recruiter.", matchScore));
+        }
+
+        JobApplication updated = jobApplicationRepository.save(application);
+        log.info("Rescored application {}: score={}%, matchingSkills={}, missingSkills={}",
+                applicationId, matchScore, atsResult.getMatchingSkills(), atsResult.getMissingSkills());
+        return JobApplicationMapper.toResponse(updated);
+    }
+
+    @Override
+    @Transactional
+    public List<JobApplicationResponse> rescoreJobApplications(UUID jobId) {
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new JobNotFoundException("Job not found"));
+
+        List<JobApplication> applications = jobApplicationRepository.findByJobIdOrderByScoreDesc(jobId);
+        List<JobApplicationResponse> responses = new ArrayList<>();
+
+        for (JobApplication application : applications) {
+            Candidate candidate = application.getCandidate();
+            AtsMatchResult atsResult = atsMatchScoringService.computeAtsScore(candidate, job);
+            int matchScore = atsResult.getMatchScore();
+
+            application.setAtsMatchScore(matchScore);
+            application.setMatchingSkills(String.join(", ", atsResult.getMatchingSkills()));
+            application.setMissingSkills(String.join(", ", atsResult.getMissingSkills()));
+
+            if (application.getStatus() == ApplicationStatus.APPLIED && matchScore >= atsProperties.getShortlistThreshold()) {
+                application.setStatus(ApplicationStatus.SHORTLISTED);
+                application.setRecruiterNotes(String.format("Shortlisted for interview by AI ATS (Match Score: %d%% >= %d%% threshold)",
+                        matchScore, atsProperties.getShortlistThreshold()));
+            } else if (application.getRecruiterNotes() != null && application.getRecruiterNotes().startsWith("Application Received: ATS Match Score")) {
+                application.setRecruiterNotes(String.format("Application Received: ATS Match Score %d%%. Under review by recruiter.", matchScore));
+            }
+
+            JobApplication updated = jobApplicationRepository.save(application);
+            responses.add(JobApplicationMapper.toResponse(updated));
+        }
+
+        log.info("Rescored {} applications for job {}", applications.size(), jobId);
+        return responses;
     }
 }

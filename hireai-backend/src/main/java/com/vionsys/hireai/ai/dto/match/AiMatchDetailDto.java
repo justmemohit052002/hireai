@@ -19,4 +19,5 @@ public class AiMatchDetailDto {
     private String matchedWith;
     private String matchType;
     private Double confidence;
+    private String evidence;
 }

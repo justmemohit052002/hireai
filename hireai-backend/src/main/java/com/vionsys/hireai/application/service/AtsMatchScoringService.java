@@ -44,14 +44,26 @@ public class AtsMatchScoringService {
             Map.entry("mongo", "mongodb"),
             Map.entry("reactjs", "react"),
             Map.entry("nodejs", "node.js"),
-            Map.entry("springboot", "spring boot")
+            Map.entry("springboot", "spring boot"),
+            Map.entry("aws", "amazon web services"),
+            Map.entry("gcp", "google cloud platform"),
+            Map.entry("os", "operating systems"),
+            Map.entry("agile", "agile methodologies"),
+            Map.entry("scrum", "agile methodologies"),
+            Map.entry("kanban", "agile methodologies"),
+            Map.entry("sdlc", "software development life cycle"),
+            Map.entry("microservices", "microservice architecture"),
+            Map.entry("design patterns", "software design patterns")
     );
 
     private static final Map<String, Set<String>> CATEGORY_MEMBERS = Map.of(
             "version control", Set.of("git", "github", "gitlab", "bitbucket", "svn"),
-            "cloud computing", Set.of("aws", "azure", "gcp", "ec2", "s3", "lambda"),
-            "database management", Set.of("mysql", "postgresql", "postgres", "oracle", "sql server", "sqlite", "sql", "dbms"),
-            "testing frameworks", Set.of("junit", "testng", "mockito", "pytest", "jest")
+            "cloud computing", Set.of("aws", "azure", "gcp", "ec2", "s3", "lambda", "cloud"),
+            "database management", Set.of("mysql", "postgresql", "postgres", "oracle", "sql server", "sqlite", "sql", "dbms", "rdbms", "mongodb"),
+            "testing frameworks", Set.of("junit", "testng", "mockito", "pytest", "jest", "selenium"),
+            "spring framework", Set.of("spring", "spring boot", "spring mvc", "spring security", "spring data jpa", "hibernate"),
+            "agile", Set.of("agile", "scrum", "kanban", "sdlc", "jira"),
+            "object-oriented", Set.of("oop", "oops", "object-oriented programming", "java", "c++", "c#", "python")
     );
 
     /**
@@ -85,9 +97,11 @@ public class AtsMatchScoringService {
         }
 
         // 2. Rule-Based Intelligent Matching Engine (Fallback)
-        List<String> jobSkills = job.getSkills() != null
+        List<String> rawJobSkills = job.getSkills() != null
                 ? job.getSkills().stream().map(String::trim).filter(s -> !s.isBlank()).toList()
                 : Collections.emptyList();
+
+        List<String> jobSkills = repairAndCleanJobSkills(rawJobSkills);
 
         List<String> candidateSkillNames = new ArrayList<>();
         if (candidate.getSkills() != null) {
@@ -98,24 +112,44 @@ public class AtsMatchScoringService {
             }
         }
 
+        String rawResumeText = candidate.getResume() != null ? candidate.getResume().getRawText() : null;
+
         List<String> matchedSkills = new ArrayList<>();
         List<String> missingSkills = new ArrayList<>();
+        double totalMatchedUnits = 0.0;
+        double totalRequiredUnits = 0.0;
 
         if (jobSkills.isEmpty()) {
             matchedSkills.addAll(candidateSkillNames);
         } else {
             for (String required : jobSkills) {
-                if (isSkillMatched(required, candidateSkillNames)) {
-                    matchedSkills.add(required);
+                List<String> subItems = splitOutsideParens(required);
+                if (subItems.size() > 1) {
+                    // Bundled requirement (e.g. "Git, SVN, Spring Framework experience, Azure")
+                    totalRequiredUnits += subItems.size();
+                    for (String sub : subItems) {
+                        if (isSkillMatched(sub, candidateSkillNames, rawResumeText)) {
+                            matchedSkills.add(sub);
+                            totalMatchedUnits += 1.0;
+                        } else {
+                            missingSkills.add(sub);
+                        }
+                    }
                 } else {
-                    missingSkills.add(required);
+                    totalRequiredUnits += 1.0;
+                    if (isSkillMatched(required, candidateSkillNames, rawResumeText)) {
+                        matchedSkills.add(required);
+                        totalMatchedUnits += 1.0;
+                    } else {
+                        missingSkills.add(required);
+                    }
                 }
             }
         }
 
         double skillScore = 60.0;
-        if (!jobSkills.isEmpty()) {
-            double skillRatio = (double) matchedSkills.size() / jobSkills.size();
+        if (totalRequiredUnits > 0) {
+            double skillRatio = totalMatchedUnits / totalRequiredUnits;
             skillScore = skillRatio * 60.0;
         }
 
@@ -134,15 +168,60 @@ public class AtsMatchScoringService {
                 .matchScore(finalScore)
                 .matchingSkills(matchedSkills)
                 .missingSkills(missingSkills)
-                .skillMatchPercentage(jobSkills.isEmpty() ? 100.0 : ((double) matchedSkills.size() / jobSkills.size()) * 100.0)
+                .skillMatchPercentage(totalRequiredUnits == 0 ? 100.0 : (totalMatchedUnits / totalRequiredUnits) * 100.0)
                 .experienceMatchPercentage((expScore / 25.0) * 100.0)
                 .build();
     }
 
-    private boolean isSkillMatched(String required, List<String> candidateSkills) {
+    public static List<String> repairAndCleanJobSkills(List<String> rawSkills) {
+        if (rawSkills == null || rawSkills.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<String> cleaned = new ArrayList<>();
+        StringBuilder buffer = null;
+
+        for (String item : rawSkills) {
+            if (item == null) continue;
+            String trimmed = item.trim();
+            if (trimmed.isEmpty()) continue;
+
+            if (buffer != null) {
+                buffer.append(", ").append(trimmed);
+                if (buffer.indexOf(")") != -1) {
+                    cleaned.add(buffer.toString());
+                    buffer = null;
+                }
+            } else if (trimmed.contains("(") && !trimmed.contains(")")) {
+                buffer = new StringBuilder(trimmed);
+            } else {
+                cleaned.add(trimmed);
+            }
+        }
+        if (buffer != null) {
+            cleaned.add(buffer.toString() + ")");
+        }
+        return cleaned;
+    }
+
+    public static List<String> splitOutsideParens(String s) {
+        if (s == null || s.isBlank()) {
+            return Collections.emptyList();
+        }
+        String[] parts = s.split("[,;]\\s*(?![^()]*\\))");
+        List<String> result = new ArrayList<>();
+        for (String p : parts) {
+            String trimmed = p.trim();
+            if (!trimmed.isEmpty()) {
+                result.add(trimmed);
+            }
+        }
+        return result.isEmpty() ? List.of(s.trim()) : result;
+    }
+
+    private boolean isSkillMatched(String required, List<String> candidateSkills, String rawResumeText) {
         String reqNorm = normalize(required);
 
-        // 1. Exact or alias match
+        // 1. Exact or alias match against candidate skill list
         for (String c : candidateSkills) {
             String cNorm = normalize(c);
             if (reqNorm.equals(cNorm)) {
@@ -164,6 +243,9 @@ public class AtsMatchScoringService {
                             return true;
                         }
                     }
+                    if (rawResumeText != null && tokenMatches(exTrim, rawResumeText)) {
+                        return true;
+                    }
                 }
             }
         }
@@ -179,6 +261,9 @@ public class AtsMatchScoringService {
                             return true;
                         }
                     }
+                    if (rawResumeText != null && tokenMatches(partTrim, rawResumeText)) {
+                        return true;
+                    }
                 }
             }
         }
@@ -192,13 +277,36 @@ public class AtsMatchScoringService {
                         return true;
                     }
                 }
+                if (rawResumeText != null) {
+                    for (String member : cat.getValue()) {
+                        if (tokenMatches(member, rawResumeText)) {
+                            return true;
+                        }
+                    }
+                }
             }
         }
 
-        // 5. Strict token matching
+        // 5. Strict token matching against candidate skills
         for (String c : candidateSkills) {
             if (tokenMatches(reqNorm, c) || tokenMatches(c, required)) {
                 return true;
+            }
+        }
+
+        // 6. Whole resume text search for base required skill or alias
+        if (rawResumeText != null) {
+            if (tokenMatches(reqNorm, rawResumeText)) {
+                return true;
+            }
+            if (COMMON_ALIASES.containsKey(reqNorm) && tokenMatches(COMMON_ALIASES.get(reqNorm), rawResumeText)) {
+                return true;
+            }
+            // Check reverse alias
+            for (Map.Entry<String, String> entry : COMMON_ALIASES.entrySet()) {
+                if (entry.getValue().equals(reqNorm) && tokenMatches(entry.getKey(), rawResumeText)) {
+                    return true;
+                }
             }
         }
 

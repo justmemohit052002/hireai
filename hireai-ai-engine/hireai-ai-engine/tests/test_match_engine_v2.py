@@ -208,3 +208,96 @@ def test_fallback_when_embedding_model_disabled(monkeypatch):
     assert len(res["matched_skills"]) == 2
     assert res["match_score"] == 100
     assert res["semantic_model_available"] is False
+
+
+def test_real_candidate_resume_match():
+    """
+    Validates exact sample resume against the real job requirements:
+    - Core Java, OOP, DSA, DBMS (MySQL, PostgreSQL), Git, Spring Framework, Agile are MATCHED.
+    - Score reflects strong coverage well above 70% threshold.
+    """
+    resume_skills = [
+        "Core Java", "OOP", "Collections", "Multithreading", "Spring Boot",
+        "Spring MVC", "Spring Security", "Spring Data JPA", "Hibernate", "REST APIs",
+        "JWT", "OAuth", "MySQL", "PostgreSQL", "React.js", "JUnit", "Mockito",
+        "Git", "GitHub", "Maven", "Postman", "AWS (EC2)", "DSA", "DBMS", "OS",
+        "Microservices", "Design Patterns", "SDLC", "Agile Methodologies"
+    ]
+
+    job_skills = [
+        "Java programming language",
+        "Cloud computing platforms (e.g. AWS)",
+        "Java-based testing frameworks (e.g. JUnit)",
+        "Object-Oriented Programming (OOP) concepts",
+        "Data structures and algorithms",
+        "Database management systems (e.g. MySQL, MongoDB)",
+        "Version control systems (e.g. Git, SVN)",
+        "Spring Framework experience",
+        "Agile development methodologies (e.g. Scrum, Kanban)"
+    ]
+
+    result = calculate_match_score(resume_skills, job_skills)
+
+    assert result["match_score"] >= 90
+    assert result["auto_action"] == "shortlist"
+    assert len(result["missing_skills"]) == 0
+    assert "Java programming language" in result["matched_skills"]
+    assert "Object-Oriented Programming (OOP) concepts" in result["matched_skills"]
+    assert "Data structures and algorithms" in result["matched_skills"]
+    assert "Database management systems (e.g. MySQL, MongoDB)" in result["matched_skills"]
+    assert "Version control systems (e.g. Git, SVN)" in result["matched_skills"]
+    assert "Spring Framework experience" in result["matched_skills"]
+    assert "Agile development methodologies (e.g. Scrum, Kanban)" in result["matched_skills"]
+
+
+def test_bundled_requirements_splitting_and_partial_credit():
+    """
+    When a requirement bundles multiple skills ('Git, SVN, Spring Framework, Azure'),
+    candidate with Git and Spring Boot matches those two, while 'Azure' is identified as the only gap.
+    """
+    resume_skills = ["Git", "Spring Boot", "MySQL"]
+    job_skills = [
+        "Version control systems (e.g. Git, SVN), Spring Framework experience, Azure"
+    ]
+
+    result = calculate_match_score(resume_skills, job_skills)
+
+    # 2 of 3 sub-skills matched -> ~67% credit
+    assert result["match_score"] >= 60
+    assert "Azure" in result["missing_skills"]
+    # Neither Git nor Spring Framework should be in missing skills
+    assert "Version control systems (e.g. Git, SVN)" not in result["missing_skills"]
+    assert "Spring Framework experience" not in result["missing_skills"]
+
+
+def test_repaired_broken_parentheses_from_naive_splits():
+    """
+    When naive comma splitting previously broke 'Database management systems (e.g. MySQL, MongoDB)',
+    into two items with unmatched parens, repair_and_clean_job_skills merges them.
+    """
+    resume_skills = ["MySQL", "PostgreSQL", "Java"]
+    broken_job_skills = [
+        "Database management systems (e.g. MySQL",
+        "MongoDB)"
+    ]
+
+    result = calculate_match_score(resume_skills, broken_job_skills)
+    assert result["match_score"] >= 90
+    assert len(result["missing_skills"]) == 0
+
+
+def test_negative_case_unrelated_resume():
+    """A resume with unrelated skills (e.g. Graphic Designer) must score 0% against technical Java requirements."""
+    resume_skills = ["Photoshop", "Illustrator", "Figma", "Typography"]
+    job_skills = [
+        "Java programming language",
+        "Spring Boot",
+        "PostgreSQL",
+        "Docker",
+        "Kubernetes"
+    ]
+
+    result = calculate_match_score(resume_skills, job_skills)
+    assert result["match_score"] == 0
+    assert result["auto_action"] == "reject"
+    assert len(result["missing_skills"]) == 5
