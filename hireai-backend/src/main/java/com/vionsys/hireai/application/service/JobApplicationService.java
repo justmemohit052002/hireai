@@ -45,4 +45,19 @@ public interface JobApplicationService {
      * Download the resume attached to a specific job application.
      */
     org.springframework.core.io.Resource downloadApplicationResume(UUID currentUserId, UUID applicationId);
+
+    /**
+     * Candidate withdraws their job application.
+     */
+    JobApplicationResponse withdrawApplication(UUID candidateUserId, UUID applicationId);
+
+    /**
+     * Recalculate ATS match score and skill breakdown for an application.
+     */
+    JobApplicationResponse rescoreApplication(UUID applicationId);
+
+    /**
+     * Recalculate ATS match score and skill breakdown for all applications to a job.
+     */
+    List<JobApplicationResponse> rescoreJobApplications(UUID jobId);
 }

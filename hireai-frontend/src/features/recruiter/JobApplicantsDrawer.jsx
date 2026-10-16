@@ -32,7 +32,7 @@ const STAGES = [
   { value: 'APPLIED', label: 'Applied', color: 'bg-blue-500/15 text-blue-500 border-blue-500/30' },
   { value: 'SCREENING', label: 'Screening', color: 'bg-amber-500/15 text-amber-500 border-amber-500/30' },
   { value: 'SHORTLISTED', label: 'Shortlisted', color: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30' },
-  { value: 'INTERVIEW_SCHEDULED', label: 'Interview', color: 'bg-purple-500/15 text-purple-500 border-purple-500/30' },
+  { value: 'INTERVIEW_SCHEDULED', label: 'Interview', color: 'bg-brand-blue/15 text-brand-blue border-brand-blue/30' },
   { value: 'OFFERED', label: 'Offered', color: 'bg-cyan-500/15 text-cyan-500 border-cyan-500/30' },
   { value: 'REJECTED', label: 'Rejected', color: 'bg-red-500/15 text-red-500 border-red-500/30' },
 ];
@@ -49,9 +49,45 @@ export const JobApplicantsDrawer = ({
   const [filterStage, setFilterStage] = useState('ALL');
   const [updatingAppId, setUpdatingAppId] = useState(null);
   const [downloadingAppId, setDownloadingAppId] = useState(null);
+  const [rescoringAppId, setRescoringAppId] = useState(null);
+  const [isRescoringAll, setIsRescoringAll] = useState(false);
   const [resumeNotice, setResumeNotice] = useState(null);
   const [previewModal, setPreviewModal] = useState(null); // { url, name, filename, isPdf }
   const [chatApplicant, setChatApplicant] = useState(null);
+
+  const handleRescoreApplicant = async (applicationId) => {
+    setRescoringAppId(applicationId);
+    try {
+      const res = await applicationsApi.rescoreApplication(applicationId);
+      const updated = res?.data || res;
+      if (updated && updated.id) {
+        setApplicants((prev) =>
+          prev.map((app) => (app.id === applicationId ? { ...app, ...updated } : app))
+        );
+      }
+    } catch (err) {
+      console.error('Failed to rescore applicant:', err);
+    } finally {
+      setRescoringAppId(null);
+    }
+  };
+
+  const handleRescoreAll = async () => {
+    if (!job?.id) return;
+    setIsRescoringAll(true);
+    try {
+      const res = await applicationsApi.rescoreJobApplications(job.id);
+      const list = res?.data || res;
+      if (Array.isArray(list)) {
+        const sorted = [...list].sort((a, b) => (b.atsMatchScore || 0) - (a.atsMatchScore || 0));
+        setApplicants(sorted);
+      }
+    } catch (err) {
+      console.error('Failed to rescore job applicants:', err);
+    } finally {
+      setIsRescoringAll(false);
+    }
+  };
 
   const fetchApplicants = async () => {
     if (!job?.id) return;
@@ -268,6 +304,17 @@ export const JobApplicantsDrawer = ({
               <div className="flex items-center gap-2">
                 <Button
                   size="sm"
+                  variant="outline"
+                  onClick={handleRescoreAll}
+                  disabled={isRescoringAll || isLoading || applicants.length === 0}
+                  title="Recalculate ATS Match for all applicants"
+                  className="h-8 text-xs font-semibold gap-1.5 border-primary/30 hover:bg-primary/10 text-primary"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRescoringAll ? 'animate-spin' : ''}`} />
+                  <span>{isRescoringAll ? 'Recalculating...' : 'Recalculate ATS'}</span>
+                </Button>
+                <Button
+                  size="sm"
                   variant="ghost"
                   onClick={fetchApplicants}
                   disabled={isLoading}
@@ -278,7 +325,7 @@ export const JobApplicantsDrawer = ({
                 </Button>
                 <button
                   onClick={onClose}
-                  className="rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -303,7 +350,7 @@ export const JobApplicantsDrawer = ({
                   {applicants.filter((a) => (a.atsMatchScore || 0) >= 70).length}
                 </div>
               </div>
-              <div className="p-3 rounded-xl bg-[#F56681]/10 border border-[#F56681]/20 text-center">
+              <div className="p-3 rounded-xl bg-brand-blue/10 border border-brand-blue/20 text-center">
                 <div className="text-[10px] uppercase font-bold tracking-wider text-brand-blue">
                   Avg ATS Score
                 </div>
@@ -361,16 +408,18 @@ export const JobApplicantsDrawer = ({
                 const matchScore = applicant.atsMatchScore != null ? Math.round(applicant.atsMatchScore) : 0;
                 const isShortlisted = matchScore >= 70;
                 const stageObj = STAGES.find((s) => s.value === String(applicant.status).toUpperCase()) || STAGES[0];
-                const matchingSkills = Array.isArray(applicant.matchingSkills)
-                  ? applicant.matchingSkills
-                  : typeof applicant.matchingSkills === 'string' && applicant.matchingSkills
-                  ? applicant.matchingSkills.split(',').map((s) => s.trim())
-                  : [];
-                const missingSkills = Array.isArray(applicant.missingSkills)
-                  ? applicant.missingSkills
-                  : typeof applicant.missingSkills === 'string' && applicant.missingSkills
-                  ? applicant.missingSkills.split(',').map((s) => s.trim())
-                  : [];
+                const splitSkillsSafely = (val) => {
+                  if (Array.isArray(val)) return val.filter(Boolean);
+                  if (typeof val === 'string' && val.trim()) {
+                    return val
+                      .split(/,\s*(?![^()]*\))/)
+                      .map((s) => s.trim())
+                      .filter(Boolean);
+                  }
+                  return [];
+                };
+                const matchingSkills = splitSkillsSafely(applicant.matchingSkills);
+                const missingSkills = splitSkillsSafely(applicant.missingSkills);
 
                 return (
                   <div
@@ -421,11 +470,11 @@ export const JobApplicantsDrawer = ({
                               : 'bg-rose-500/15 border-rose-500/30 text-rose-400'
                           }`}
                         >
-                          <Sparkles className="w-4 h-4" />
+                          <CheckCircle2 className="w-4 h-4" />
                           <span>{matchScore}% ATS Match</span>
                         </div>
                         <span className="text-[10px] font-semibold text-muted-foreground">
-                          {isShortlisted ? '✓ Shortlist Threshold Met' : '✗ Below 70% Cutoff'}
+                          {isShortlisted ? 'Shortlist Threshold Met' : 'Below 70% Cutoff'}
                         </span>
                       </div>
                     </div>
@@ -435,8 +484,10 @@ export const JobApplicantsDrawer = ({
                       <div className="p-3 rounded-xl bg-surface-2/60 border border-border/40 text-xs space-y-2">
                         {matchingSkills.length > 0 && (
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[11px] font-bold text-emerald-400 shrink-0">Matched Skills:</span>
-                            {matchingSkills.slice(0, 6).map((skill, sIdx) => (
+                            <span className="text-[11px] font-bold text-emerald-400 shrink-0">
+                              Matched Skills ({matchingSkills.length}):
+                            </span>
+                            {matchingSkills.map((skill, sIdx) => (
                               <span
                                 key={sIdx}
                                 className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-300"
@@ -448,8 +499,10 @@ export const JobApplicantsDrawer = ({
                         )}
                         {missingSkills.length > 0 && (
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[11px] font-bold text-rose-400 shrink-0">Skill Gaps:</span>
-                            {missingSkills.slice(0, 5).map((skill, sIdx) => (
+                            <span className="text-[11px] font-bold text-rose-400 shrink-0">
+                              Skill Gaps ({missingSkills.length}):
+                            </span>
+                            {missingSkills.map((skill, sIdx) => (
                               <span
                                 key={sIdx}
                                 className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-300"
@@ -493,6 +546,22 @@ export const JobApplicantsDrawer = ({
                             <Download className="w-3.5 h-3.5 text-primary" />
                           )}
                           <span>View Resume</span>
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleRescoreApplicant(applicant.id)}
+                          disabled={rescoringAppId === applicant.id}
+                          className="h-8 text-xs font-semibold gap-1.5 text-muted-foreground hover:text-primary"
+                          title="Recalculate ATS match score"
+                        >
+                          <RefreshCw
+                            className={`w-3.5 h-3.5 ${
+                              rescoringAppId === applicant.id ? 'animate-spin text-primary' : ''
+                            }`}
+                          />
+                          <span>{rescoringAppId === applicant.id ? 'Scoring...' : 'Rescore'}</span>
                         </Button>
 
                         <Button

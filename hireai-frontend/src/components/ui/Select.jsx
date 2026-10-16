@@ -25,7 +25,7 @@ export const Select = ({
       <SelectPrimitive.Root value={value} onValueChange={handleValueChange}>
         <SelectPrimitive.Trigger
           className={cn(
-            'flex h-11 w-full items-center justify-between rounded-xl border border-border bg-surface-2/80 dark:bg-surface-2 text-foreground px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#F56681]/40 focus:border-[#F56681] disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 shadow-xs cursor-pointer',
+            'flex h-11 w-full items-center justify-between rounded-xl border border-border bg-surface-2/80 dark:bg-surface-2 text-foreground px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 shadow-xs cursor-pointer',
             error && 'border-red-500 focus:ring-red-500',
             className
           )}
@@ -43,11 +43,11 @@ export const Select = ({
                 <SelectPrimitive.Item
                   key={opt.value}
                   value={opt.value}
-                  className="relative flex w-full cursor-pointer select-none items-center rounded-lg py-2 pl-8 pr-4 text-sm text-foreground outline-none focus:bg-brand-blue-light/15 focus:text-[#F56681] hover:bg-muted data-[disabled]:pointer-events-none data-[disabled]:opacity-50 transition-colors"
+                  className="relative flex w-full cursor-pointer select-none items-center rounded-lg py-2 pl-8 pr-4 text-sm text-foreground outline-none focus:bg-brand-blue-light/15 focus:text-brand-blue hover:bg-muted data-[disabled]:pointer-events-none data-[disabled]:opacity-50 transition-colors"
                 >
                   <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
                     <SelectPrimitive.ItemIndicator>
-                      <Check className="h-4 w-4 text-[#F56681]" />
+                      <Check className="h-4 w-4 text-brand-blue" />
                     </SelectPrimitive.ItemIndicator>
                   </span>
                   <SelectPrimitive.ItemText>{opt.label}</SelectPrimitive.ItemText>

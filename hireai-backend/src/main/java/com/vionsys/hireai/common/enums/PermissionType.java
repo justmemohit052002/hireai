@@ -52,6 +52,11 @@ public enum PermissionType {
                     .map(PermissionType::getPermission)
                     .collect(Collectors.toSet());
 
+            case ROLE_SUB_ADMIN -> EnumSet.of(
+                    ADMIN_USER_MANAGE,
+                    ADMIN_SYSTEM_CONFIG
+            ).stream().map(PermissionType::getPermission).collect(Collectors.toSet());
+
             case ROLE_RECRUITER -> EnumSet.of(
                     JOB_READ,
                     JOB_CREATE,

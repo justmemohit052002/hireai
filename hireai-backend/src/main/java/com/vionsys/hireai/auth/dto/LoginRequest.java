@@ -27,4 +27,7 @@ public class LoginRequest {
     @NotBlank(message = "Password is required")
     private String password;
 
+    @Schema(description = "Requested login role context (e.g. CANDIDATE or RECRUITER)", example = "RECRUITER")
+    private String role;
+
 }

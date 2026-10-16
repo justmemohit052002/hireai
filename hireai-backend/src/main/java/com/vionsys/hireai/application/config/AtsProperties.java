@@ -17,6 +17,12 @@ public class AtsProperties {
      */
     private int shortlistThreshold = 70;
 
+    private double weightRequiredSkills = 0.60;
+    private double weightPreferredSkills = 0.15;
+    private double weightExperience = 0.15;
+    private double weightRole = 0.10;
+    private double relatedSkillCredit = 0.25;
+
     private LlmProperties llm = new LlmProperties();
 
     @Getter

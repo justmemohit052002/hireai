@@ -29,11 +29,53 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_FILE_PATH = os.getenv("LOG_FILE_PATH", "logs/app.log")
 LLM_CALL_LOG_PATH = os.getenv("LLM_CALL_LOG_PATH", "logs/llm_call_log.jsonl")
 
+# ---- Error handling & debugging ----
+# When false (default), API clients receive safe generic error messages without stack traces.
+# Full error details and stack traces are always logged server-side for debugging.
+SHOW_ERROR_DETAILS = os.getenv("SHOW_ERROR_DETAILS", "false").lower() in ("true", "1", "yes")
+
+# ---- Security & Internal Service Authentication ----
+INTERNAL_API_KEY = os.getenv("INTERNAL_API_KEY")
+APP_ENV = os.getenv("APP_ENV", os.getenv("ENVIRONMENT", "development")).lower()
+
+# Startup security validation:
+# If APP_ENV is not "development" and the key is missing, empty, or equals the old default, raise an error.
+OLD_DEFAULT_KEY = "hireai-internal-secret-key"
+if APP_ENV != "development":
+    if not INTERNAL_API_KEY or not str(INTERNAL_API_KEY).strip() or str(INTERNAL_API_KEY).strip() == OLD_DEFAULT_KEY:
+        raise ValueError(
+            "Security Error: INTERNAL_API_KEY must be configured with a secure, non-default secret in non-development environments."
+        )
+
+# ---- Admin Metrics Configuration ----
+GEMINI_DAILY_LIMIT = int(os.getenv("GEMINI_DAILY_LIMIT", "250"))
+ADMIN_TIMEZONE = os.getenv("ADMIN_TIMEZONE", os.getenv("TIMEZONE", "Asia/Kolkata"))
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+
+# ---- Match Engine ATS Thresholds & Weights ----
+ATS_SHORTLIST_THRESHOLD = int(os.getenv("ATS_SHORTLIST_THRESHOLD", "70"))
+ATS_REJECT_THRESHOLD = int(os.getenv("ATS_REJECT_THRESHOLD", "40"))
+ATS_WEIGHT_REQUIRED_SKILLS = float(os.getenv("ATS_WEIGHT_REQUIRED_SKILLS", "0.60"))
+ATS_WEIGHT_PREFERRED_SKILLS = float(os.getenv("ATS_WEIGHT_PREFERRED_SKILLS", "0.15"))
+ATS_WEIGHT_EXPERIENCE = float(os.getenv("ATS_WEIGHT_EXPERIENCE", "0.15"))
+ATS_WEIGHT_ROLE = float(os.getenv("ATS_WEIGHT_ROLE", "0.10"))
+ATS_RELATED_SKILL_CREDIT = float(os.getenv("ATS_RELATED_SKILL_CREDIT", "0.25"))
+
 # ---- CORS ----
-# During team testing, frontend may call this service directly (not just
-# through backend), so we allow common local dev ports. Tighten this list
-# before any real deployment.
-CORS_ALLOWED_ORIGINS = os.getenv(
-    "CORS_ALLOWED_ORIGINS",
-    "http://localhost:3000,http://localhost:5173,http://localhost:8080,http://localhost:4200",
-).split(",")
+# During local development, frontend may call this service directly, so default local ports are allowed.
+# Outside development, CORS_ALLOWED_ORIGINS defaults to an empty list (no wildcard).
+cors_env = os.getenv("CORS_ALLOWED_ORIGINS")
+if cors_env is not None:
+    CORS_ALLOWED_ORIGINS = [
+        origin.strip() for origin in cors_env.split(",") if origin.strip() and origin.strip() != "*"
+    ]
+elif APP_ENV == "development":
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:8080",
+        "http://localhost:4200",
+    ]
+else:
+    CORS_ALLOWED_ORIGINS = []
+

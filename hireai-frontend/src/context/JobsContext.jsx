@@ -81,12 +81,18 @@ function normalizeApplication(backendApp) {
     INTERVIEW_SCHEDULED: 'interview',
     OFFERED: 'offer',
     REJECTED: 'rejected',
+    WITHDRAWN: 'withdrawn',
   };
+
+  const appliedDate = backendApp.appliedAt || backendApp.createdAt || new Date().toISOString();
+  const updatedDate = backendApp.updatedAt || appliedDate;
 
   return {
     id: backendApp.id,
     jobId: backendApp.jobId,
     candidateId: backendApp.candidateId,
+    jobTitle: backendApp.jobTitle || '',
+    companyName: backendApp.companyName || '',
     candidateName: backendApp.candidateName || 'Candidate',
     candidateEmail: backendApp.candidateEmail || '',
     candidatePhone: backendApp.candidatePhone || '',
@@ -99,8 +105,9 @@ function normalizeApplication(backendApp) {
     atsMatchScore: backendApp.atsMatchScore,
     skillsIdentified: backendApp.skillsIdentified || [],
     feedbackNotes: backendApp.feedbackNotes || '',
-    appliedAt: backendApp.createdAt || new Date().toISOString(),
-    updatedAt: backendApp.updatedAt || backendApp.createdAt || new Date().toISOString(),
+    appliedAt: appliedDate,
+    createdAt: appliedDate,
+    updatedAt: updatedDate,
     raw: backendApp,
   };
 }
@@ -377,6 +384,18 @@ export const JobsProvider = ({ children }) => {
     );
   }, []);
 
+  /** Candidate withdraws application */
+  const withdrawApplication = useCallback(async (appId) => {
+    try {
+      await applicationsApi.withdrawApplication(appId);
+    } catch (err) {
+      console.warn('[JobsContext] Remote withdraw failed:', err);
+    }
+    setApplications((prev) =>
+      prev.map((a) => (a.id === appId ? { ...a, status: 'withdrawn' } : a))
+    );
+  }, []);
+
   return (
     <JobsContext.Provider
       value={{
@@ -395,6 +414,7 @@ export const JobsProvider = ({ children }) => {
         deleteJob,
         submitApplication,
         updateApplicationStatus,
+        withdrawApplication,
       }}
     >
       {children}

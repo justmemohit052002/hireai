@@ -137,12 +137,12 @@ public class CandidateController {
 		return ResponseEntity.ok()
 				.contentType(mediaType)
 				.header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+				.header("X-Content-Type-Options", "nosniff")
 				.body(resource);
 	}
 
-	@Operation(summary = "Get Candidate Profile Photo by Candidate ID", description = "Recruiters and candidates can view a candidate's profile photo")
+	@Operation(summary = "Get Candidate Profile Photo by Candidate ID", description = "Recruiters and public profile views can display a candidate's profile photo")
 	@GetMapping("/candidates/{id}/profile/photo")
-	@PreAuthorize("hasAnyRole('CANDIDATE', 'RECRUITER', 'ADMIN')")
 	public ResponseEntity<Resource> getCandidateProfilePhoto(
 			@PathVariable UUID id) {
 
@@ -153,6 +153,8 @@ public class CandidateController {
 		return ResponseEntity.ok()
 				.contentType(mediaType)
 				.header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+				.header(HttpHeaders.CACHE_CONTROL, "max-age=3600, must-revalidate")
+				.header("X-Content-Type-Options", "nosniff")
 				.body(resource);
 	}
 
@@ -251,10 +253,13 @@ public class CandidateController {
 						? Sort.Direction.ASC
 						: Sort.Direction.DESC;
 
+		int safePage = Math.max(page, 0);
+		int safeSize = Math.min(Math.max(size, 1), 100);
+
 		PageRequest pageable =
 				PageRequest.of(
-						page,
-						size,
+						safePage,
+						safeSize,
 						Sort.by(
 								sortDirection,
 								sortBy

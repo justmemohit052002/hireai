@@ -104,11 +104,11 @@ export const CandidateJobsPage = () => {
           {sortedJobs.length > 0 ? (
             <div className="flex flex-col gap-4">
               {/* Sort Order Header */}
-              <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1 text-xs text-muted-foreground">
                 <span>
                   Showing <strong className="text-foreground font-mono">{sortedJobs.length}</strong> open position{sortedJobs.length > 1 ? 's' : ''}
                 </span>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-blue/10 text-brand-blue font-semibold text-[11px] border border-brand-blue/20">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-brand-blue/10 text-brand-blue font-semibold text-[11px] border border-brand-blue/20 w-fit">
                   <Clock className="w-3 h-3" />
                   <span>Sorted by: Newest First</span>
                 </div>
@@ -155,8 +155,7 @@ export const CandidateJobsPage = () => {
         job={applyingJob}
         isOpen={Boolean(applyingJob)}
         onClose={() => setApplyingJob(null)}
-        onSubmit={(jobId, coverLetter) => {
-          submitApplication({ jobId, coverLetter });
+        onSubmit={() => {
           setApplyingJob(null);
         }}
       />

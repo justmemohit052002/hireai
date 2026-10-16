@@ -52,7 +52,16 @@ def get_active_provider_info() -> tuple[str, str]:
     return prov, mdl
 
 
-def call_llm(prompt: str, task_type: str = "general", provider_override: str = None, model_override: str = None) -> str:
+import uuid
+from datetime import datetime, timezone
+
+def call_llm(
+    prompt: str,
+    task_type: str = "general",
+    provider_override: str = None,
+    model_override: str = None,
+    temperature: float = None,
+) -> str:
     last_error = None
     provider = provider_override or ACTIVE_PROVIDER or LLM_PROVIDER
     model = model_override or ACTIVE_MODEL
@@ -61,17 +70,17 @@ def call_llm(prompt: str, task_type: str = "general", provider_override: str = N
         start = time.time()
         try:
             if provider == "ollama":
-                text = _call_ollama(prompt, model=model)
+                text = _call_ollama(prompt, model=model, temperature=temperature)
             elif provider == "gemini":
-                text = _call_gemini(prompt)
+                text = _call_gemini(prompt, temperature=temperature)
             elif provider == "groq":
-                text = _call_groq(prompt, model=model)
+                text = _call_groq(prompt, model=model, temperature=temperature)
             else:
                 raise LLMCallError(f"Unknown LLM_PROVIDER: {provider}")
 
             latency = round(time.time() - start, 2)
             logger.info(f"[{task_type}] {provider} ({model or 'default'}) call succeeded in {latency}s (attempt {attempt})")
-            _log_call(prompt, text, task_type, latency, attempt, provider=provider)
+            _log_call(prompt, text, task_type, latency, attempt, provider=provider, status="SUCCESS")
             return text
 
         except Exception as e:
@@ -80,25 +89,37 @@ def call_llm(prompt: str, task_type: str = "general", provider_override: str = N
             if attempt <= LLM_MAX_RETRIES:
                 time.sleep(LLM_RETRY_BACKOFF_SECONDS * attempt)  # simple linear backoff
 
+    latency = round(time.time() - start, 2)
     logger.error(f"[{task_type}] All {LLM_MAX_RETRIES + 1} attempts failed. Last error: {last_error}")
+    _log_call(
+        prompt=prompt,
+        response_text="",
+        task_type=task_type,
+        latency=latency,
+        attempt=LLM_MAX_RETRIES + 1,
+        provider=provider,
+        status="FAILED",
+        error_message=str(last_error),
+    )
     raise LLMCallError(f"LLM call failed after {LLM_MAX_RETRIES + 1} attempts: {last_error}")
 
 
-def _call_ollama(prompt: str, model: str = None) -> str:
+def _call_ollama(prompt: str, model: str = None, temperature: float = None) -> str:
     use_model = model or OLLAMA_MODEL
     
     # Detect if prompt requests structured JSON output
     is_json_request = "json" in prompt.lower() or "{" in prompt
 
+    temp = temperature if temperature is not None else (0.1 if is_json_request else 0.3)
     payload = {
         "model": use_model,
         "prompt": prompt,
         "stream": False,
         "options": {
-            "temperature": 0.1 if is_json_request else 0.3,
+            "temperature": temp,
             "top_p": 0.9,
-            "num_ctx": 4096,
-            "num_predict": 1024,
+            "num_ctx": 8192,
+            "num_predict": 2048,
             "repeat_penalty": 1.1,
         },
     }
@@ -121,29 +142,56 @@ def _call_ollama(prompt: str, model: str = None) -> str:
         raise LLMCallError(f"Ollama did not respond within {LLM_TIMEOUT_SECONDS}s.")
 
 
-def _call_gemini(prompt: str) -> str:
+import re
+from app.config import (
+    LLM_PROVIDER, OLLAMA_MODEL, OLLAMA_BASE_URL,
+    GEMINI_API_KEY, GROQ_API_KEY, GROQ_MODEL, GEMINI_MODEL,
+    LLM_TIMEOUT_SECONDS, LLM_MAX_RETRIES, LLM_RETRY_BACKOFF_SECONDS,
+    LLM_CALL_LOG_PATH,
+)
+from app.context import get_current_request_id, get_current_candidate_ref
+
+def _call_gemini(prompt: str, temperature: float = None) -> str:
     if not GEMINI_API_KEY:
         raise LLMCallError("GEMINI_API_KEY not set - required when LLM_PROVIDER=gemini.")
+    model_name = GEMINI_MODEL or "gemini-1.5-flash"
     url = (
         "https://generativelanguage.googleapis.com/v1beta/models/"
-        f"gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        f"{model_name}:generateContent?key={GEMINI_API_KEY}"
     )
+    is_json = "json" in prompt.lower() or "{" in prompt
+    body: dict = {"contents": [{"parts": [{"text": prompt}]}]}
+    gen_config: dict = {}
+    if is_json:
+        gen_config["response_mime_type"] = "application/json"
+    if temperature is not None:
+        gen_config["temperature"] = temperature
+    if gen_config:
+        body["generationConfig"] = gen_config
+
     response = requests.post(
-        url, json={"contents": [{"parts": [{"text": prompt}]}]}, timeout=60
+        url, json=body, timeout=LLM_TIMEOUT_SECONDS
     )
     response.raise_for_status()
     return response.json()["candidates"][0]["content"]["parts"][0]["text"]
 
 
-def _call_groq(prompt: str, model: str = None) -> str:
+def _call_groq(prompt: str, model: str = None, temperature: float = None) -> str:
     if not GROQ_API_KEY:
         raise LLMCallError("GROQ_API_KEY not set - required when LLM_PROVIDER=groq.")
     use_model = model or GROQ_MODEL
+    is_json = "json" in prompt.lower() or "{" in prompt
+    body: dict = {"model": use_model, "messages": [{"role": "user", "content": prompt}]}
+    if is_json:
+        body["response_format"] = {"type": "json_object"}
+    if temperature is not None:
+        body["temperature"] = temperature
+
     response = requests.post(
         "https://api.groq.com/openai/v1/chat/completions",
         headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
-        json={"model": use_model, "messages": [{"role": "user", "content": prompt}]},
-        timeout=60,
+        json=body,
+        timeout=LLM_TIMEOUT_SECONDS,
     )
     response.raise_for_status()
     return response.json()["choices"][0]["message"]["content"]
@@ -158,14 +206,65 @@ def check_ollama_reachable() -> bool:
         return False
 
 
-def _log_call(prompt: str, response_text: str, task_type: str, latency: float, attempt: int, provider: str = None) -> None:
+def mask_key(key: str | None) -> str:
+    """
+    Returns read-only presence status ('Configured' or 'Not Configured').
+    Never exposes any characters, slices, or plaintext of API keys.
+    """
+    if not key or not str(key).strip():
+        return "Not Configured"
+    return "Configured"
+
+
+def sanitize_error_message(msg: str | None) -> str | None:
+    """
+    Sanitizes failure messages to strip potential API keys, tokens, or authorization headers,
+    capping message length at 500 characters.
+    """
+    if not msg:
+        return None
+    text = str(msg)
+    # Strip potential API keys / tokens / Bearer strings
+    text = re.sub(r'Bearer\s+[A-Za-z0-9_\-\.]+', '[REDACTED_TOKEN]', text, flags=re.IGNORECASE)
+    text = re.sub(r'(?:Bearer|bearer)', '[REDACTED_AUTH]', text)
+    text = re.sub(r'(?:sk|gsk|AIza|key|token)[A-Za-z0-9_\-\.]{6,}', '[REDACTED_SECRET]', text, flags=re.IGNORECASE)
+    text = re.sub(r'AIza[A-Za-z0-9_\-]{10,}', '[REDACTED_SECRET]', text)
+    if len(text) > 500:
+        text = text[:497] + "..."
+    return text
+
+
+def _log_call(
+    prompt: str,
+    response_text: str,
+    task_type: str,
+    latency: float,
+    attempt: int,
+    provider: str = None,
+    status: str = "SUCCESS",
+    error_message: str = None,
+    request_id: str = None,
+    candidate_ref: str = None,
+) -> None:
+    req_id = request_id or get_current_request_id()
+    cand_ref = candidate_ref or get_current_candidate_ref()
+
     entry = {
+        "id": str(uuid.uuid4()),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "task_type": task_type,
         "provider": provider or LLM_PROVIDER,
         "latency_seconds": latency,
         "attempt": attempt,
-        "prompt_preview": prompt[:200],
-        "response_preview": response_text[:200],
+        "status": status,
+        "error_message": sanitize_error_message(error_message),
+        "request_id": str(req_id) if req_id else None,
+        "candidate_ref": str(cand_ref) if cand_ref else None,
+        "prompt_preview": (prompt[:200] if prompt else ""),
+        "response_preview": (response_text[:200] if response_text else ""),
     }
-    with open(LLM_CALL_LOG_PATH, "a") as f:
-        f.write(json.dumps(entry) + "\n")
+    try:
+        with open(LLM_CALL_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception as e:
+        logger.error(f"Failed to append to LLM call log: {e}")

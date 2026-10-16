@@ -53,7 +53,7 @@ export const JobCard = ({ job, onSelect, onApply, isPaused = false }) => {
                     {job.title}
                   </h3>
                   {isRecent && (
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-brand-accent text-slate-950 shadow-xs flex items-center gap-1 shrink-0">
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-brand-accent text-slate-950 shadow-xs flex items-center gap-1 shrink-0">
                       <Sparkles className="w-2.5 h-2.5 text-slate-950" />
                       NEW
                     </span>
@@ -103,7 +103,7 @@ export const JobCard = ({ job, onSelect, onApply, isPaused = false }) => {
         </div>
 
         {/* Right area metadata + actions */}
-        <div className="flex flex-col sm:flex-row md:flex-col items-start sm:items-center md:items-end justify-between md:justify-center gap-3 shrink-0 pt-3 md:pt-0 border-t md:border-t-0 md:border-l border-border/50 md:pl-5 min-w-[210px]">
+        <div className="flex flex-col sm:flex-row md:flex-col items-start sm:items-center md:items-end justify-between md:justify-center gap-3 shrink-0 pt-3 md:pt-0 border-t md:border-t-0 md:border-l border-border/50 md:pl-5 w-full md:w-auto md:min-w-[210px]">
           {/* Metadata Pills */}
           <div className="flex flex-col gap-1.5 text-xs text-muted-foreground w-full md:items-end">
             <div className="flex items-center gap-2 flex-wrap md:justify-end">

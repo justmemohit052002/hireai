@@ -13,7 +13,7 @@ export const MOCK_MESSAGES = [
     id: 'msg-2',
     conversationId: 'conv-1',
     senderId: 'cand-1',
-    content: 'Hi Jordan! Thank you so much — I would love that. I am free Thursday afternoon or Friday morning. Whatever works best for you!',
+    content: 'Hi Jordan! Thank you so much, I would love that. I am free Thursday afternoon or Friday morning. Whatever works best for you!',
     sentAt: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
     read: true,
   },

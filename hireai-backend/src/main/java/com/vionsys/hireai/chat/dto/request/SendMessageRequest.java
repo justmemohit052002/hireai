@@ -18,10 +18,8 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SendMessageRequest {
 
-    @NotNull(message = "Conversation ID is required")
     private UUID conversationId;
 
-    @NotNull(message = "Recipient ID is required")
     private UUID recipientId;
 
     private String messageText;

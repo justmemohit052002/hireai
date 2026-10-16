@@ -174,6 +174,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                         || path.startsWith("/auth/forgot-password")
                         || path.startsWith("/auth/reset-password")
                         || path.startsWith("/auth/refresh")
+                        || path.startsWith("/auth/verify-email-otp")
+                        || path.startsWith("/auth/resend-email-otp")
+                        || path.startsWith("/auth/oauth")
         );
     }
 

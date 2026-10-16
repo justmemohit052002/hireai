@@ -47,4 +47,9 @@ public class JobApplicationResponse {
     private String resumeDownloadUrl;
     private LocalDateTime appliedAt;
     private LocalDateTime updatedAt;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("createdAt")
+    public LocalDateTime getCreatedAt() {
+        return appliedAt;
+    }
 }

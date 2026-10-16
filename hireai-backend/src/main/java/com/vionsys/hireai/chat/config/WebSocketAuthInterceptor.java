@@ -55,6 +55,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                                 accessor.setUser(authentication);
                                 SecurityContextHolder.getContext().setAuthentication(authentication);
                                 log.info("[WebSocket] Authenticated user: {}", username);
+                                return message;
                             }
                         }
                     } catch (Exception e) {
@@ -63,6 +64,11 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                     }
                 }
             }
+
+            log.warn("[WebSocket] Unauthenticated STOMP CONNECT attempt rejected");
+            throw new org.springframework.security.authentication.AuthenticationCredentialsNotFoundException(
+                    "Authentication token required for WebSocket connection"
+            );
         }
         return message;
     }

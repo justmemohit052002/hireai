@@ -1,15 +1,16 @@
 {
   "info": {
     "name": "HireAI AI Engine",
-    "description": "All 8 endpoints for the HireAI AI Engine. Import this into Postman, set the base_url variable if needed (default: http://localhost:8000).",
+    "description": "All endpoints for the HireAI AI Engine, including Core Processing (Modules 1-6) and Admin Operations. All /api/v1 endpoints require the X-Internal-Key header.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "base_url", "value": "http://localhost:8000" }
+    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "internal_api_key", "value": "your_secure_internal_api_key" }
   ],
   "item": [
     {
-      "name": "Health Check",
+      "name": "Health Check (Public)",
       "request": {
         "method": "GET",
         "url": "{{base_url}}/health"
@@ -19,7 +20,11 @@
       "name": "1. JD Generator",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Internal-Key", "value": "{{internal_api_key}}" },
+          { "key": "X-Request-Id", "value": "req-sample-uuid" }
+        ],
         "url": "{{base_url}}/api/v1/jd/generate",
         "body": {
           "mode": "raw",
@@ -31,7 +36,11 @@
       "name": "2a. Resume Parser - Start",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Internal-Key", "value": "{{internal_api_key}}" },
+          { "key": "X-Candidate-Ref", "value": "cand_1029" }
+        ],
         "url": "{{base_url}}/api/v1/resumes/parse",
         "body": {
           "mode": "raw",
@@ -43,6 +52,9 @@
       "name": "2b. Resume Parser - Check Status",
       "request": {
         "method": "GET",
+        "header": [
+          { "key": "X-Internal-Key", "value": "{{internal_api_key}}" }
+        ],
         "url": "{{base_url}}/api/v1/resumes/status/REPLACE_WITH_JOB_ID"
       }
     },
@@ -50,47 +62,59 @@
       "name": "3. Match Engine",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Internal-Key", "value": "{{internal_api_key}}" }
+        ],
         "url": "{{base_url}}/api/v1/match/score",
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"resumeSkills\": [\"Node.js\", \"PostgreSQL\", \"Docker\"],\n  \"jobSkills\": [\"Node.js\", \"PostgreSQL\", \"Kubernetes\"]\n}"
+          "raw": "{\n  \"resumeSkills\": [\"React\", \"Node.js\", \"Docker\"],\n  \"jobSkills\": [\"React\", \"Node.js\", \"PostgreSQL\", \"Docker\", \"AWS\"]\n}"
         }
       }
     },
     {
-      "name": "4. Chatbot Message",
+      "name": "4. AI Chatbot",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Internal-Key", "value": "{{internal_api_key}}" }
+        ],
         "url": "{{base_url}}/api/v1/chatbot/message",
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"candidateId\": \"cand_1029\",\n  \"conversationHistory\": [],\n  \"newMessage\": \"Hi, I just applied for the Backend Engineer role.\"\n}"
+          "raw": "{\n  \"conversationHistory\": [\n    {\"role\": \"assistant\", \"text\": \"Hi! Welcome to HireAI. What role are you applying for?\"}\n  ],\n  \"newMessage\": \"I'm interested in the Backend Engineer position.\"\n}"
         }
       }
     },
     {
-      "name": "5a. Interview Questions",
+      "name": "5a. Interview AI - Generate Questions",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Internal-Key", "value": "{{internal_api_key}}" }
+        ],
         "url": "{{base_url}}/api/v1/interview/questions",
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"jobId\": \"job_118\",\n  \"skills\": [\"Node.js\", \"PostgreSQL\"]\n}"
+          "raw": "{\n  \"skills\": [\"Node.js\", \"PostgreSQL\"]\n}"
         }
       }
     },
     {
-      "name": "5b. Interview Evaluate",
+      "name": "5b. Interview AI - Evaluate Answers",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Internal-Key", "value": "{{internal_api_key}}" }
+        ],
         "url": "{{base_url}}/api/v1/interview/evaluate",
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"candidateId\": \"cand_1029\",\n  \"answers\": [\n    {\"questionId\": \"q1\", \"answerText\": \"I would use connection pooling and indexed queries.\"}\n  ]\n}"
+          "raw": "{\n  \"answers\": [\n    {\n      \"questionId\": \"q1\",\n      \"answerText\": \"An event loop continuously polls for events and executes tasks in the queue...\"\n    }\n  ]\n}"
         }
       }
     },
@@ -98,12 +122,55 @@
       "name": "6. Decision Engine",
       "request": {
         "method": "POST",
-        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Internal-Key", "value": "{{internal_api_key}}" }
+        ],
         "url": "{{base_url}}/api/v1/decision/finalize",
         "body": {
           "mode": "raw",
           "raw": "{\n  \"resumeScore\": 85,\n  \"interviewScore\": 70,\n  \"chatbotSignalScore\": 90\n}"
         }
+      }
+    },
+    {
+      "name": "7. Admin - Health Summary",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-Internal-Key", "value": "{{internal_api_key}}" }
+        ],
+        "url": "{{base_url}}/api/v1/admin/health-summary"
+      }
+    },
+    {
+      "name": "8. Admin - Usage & Quota Stats",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-Internal-Key", "value": "{{internal_api_key}}" }
+        ],
+        "url": "{{base_url}}/api/v1/admin/stats?range=all"
+      }
+    },
+    {
+      "name": "9. Admin - Query Call Logs",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-Internal-Key", "value": "{{internal_api_key}}" }
+        ],
+        "url": "{{base_url}}/api/v1/admin/logs?page=1&size=20"
+      }
+    },
+    {
+      "name": "10. Admin - Get Single Call Log",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-Internal-Key", "value": "{{internal_api_key}}" }
+        ],
+        "url": "{{base_url}}/api/v1/admin/logs/REPLACE_WITH_LOG_ID"
       }
     }
   ]

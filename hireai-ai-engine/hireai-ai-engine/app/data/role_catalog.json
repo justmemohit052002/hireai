@@ -1,0 +1,1527 @@
+{
+  "version": "1.0.0",
+  "last_reviewed": "2026-10-15",
+  "description": "Curated, maintainable baseline catalog mapping technical role families and experience levels to realistic industry skill sets. Used for AI auto-generation and ATS grounding.",
+  "level_ranges": {
+    "entry": {
+      "min_required": 8,
+      "max_required": 10,
+      "min_preferred": 5,
+      "max_preferred": 6,
+      "experience_years": { "min": 0, "max": 2 }
+    },
+    "mid": {
+      "min_required": 10,
+      "max_required": 13,
+      "min_preferred": 5,
+      "max_preferred": 7,
+      "experience_years": { "min": 2, "max": 5 }
+    },
+    "senior": {
+      "min_required": 11,
+      "max_required": 15,
+      "min_preferred": 5,
+      "max_preferred": 8,
+      "experience_years": { "min": 5, "max": 8 }
+    },
+    "lead": {
+      "min_required": 10,
+      "max_required": 14,
+      "min_preferred": 5,
+      "max_preferred": 8,
+      "experience_years": { "min": 8, "max": 12 }
+    },
+    "executive": {
+      "min_required": 8,
+      "max_required": 12,
+      "min_preferred": 4,
+      "max_preferred": 6,
+      "experience_years": { "min": 10, "max": 20 }
+    }
+  },
+  "prohibited_by_level": {
+    "entry": [
+      "kubernetes",
+      "k8s",
+      "system design",
+      "distributed systems",
+      "architecture ownership",
+      "team leadership",
+      "mentoring",
+      "budgeting",
+      "vendor management",
+      "micro frontends",
+      "cloud governance"
+    ],
+    "mid": [
+      "team leadership",
+      "budgeting",
+      "vendor management",
+      "enterprise security governance",
+      "cloud strategy"
+    ]
+  },
+  "role_families": {
+    "java_backend": {
+      "display_name": "Java / Backend Developer",
+      "match_keywords": ["java", "spring", "spring boot", "jvm", "kotlin backend", "java backend", "java developer", "backend java"],
+      "levels": {
+        "entry": {
+          "experience_years": { "min": 0, "max": 2 },
+          "education": "Bachelor's degree in Computer Science, Information Technology, or equivalent practical experience",
+          "required": [
+            "Java",
+            "Object-Oriented Programming",
+            "Data Structures and Algorithms",
+            "SQL",
+            "Spring Boot",
+            "REST APIs",
+            "JUnit",
+            "Maven",
+            "Git",
+            "Postman"
+          ],
+          "preferred": [
+            "Docker",
+            "Linux",
+            "Hibernate",
+            "Agile Methodologies",
+            "Mockito",
+            "AWS"
+          ],
+          "soft_skills": [
+            "Problem Solving",
+            "Analytical Thinking",
+            "Team Collaboration",
+            "Willingness to Learn"
+          ]
+        },
+        "mid": {
+          "experience_years": { "min": 2, "max": 5 },
+          "education": "Bachelor's degree in Computer Science, Software Engineering, or related technical field",
+          "required": [
+            "Java",
+            "Spring Boot",
+            "Spring Security",
+            "Hibernate",
+            "PostgreSQL",
+            "REST APIs",
+            "Microservices",
+            "JUnit",
+            "Mockito",
+            "Docker",
+            "Git",
+            "CI/CD"
+          ],
+          "preferred": [
+            "Redis",
+            "Kafka",
+            "AWS",
+            "Linux",
+            "Performance Tuning",
+            "Agile Methodologies"
+          ],
+          "soft_skills": [
+            "Code Review",
+            "Debugging and Root Cause Analysis",
+            "Collaborative Problem Solving",
+            "Technical Documentation"
+          ]
+        },
+        "senior": {
+          "experience_years": { "min": 5, "max": 8 },
+          "education": "Bachelor's or Master's degree in Computer Science, Software Engineering, or equivalent experience",
+          "required": [
+            "Java",
+            "Spring Boot",
+            "Microservices",
+            "Distributed Systems",
+            "System Design",
+            "PostgreSQL",
+            "Redis",
+            "Kafka",
+            "Spring Security",
+            "Docker",
+            "Kubernetes",
+            "AWS",
+            "Mentoring"
+          ],
+          "preferred": [
+            "CI/CD",
+            "Observability",
+            "NoSQL",
+            "Performance Optimization",
+            "Database Tuning",
+            "Technical Leadership"
+          ],
+          "soft_skills": [
+            "Technical Decision Making",
+            "Cross-Team Communication",
+            "Engineering Mentorship",
+            "Architectural Trade-Off Analysis"
+          ]
+        },
+        "lead": {
+          "experience_years": { "min": 8, "max": 12 },
+          "education": "Bachelor's or Master's degree in Computer Science, Engineering, or demonstrable engineering leadership track record",
+          "required": [
+            "Java",
+            "Spring Boot",
+            "System Design",
+            "Distributed Systems",
+            "Architecture Ownership",
+            "Team Leadership",
+            "Microservices",
+            "PostgreSQL",
+            "Kafka",
+            "Code Review",
+            "Delivery Management",
+            "Mentoring"
+          ],
+          "preferred": [
+            "AWS",
+            "Kubernetes",
+            "Technical Strategy",
+            "CI/CD",
+            "Observability",
+            "Agile Coaching"
+          ],
+          "soft_skills": [
+            "Stakeholder Management",
+            "Project Scoping and Estimation",
+            "Conflict Resolution",
+            "Hiring and Talent Calibration"
+          ]
+        },
+        "executive": {
+          "experience_years": { "min": 10, "max": 20 },
+          "education": "Bachelor's or Master's degree in Computer Science, Engineering, or Executive Leadership qualification",
+          "required": [
+            "Technology Strategy",
+            "Engineering Leadership",
+            "Technology Governance",
+            "System Architecture",
+            "Budgeting",
+            "Hiring",
+            "Vendor Management",
+            "Enterprise Security",
+            "Roadmap Planning",
+            "Stakeholder Management"
+          ],
+          "preferred": [
+            "Cloud Strategy",
+            "Distributed Systems",
+            "Software Quality Governance",
+            "Digital Transformation",
+            "Risk Management"
+          ],
+          "soft_skills": [
+            "Executive Presence",
+            "Organizational Transformation",
+            "Board and Investor Communication",
+            "Strategic Vision Alignment"
+          ]
+        }
+      }
+    },
+    "full_stack_java_react": {
+      "display_name": "Full Stack Developer (Java + React)",
+      "match_keywords": ["full stack", "fullstack", "java react", "react java", "full stack developer", "full stack engineer"],
+      "levels": {
+        "entry": {
+          "experience_years": { "min": 0, "max": 2 },
+          "education": "Bachelor's degree in Computer Science, Information Technology, or equivalent practical web experience",
+          "required": [
+            "Java",
+            "JavaScript",
+            "React",
+            "HTML5",
+            "CSS3",
+            "SQL",
+            "Spring Boot",
+            "REST APIs",
+            "Git",
+            "Data Structures and Algorithms"
+          ],
+          "preferred": [
+            "TypeScript",
+            "JUnit",
+            "Postman",
+            "Maven",
+            "Tailwind CSS",
+            "Docker"
+          ],
+          "soft_skills": [
+            "Fast Learner",
+            "Analytical Mindset",
+            "Team Collaboration",
+            "Attention to Detail"
+          ]
+        },
+        "mid": {
+          "experience_years": { "min": 2, "max": 5 },
+          "education": "Bachelor's degree in Computer Science, Software Engineering, or related technical field",
+          "required": [
+            "Java",
+            "React",
+            "TypeScript",
+            "Spring Boot",
+            "Hibernate",
+            "PostgreSQL",
+            "REST APIs",
+            "Tailwind CSS",
+            "Redux",
+            "Docker",
+            "Git",
+            "Jest"
+          ],
+          "preferred": [
+            "Microservices",
+            "CI/CD",
+            "Redis",
+            "AWS",
+            "JUnit",
+            "Agile Methodologies"
+          ],
+          "soft_skills": [
+            "Full Stack Problem Solving",
+            "Code Quality Ownership",
+            "Clear Technical Communication",
+            "User Centric Mindset"
+          ]
+        },
+        "senior": {
+          "experience_years": { "min": 5, "max": 8 },
+          "education": "Bachelor's or Master's degree in Computer Science, Software Engineering, or equivalent experience",
+          "required": [
+            "Java",
+            "Spring Boot",
+            "React",
+            "TypeScript",
+            "System Design",
+            "Microservices",
+            "Distributed Systems",
+            "PostgreSQL",
+            "State Management",
+            "Docker",
+            "AWS",
+            "CI/CD",
+            "Mentoring"
+          ],
+          "preferred": [
+            "Redis",
+            "Kafka",
+            "Kubernetes",
+            "GraphQL",
+            "Next.js",
+            "Web Performance",
+            "Testing Strategies"
+          ],
+          "soft_skills": [
+            "Architectural Guidance",
+            "End-to-End Ownership",
+            "Team Mentorship",
+            "Cross-Functional Collaboration"
+          ]
+        },
+        "lead": {
+          "experience_years": { "min": 8, "max": 12 },
+          "education": "Bachelor's or Master's degree in Computer Science or demonstrable engineering lead experience",
+          "required": [
+            "Java",
+            "React",
+            "TypeScript",
+            "System Design",
+            "Full Stack Architecture",
+            "Team Leadership",
+            "Microservices",
+            "PostgreSQL",
+            "Code Review",
+            "Delivery Management",
+            "Mentoring",
+            "Architecture Ownership"
+          ],
+          "preferred": [
+            "Cloud Architecture",
+            "CI/CD",
+            "Kafka",
+            "Technical Strategy",
+            "Observability",
+            "Agile Coaching"
+          ],
+          "soft_skills": [
+            "Stakeholder Communication",
+            "Sprint Planning and Execution",
+            "Hiring and Talent Evaluation",
+            "Engineering Culture Development"
+          ]
+        },
+        "executive": {
+          "experience_years": { "min": 10, "max": 20 },
+          "education": "Bachelor's or Master's degree in technical or managerial discipline",
+          "required": [
+            "Technology Strategy",
+            "Engineering Leadership",
+            "System Architecture",
+            "Roadmap Planning",
+            "Technology Governance",
+            "Hiring",
+            "Budgeting",
+            "Stakeholder Management",
+            "Vendor Management",
+            "Enterprise Security"
+          ],
+          "preferred": [
+            "Cloud Governance",
+            "Product Strategy",
+            "Engineering Culture",
+            "Operational Excellence",
+            "Scalability Strategy"
+          ],
+          "soft_skills": [
+            "Executive Alignment",
+            "Cross-Departmental Synergy",
+            "Resource Allocation",
+            "Change Management"
+          ]
+        }
+      }
+    },
+    "frontend": {
+      "display_name": "Frontend Developer",
+      "match_keywords": ["frontend", "front end", "ui developer", "react developer", "vue developer", "angular developer", "web developer"],
+      "levels": {
+        "entry": {
+          "experience_years": { "min": 0, "max": 2 },
+          "education": "Bachelor's degree in Computer Science, Software Engineering, or equivalent practical portfolio",
+          "required": [
+            "JavaScript",
+            "React",
+            "HTML5",
+            "CSS3",
+            "Data Structures and Algorithms",
+            "REST APIs",
+            "Git",
+            "Responsive Web Design",
+            "Postman",
+            "Browser Developer Tools"
+          ],
+          "preferred": [
+            "TypeScript",
+            "Tailwind CSS",
+            "Jest",
+            "Webpack",
+            "Vite",
+            "Figma"
+          ],
+          "soft_skills": [
+            "Attention to Visual Detail",
+            "User Experience Empathy",
+            "Teamwork",
+            "Continuous Learning"
+          ]
+        },
+        "mid": {
+          "experience_years": { "min": 2, "max": 5 },
+          "education": "Bachelor's degree in Computer Science, Design Technology, or related discipline",
+          "required": [
+            "JavaScript",
+            "TypeScript",
+            "React",
+            "HTML5",
+            "CSS3",
+            "Tailwind CSS",
+            "State Management",
+            "REST APIs",
+            "Jest",
+            "Vite",
+            "Git",
+            "Web Performance"
+          ],
+          "preferred": [
+            "Next.js",
+            "Redux",
+            "GraphQL",
+            "CI/CD",
+            "Responsive Web Design",
+            "Accessibility"
+          ],
+          "soft_skills": [
+            "Design-to-Code Translation",
+            "Code Quality Focus",
+            "Constructive Code Reviews",
+            "Cross-Browser Troubleshooting"
+          ]
+        },
+        "senior": {
+          "experience_years": { "min": 5, "max": 8 },
+          "education": "Bachelor's or Master's degree in Computer Science or equivalent practical frontend engineering experience",
+          "required": [
+            "JavaScript",
+            "TypeScript",
+            "React",
+            "Next.js",
+            "State Management",
+            "Frontend Architecture",
+            "Web Performance",
+            "Core Web Vitals",
+            "Testing Library",
+            "CI/CD",
+            "Design Systems",
+            "REST APIs",
+            "Mentoring"
+          ],
+          "preferred": [
+            "GraphQL",
+            "Micro Frontends",
+            "WebSockets",
+            "Accessibility",
+            "Docker",
+            "Tailwind CSS"
+          ],
+          "soft_skills": [
+            "Technical Mentorship",
+            "Design and Product Collaboration",
+            "Architectural Decision Making",
+            "Performance Advocacy"
+          ]
+        },
+        "lead": {
+          "experience_years": { "min": 8, "max": 12 },
+          "education": "Bachelor's or Master's degree in Computer Science or demonstrable frontend team leadership background",
+          "required": [
+            "JavaScript",
+            "TypeScript",
+            "React",
+            "Frontend Architecture",
+            "Design Systems",
+            "Team Leadership",
+            "Web Performance",
+            "Code Review",
+            "Delivery Management",
+            "Mentoring",
+            "Testing Strategy",
+            "Technical Strategy"
+          ],
+          "preferred": [
+            "Micro Frontends",
+            "CI/CD",
+            "Next.js",
+            "Accessibility",
+            "Cross-Browser Compatibility",
+            "Stakeholder Management"
+          ],
+          "soft_skills": [
+            "Design System Governance",
+            "Team Guidance and Motivation",
+            "Sprint Coordination",
+            "Stakeholder Alignment"
+          ]
+        },
+        "executive": {
+          "experience_years": { "min": 10, "max": 20 },
+          "education": "Bachelor's or Master's degree with executive track record",
+          "required": [
+            "Technology Strategy",
+            "Engineering Leadership",
+            "Frontend Platform Strategy",
+            "User Experience Strategy",
+            "Technology Governance",
+            "Hiring",
+            "Budgeting",
+            "Stakeholder Management",
+            "Vendor Management",
+            "Engineering Culture"
+          ],
+          "preferred": [
+            "Product Alignment",
+            "Digital Transformation",
+            "Web Standards",
+            "Operational Excellence",
+            "Performance Governance"
+          ],
+          "soft_skills": [
+            "Visionary Leadership",
+            "User-Centric Innovation",
+            "Executive Communication",
+            "Organizational Agility"
+          ]
+        }
+      }
+    },
+    "python_backend": {
+      "display_name": "Python / Backend Developer",
+      "match_keywords": ["python", "django", "fastapi", "flask", "python developer", "python backend", "python engineer"],
+      "levels": {
+        "entry": {
+          "experience_years": { "min": 0, "max": 2 },
+          "education": "Bachelor's degree in Computer Science, Software Engineering, or equivalent practical experience",
+          "required": [
+            "Python",
+            "Object-Oriented Programming",
+            "Data Structures and Algorithms",
+            "SQL",
+            "FastAPI",
+            "REST APIs",
+            "PyTest",
+            "Git",
+            "Postman",
+            "Linux"
+          ],
+          "preferred": [
+            "Django",
+            "PostgreSQL",
+            "Docker",
+            "Redis",
+            "Virtualenv",
+            "Agile Methodologies"
+          ],
+          "soft_skills": [
+            "Logical Problem Solving",
+            "Curiosity and Adaptability",
+            "Team Collaboration",
+            "Code Cleanliness"
+          ]
+        },
+        "mid": {
+          "experience_years": { "min": 2, "max": 5 },
+          "education": "Bachelor's degree in Computer Science, Information Systems, or related field",
+          "required": [
+            "Python",
+            "FastAPI",
+            "Django",
+            "PostgreSQL",
+            "SQLAlchemy",
+            "REST APIs",
+            "PyTest",
+            "Docker",
+            "Redis",
+            "Git",
+            "Microservices",
+            "CI/CD"
+          ],
+          "preferred": [
+            "Celery",
+            "Kafka",
+            "AWS",
+            "Linux",
+            "Performance Profiling",
+            "Asynchronous Programming"
+          ],
+          "soft_skills": [
+            "Backend Debugging",
+            "Database Query Optimization",
+            "Effective Peer Review",
+            "API Contract Design"
+          ]
+        },
+        "senior": {
+          "experience_years": { "min": 5, "max": 8 },
+          "education": "Bachelor's or Master's degree in Computer Science, Software Engineering, or equivalent experience",
+          "required": [
+            "Python",
+            "FastAPI",
+            "Microservices",
+            "Distributed Systems",
+            "System Design",
+            "PostgreSQL",
+            "Redis",
+            "Celery",
+            "Kafka",
+            "Docker",
+            "AWS",
+            "CI/CD",
+            "Mentoring"
+          ],
+          "preferred": [
+            "Kubernetes",
+            "SQLAlchemy",
+            "Asynchronous Programming",
+            "NoSQL",
+            "Database Optimization",
+            "Observability"
+          ],
+          "soft_skills": [
+            "Distributed Systems Reasoning",
+            "Technical Mentoring",
+            "Trade-Off Assessment",
+            "Architecture Review"
+          ]
+        },
+        "lead": {
+          "experience_years": { "min": 8, "max": 12 },
+          "education": "Bachelor's or Master's degree with demonstrable technical leadership experience",
+          "required": [
+            "Python",
+            "FastAPI",
+            "System Design",
+            "Distributed Systems",
+            "Architecture Ownership",
+            "Team Leadership",
+            "Microservices",
+            "PostgreSQL",
+            "Kafka",
+            "Code Review",
+            "Delivery Management",
+            "Mentoring"
+          ],
+          "preferred": [
+            "AWS",
+            "Kubernetes",
+            "Technical Strategy",
+            "CI/CD",
+            "Observability",
+            "Agile Coaching"
+          ],
+          "soft_skills": [
+            "Engineering Execution",
+            "Cross-Functional Negotiation",
+            "Talent Sourcing and Mentoring",
+            "Stakeholder Alignment"
+          ]
+        },
+        "executive": {
+          "experience_years": { "min": 10, "max": 20 },
+          "education": "Bachelor's or Master's degree with executive technical background",
+          "required": [
+            "Technology Strategy",
+            "Engineering Leadership",
+            "System Architecture",
+            "Roadmap Planning",
+            "Technology Governance",
+            "Hiring",
+            "Budgeting",
+            "Stakeholder Management",
+            "Enterprise Security",
+            "Vendor Management"
+          ],
+          "preferred": [
+            "Cloud Strategy",
+            "Data Governance",
+            "Operational Excellence",
+            "Technical Due Diligence",
+            "Scalability Strategy"
+          ],
+          "soft_skills": [
+            "Enterprise Leadership",
+            "Strategic Vision",
+            "Boardroom Communication",
+            "Organizational Design"
+          ]
+        }
+      }
+    },
+    "data_ml": {
+      "display_name": "Data / Machine Learning Engineer",
+      "match_keywords": ["data science", "machine learning", "ml engineer", "ai engineer", "data engineer", "deep learning", "nlp", "computer vision"],
+      "levels": {
+        "entry": {
+          "experience_years": { "min": 0, "max": 2 },
+          "education": "Bachelor's or Master's degree in Data Science, Computer Science, Statistics, Mathematics, or related quantitative field",
+          "required": [
+            "Python",
+            "SQL",
+            "Data Structures and Algorithms",
+            "Pandas",
+            "NumPy",
+            "Scikit-Learn",
+            "Mathematics and Statistics",
+            "Git",
+            "Exploratory Data Analysis",
+            "Data Visualization"
+          ],
+          "preferred": [
+            "Matplotlib",
+            "Jupyter",
+            "PyTorch",
+            "Docker",
+            "Feature Engineering",
+            "REST APIs"
+          ],
+          "soft_skills": [
+            "Statistical Curiosity",
+            "Analytical Rigor",
+            "Clear Data Communication",
+            "Problem Formulation"
+          ]
+        },
+        "mid": {
+          "experience_years": { "min": 2, "max": 5 },
+          "education": "Bachelor's or Master's degree in Data Science, Computer Science, or quantitative discipline",
+          "required": [
+            "Python",
+            "SQL",
+            "Pandas",
+            "NumPy",
+            "Scikit-Learn",
+            "PyTorch",
+            "Machine Learning",
+            "Feature Engineering",
+            "Model Evaluation",
+            "Docker",
+            "Git",
+            "Data Pipelines"
+          ],
+          "preferred": [
+            "TensorFlow",
+            "MLOps",
+            "FastAPI",
+            "MLflow",
+            "AWS",
+            "PostgreSQL"
+          ],
+          "soft_skills": [
+            "Experimentation Discipline",
+            "Model Interpretability",
+            "Cross-Team Insights Sharing",
+            "Metric Driven Thinking"
+          ]
+        },
+        "senior": {
+          "experience_years": { "min": 5, "max": 8 },
+          "education": "Master's or Ph.D. in Computer Science, Artificial Intelligence, Data Science, or equivalent experience",
+          "required": [
+            "Python",
+            "Machine Learning",
+            "Deep Learning",
+            "PyTorch",
+            "MLOps",
+            "Model Deployment",
+            "Feature Engineering",
+            "Distributed Computing",
+            "System Design",
+            "SQL",
+            "Docker",
+            "Cloud Platforms",
+            "Mentoring"
+          ],
+          "preferred": [
+            "MLflow",
+            "Kubeflow",
+            "Apache Spark",
+            "Large Language Models",
+            "Data Pipelines",
+            "Observability"
+          ],
+          "soft_skills": [
+            "AI Feasibility Assessment",
+            "Productionizing Research",
+            "Technical Mentorship",
+            "Business Metric Translation"
+          ]
+        },
+        "lead": {
+          "experience_years": { "min": 8, "max": 12 },
+          "education": "Master's or Ph.D. with track record of leading applied ML / AI systems in production",
+          "required": [
+            "Python",
+            "Machine Learning",
+            "Deep Learning",
+            "MLOps",
+            "AI Strategy",
+            "Architecture Ownership",
+            "Team Leadership",
+            "Data Governance",
+            "Model Deployment",
+            "Code Review",
+            "Mentoring",
+            "Delivery Management"
+          ],
+          "preferred": [
+            "Large Language Models",
+            "Cloud Platforms",
+            "Distributed Computing",
+            "Stakeholder Management",
+            "Kubeflow",
+            "Ethical AI"
+          ],
+          "soft_skills": [
+            "AI Roadmap Governance",
+            "Team Leadership and Calibration",
+            "Executive Data Presentation",
+            "Research-to-Production Velocity"
+          ]
+        },
+        "executive": {
+          "experience_years": { "min": 10, "max": 20 },
+          "education": "Advanced quantitative degree with executive data leadership credentials",
+          "required": [
+            "AI Strategy",
+            "Data Strategy",
+            "Engineering Leadership",
+            "Technology Governance",
+            "Ethical AI",
+            "Hiring",
+            "Budgeting",
+            "Roadmap Planning",
+            "Stakeholder Management",
+            "Vendor Management"
+          ],
+          "preferred": [
+            "Enterprise AI Adoption",
+            "Data Governance",
+            "Research Direction",
+            "Operational Excellence",
+            "Cloud Cost Optimization"
+          ],
+          "soft_skills": [
+            "Strategic Data Vision",
+            "C-Suite Advisory",
+            "Enterprise AI Risk Management",
+            "Cross-Functional Transformation"
+          ]
+        }
+      }
+    },
+    "devops_cloud": {
+      "display_name": "DevOps / Cloud Engineer",
+      "match_keywords": ["devops", "cloud engineer", "sre", "site reliability", "infrastructure", "platform engineer", "kubernetes engineer", "aws engineer"],
+      "levels": {
+        "entry": {
+          "experience_years": { "min": 0, "max": 2 },
+          "education": "Bachelor's degree in Computer Science, Information Technology, Network Engineering, or equivalent practical experience",
+          "required": [
+            "Linux",
+            "Bash Scripting",
+            "Git",
+            "Python",
+            "Networking Basics",
+            "Docker",
+            "CI/CD Basics",
+            "Cloud Fundamentals",
+            "Virtualization",
+            "Postman"
+          ],
+          "preferred": [
+            "AWS",
+            "Terraform",
+            "GitHub Actions",
+            "Nginx",
+            "YAML",
+            "Monitoring Basics"
+          ],
+          "soft_skills": [
+            "System Troubleshooting",
+            "Calm Under Incident Pressure",
+            "Documentation Discipline",
+            "Automation Mindset"
+          ]
+        },
+        "mid": {
+          "experience_years": { "min": 2, "max": 5 },
+          "education": "Bachelor's degree in Computer Science, Systems Engineering, or cloud certification equivalent",
+          "required": [
+            "Linux",
+            "Docker",
+            "Kubernetes",
+            "AWS",
+            "Terraform",
+            "CI/CD",
+            "Bash Scripting",
+            "Python",
+            "Git",
+            "Prometheus",
+            "Grafana",
+            "Infrastructure as Code"
+          ],
+          "preferred": [
+            "Ansible",
+            "Helm",
+            "GitHub Actions",
+            "GCP",
+            "Azure",
+            "Security Best Practices"
+          ],
+          "soft_skills": [
+            "Incident Management",
+            "Root Cause Analysis",
+            "Collaborative Operations",
+            "Reliability Mindset"
+          ]
+        },
+        "senior": {
+          "experience_years": { "min": 5, "max": 8 },
+          "education": "Bachelor's or Master's degree in Computer Science or significant multi-cloud engineering track record",
+          "required": [
+            "Kubernetes",
+            "Cloud Architecture",
+            "AWS",
+            "Terraform",
+            "Infrastructure as Code",
+            "CI/CD",
+            "Prometheus",
+            "Grafana",
+            "Observability",
+            "Security and Compliance",
+            "Distributed Systems",
+            "System Design",
+            "Mentoring"
+          ],
+          "preferred": [
+            "Helm",
+            "GitOps",
+            "Cost Optimization",
+            "Disaster Recovery",
+            "Linux",
+            "Azure",
+            "Site Reliability Engineering"
+          ],
+          "soft_skills": [
+            "Disaster Recovery Planning",
+            "SLO and SLA Definition",
+            "On-Call Mentorship",
+            "Cross-Engineering Communication"
+          ]
+        },
+        "lead": {
+          "experience_years": { "min": 8, "max": 12 },
+          "education": "Bachelor's or Master's degree with demonstrable infrastructure leadership experience",
+          "required": [
+            "Cloud Architecture",
+            "Kubernetes",
+            "Terraform",
+            "Infrastructure as Code",
+            "Site Reliability Engineering",
+            "Team Leadership",
+            "Security and Compliance",
+            "Architecture Ownership",
+            "Disaster Recovery",
+            "Cost Optimization",
+            "Mentoring",
+            "Code Review"
+          ],
+          "preferred": [
+            "CI/CD",
+            "GitOps",
+            "Observability",
+            "Technical Strategy",
+            "AWS",
+            "Stakeholder Management"
+          ],
+          "soft_skills": [
+            "High-Reliability Leadership",
+            "Vendor Negotiation",
+            "Incident Command",
+            "Infrastructure Roadmapping"
+          ]
+        },
+        "executive": {
+          "experience_years": { "min": 10, "max": 20 },
+          "education": "Bachelor's or Master's degree with executive cloud and platform credentials",
+          "required": [
+            "Cloud Strategy",
+            "Infrastructure Governance",
+            "Engineering Leadership",
+            "Security and Compliance",
+            "Technology Governance",
+            "Budgeting",
+            "Vendor Management",
+            "Disaster Recovery Strategy",
+            "Hiring",
+            "Stakeholder Management"
+          ],
+          "preferred": [
+            "Site Reliability Engineering",
+            "Cost Optimization",
+            "Multi-Cloud Strategy",
+            "Operational Excellence",
+            "Risk Management"
+          ],
+          "soft_skills": [
+            "Cloud Investment Optimization",
+            "Strategic Infrastructure Governance",
+            "Executive Risk Management",
+            "Resilience Culture"
+          ]
+        }
+      }
+    },
+    "qa_automation": {
+      "display_name": "QA / Automation Engineer",
+      "match_keywords": ["qa", "sdet", "test engineer", "automation engineer", "quality assurance", "software tester", "qa automation"],
+      "levels": {
+        "entry": {
+          "experience_years": { "min": 0, "max": 2 },
+          "education": "Bachelor's degree in Computer Science, Software Engineering, or related technical field",
+          "required": [
+            "Software Testing Fundamentals",
+            "Test Case Design",
+            "Java",
+            "Selenium WebDriver",
+            "Test Execution",
+            "Bug Tracking",
+            "JIRA",
+            "SQL",
+            "Git",
+            "Postman"
+          ],
+          "preferred": [
+            "TestNG",
+            "JUnit",
+            "Python",
+            "API Testing",
+            "Agile Methodologies",
+            "CI/CD Basics"
+          ],
+          "soft_skills": [
+            "Detail Orientation",
+            "Analytical Thinking",
+            "Clear Defect Reporting",
+            "Eagerness to Learn"
+          ]
+        },
+        "mid": {
+          "experience_years": { "min": 2, "max": 5 },
+          "education": "Bachelor's degree in Computer Science, Software Engineering, or equivalent testing experience",
+          "required": [
+            "Test Automation",
+            "Selenium WebDriver",
+            "Java",
+            "TestNG",
+            "API Testing",
+            "Postman",
+            "REST Assured",
+            "SQL",
+            "JIRA",
+            "Git",
+            "CI/CD",
+            "Test Execution"
+          ],
+          "preferred": [
+            "Cypress",
+            "Playwright",
+            "Cucumber",
+            "Python",
+            "Docker",
+            "Performance Testing Basics"
+          ],
+          "soft_skills": [
+            "Regression Prevention Focus",
+            "Defect Triage Collaboration",
+            "Quality Advocacy",
+            "Clear Documentation"
+          ]
+        },
+        "senior": {
+          "experience_years": { "min": 5, "max": 8 },
+          "education": "Bachelor's or Master's degree in Computer Science, Software Engineering, or extensive SDET experience",
+          "required": [
+            "Test Automation Architecture",
+            "Framework Design",
+            "Selenium WebDriver",
+            "Playwright",
+            "API Testing",
+            "REST Assured",
+            "CI/CD Integration",
+            "Performance Testing",
+            "JMeter",
+            "SQL",
+            "Test Strategy",
+            "Git",
+            "Mentoring"
+          ],
+          "preferred": [
+            "Cypress",
+            "Docker",
+            "Security Testing",
+            "Cross-Browser Testing",
+            "TestNG",
+            "Agile Methodologies"
+          ],
+          "soft_skills": [
+            "Quality Culture Champion",
+            "Test Architecture Mentorship",
+            "Risk Based Testing Strategy",
+            "Cross-Functional Alignment"
+          ]
+        },
+        "lead": {
+          "experience_years": { "min": 8, "max": 12 },
+          "education": "Bachelor's or Master's degree with demonstrable QA / SDET leadership track record",
+          "required": [
+            "Quality Engineering Leadership",
+            "Test Strategy",
+            "Test Automation Architecture",
+            "Framework Design",
+            "Team Leadership",
+            "CI/CD Integration",
+            "Delivery Management",
+            "Code Review",
+            "Mentoring",
+            "Defect Management",
+            "Performance Testing",
+            "Stakeholder Communication"
+          ],
+          "preferred": [
+            "Playwright",
+            "Security Testing",
+            "Test Metrics",
+            "Agile Coaching",
+            "Cloud Testing",
+            "Technical Strategy"
+          ],
+          "soft_skills": [
+            "Quality Governance",
+            "Release Readiness Signoff",
+            "Mentorship and Hiring",
+            "Customer Impact Awareness"
+          ]
+        },
+        "executive": {
+          "experience_years": { "min": 10, "max": 20 },
+          "education": "Bachelor's or Master's degree with executive quality governance background",
+          "required": [
+            "Quality Governance",
+            "Engineering Leadership",
+            "Technology Strategy",
+            "Software Quality Standards",
+            "Risk Management",
+            "Hiring",
+            "Budgeting",
+            "Stakeholder Management",
+            "Vendor Management",
+            "Technology Governance"
+          ],
+          "preferred": [
+            "Continuous Testing Strategy",
+            "Shift-Left Adoption",
+            "Test Operations",
+            "Compliance",
+            "Operational Excellence"
+          ],
+          "soft_skills": [
+            "Enterprise Quality Vision",
+            "Executive Risk Communication",
+            "Continuous Improvement Culture",
+            "Quality Value Delivery"
+          ]
+        }
+      }
+    },
+    "mobile": {
+      "display_name": "Mobile Application Developer",
+      "match_keywords": ["mobile developer", "android developer", "ios developer", "flutter developer", "react native developer", "mobile engineer", "swift developer", "kotlin developer"],
+      "levels": {
+        "entry": {
+          "experience_years": { "min": 0, "max": 2 },
+          "education": "Bachelor's degree in Computer Science, Mobile Computing, or equivalent practical app portfolio",
+          "required": [
+            "Mobile Application Development",
+            "Kotlin",
+            "Java",
+            "Android SDK",
+            "Object-Oriented Programming",
+            "Data Structures and Algorithms",
+            "REST APIs",
+            "Git",
+            "UI Layouts",
+            "Postman"
+          ],
+          "preferred": [
+            "Swift",
+            "Flutter",
+            "SQLite",
+            "Firebase",
+            "Android Studio",
+            "Agile Methodologies"
+          ],
+          "soft_skills": [
+            "Touch Interface Empathy",
+            "Visual Precision",
+            "Curiosity and Problem Solving",
+            "Collaborative Spirit"
+          ]
+        },
+        "mid": {
+          "experience_years": { "min": 2, "max": 5 },
+          "education": "Bachelor's degree in Computer Science, Mobile Engineering, or related field",
+          "required": [
+            "Kotlin",
+            "Android SDK",
+            "Flutter",
+            "Dart",
+            "REST APIs",
+            "State Management",
+            "SQLite",
+            "Git",
+            "Firebase",
+            "Unit Testing",
+            "App Store Deployment",
+            "Clean Architecture"
+          ],
+          "preferred": [
+            "Swift",
+            "iOS SDK",
+            "CI/CD",
+            "Jetpack Compose",
+            "GraphQL",
+            "Push Notifications"
+          ],
+          "soft_skills": [
+            "Battery and Memory Optimization",
+            "Cross-Platform Code Reuse",
+            "App Lifecycle Discipline",
+            "Code Quality Ownership"
+          ]
+        },
+        "senior": {
+          "experience_years": { "min": 5, "max": 8 },
+          "education": "Bachelor's or Master's degree in Computer Science or significant mobile app production history",
+          "required": [
+            "Mobile Architecture",
+            "Kotlin",
+            "Swift",
+            "Flutter",
+            "State Management",
+            "Performance Optimization",
+            "Offline Synchronization",
+            "CI/CD",
+            "App Store Deployment",
+            "Automated Testing",
+            "REST APIs",
+            "Security Best Practices",
+            "Mentoring"
+          ],
+          "preferred": [
+            "Jetpack Compose",
+            "SwiftUI",
+            "Reactive Programming",
+            "GraphQL",
+            "Firebase",
+            "Memory Management"
+          ],
+          "soft_skills": [
+            "Mobile UX Leadership",
+            "App Store Policy Navigation",
+            "Engineering Mentorship",
+            "Architectural Trade-Off Analysis"
+          ]
+        },
+        "lead": {
+          "experience_years": { "min": 8, "max": 12 },
+          "education": "Bachelor's or Master's degree with demonstrable mobile engineering leadership track record",
+          "required": [
+            "Mobile Architecture",
+            "Cross-Platform Architecture",
+            "Team Leadership",
+            "App Lifecycle Management",
+            "Code Review",
+            "Delivery Management",
+            "Mentoring",
+            "Performance Optimization",
+            "Security Best Practices",
+            "App Store Compliance",
+            "Release Management",
+            "Technical Strategy"
+          ],
+          "preferred": [
+            "Kotlin",
+            "Swift",
+            "Flutter",
+            "CI/CD",
+            "Stakeholder Management",
+            "Agile Coaching"
+          ],
+          "soft_skills": [
+            "Release Risk Management",
+            "Mobile Product Roadmapping",
+            "Cross-Platform Talent Mentoring",
+            "Executive Communication"
+          ]
+        },
+        "executive": {
+          "experience_years": { "min": 10, "max": 20 },
+          "education": "Bachelor's or Master's degree with executive mobile strategy credentials",
+          "required": [
+            "Mobile Strategy",
+            "Technology Strategy",
+            "Engineering Leadership",
+            "Mobile Platform Governance",
+            "App Ecosystem Strategy",
+            "Hiring",
+            "Budgeting",
+            "Stakeholder Management",
+            "Vendor Management",
+            "Security and Compliance"
+          ],
+          "preferred": [
+            "Product Alignment",
+            "User Experience Governance",
+            "Digital Transformation",
+            "Operational Excellence",
+            "Release Governance"
+          ],
+          "soft_skills": [
+            "Mobile Innovation Vision",
+            "Platform Partnership Strategy",
+            "Omnichannel Brand Alignment",
+            "Executive Agility"
+          ]
+        }
+      }
+    },
+    "generic": {
+      "display_name": "Software Engineer (General)",
+      "match_keywords": ["software engineer", "software developer", "sde", "developer", "engineer", "programmer"],
+      "levels": {
+        "entry": {
+          "experience_years": { "min": 0, "max": 2 },
+          "education": "Bachelor's degree in Computer Science, Information Technology, Engineering, or equivalent practical experience",
+          "required": [
+            "Programming Fundamentals",
+            "Object-Oriented Programming",
+            "Data Structures and Algorithms",
+            "SQL",
+            "REST APIs",
+            "Version Control",
+            "Git",
+            "Software Testing",
+            "Problem Solving",
+            "Command Line"
+          ],
+          "preferred": [
+            "Relational Databases",
+            "Agile Methodologies",
+            "Postman",
+            "CI/CD Basics",
+            "Docker Basics",
+            "Code Quality"
+          ],
+          "soft_skills": [
+            "Problem Solving",
+            "Analytical Thinking",
+            "Collaborative Attitude",
+            "Eagerness to Learn"
+          ]
+        },
+        "mid": {
+          "experience_years": { "min": 2, "max": 5 },
+          "education": "Bachelor's degree in Computer Science, Software Engineering, or related technical field",
+          "required": [
+            "Software Engineering",
+            "Object-Oriented Programming",
+            "Relational Databases",
+            "SQL",
+            "REST APIs",
+            "Microservices Basics",
+            "Unit Testing",
+            "Git",
+            "Docker",
+            "CI/CD",
+            "Code Review",
+            "Problem Solving"
+          ],
+          "preferred": [
+            "Cloud Platforms",
+            "Caching",
+            "Linux",
+            "Database Optimization",
+            "Agile Methodologies",
+            "Software Architecture"
+          ],
+          "soft_skills": [
+            "Technical Problem Solving",
+            "Peer Code Review",
+            "Cross-Functional Teamwork",
+            "Feature Ownership"
+          ]
+        },
+        "senior": {
+          "experience_years": { "min": 5, "max": 8 },
+          "education": "Bachelor's or Master's degree in Computer Science, Engineering, or equivalent experience",
+          "required": [
+            "System Design",
+            "Software Architecture",
+            "Distributed Systems",
+            "Microservices",
+            "Relational Databases",
+            "NoSQL",
+            "API Design",
+            "Security Best Practices",
+            "CI/CD",
+            "Docker",
+            "Cloud Computing",
+            "Code Review",
+            "Mentoring"
+          ],
+          "preferred": [
+            "Observability",
+            "Performance Optimization",
+            "Messaging Systems",
+            "Database Tuning",
+            "High Availability",
+            "Kubernetes",
+            "Agile Methodologies"
+          ],
+          "soft_skills": [
+            "Architectural Decision Making",
+            "Mentoring Junior Engineers",
+            "Cross-Team Communication",
+            "Complexity Management"
+          ]
+        },
+        "lead": {
+          "experience_years": { "min": 8, "max": 12 },
+          "education": "Bachelor's or Master's degree with demonstrable engineering leadership track record",
+          "required": [
+            "System Architecture",
+            "System Design",
+            "Distributed Systems",
+            "Architecture Ownership",
+            "Team Leadership",
+            "Code Review",
+            "Delivery Management",
+            "Mentoring",
+            "Cross-Team Collaboration",
+            "Technical Strategy",
+            "Software Quality Standards",
+            "Stakeholder Communication"
+          ],
+          "preferred": [
+            "Cloud Platforms",
+            "Microservices",
+            "CI/CD",
+            "Cost Optimization",
+            "Agile Coaching",
+            "Risk Management"
+          ],
+          "soft_skills": [
+            "Technical Direction",
+            "Hiring and Talent Development",
+            "Project Scoping and Estimation",
+            "Conflict Resolution"
+          ]
+        },
+        "executive": {
+          "experience_years": { "min": 10, "max": 20 },
+          "education": "Bachelor's or Master's degree with executive engineering credentials",
+          "required": [
+            "Technology Strategy",
+            "Engineering Leadership",
+            "System Architecture",
+            "Roadmap Planning",
+            "Technology Governance",
+            "Hiring",
+            "Budgeting",
+            "Stakeholder Management",
+            "Vendor Management",
+            "Enterprise Security"
+          ],
+          "preferred": [
+            "Cloud Governance",
+            "Organizational Design",
+            "Technical Due Diligence",
+            "Digital Transformation",
+            "Operational Excellence"
+          ],
+          "soft_skills": [
+            "Strategic Leadership",
+            "Enterprise Vision Alignment",
+            "Executive Sponsorship",
+            "High-Performance Culture Building"
+          ]
+        }
+      }
+    }
+  }
+}

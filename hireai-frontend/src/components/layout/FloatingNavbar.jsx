@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
-import { Logo } from '@/components/common/Logo';
+import { Logo } from '@/components/brand/Logo';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { Button } from '@/components/ui/Button';
 import { ROUTES } from '@/constants';
@@ -22,11 +22,11 @@ export const FloatingNavbar = () => {
   };
 
   return (
-    <header className="fixed top-3 sm:top-4 inset-x-0 z-50 flex flex-col items-center justify-center px-3 sm:px-4 pointer-events-none">
-      <nav className="pointer-events-auto flex items-center justify-between w-full max-w-6xl h-14 sm:h-16 px-4 sm:px-6 rounded-full glass border border-white/20 dark:border-white/10 shadow-2xl backdrop-blur-xl">
+    <header className="fixed top-2 sm:top-4 inset-x-0 z-50 flex flex-col items-center justify-center px-2 sm:px-4 pointer-events-none">
+      <nav className="pointer-events-auto flex items-center justify-between w-full max-w-6xl h-14 sm:h-16 px-3 sm:px-6 rounded-xl bg-surface/90 border border-border shadow-md backdrop-blur-xl">
         {/* Brand Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
-          <Logo size="md" />
+          <Logo variant="full" size="md" showPro />
         </Link>
 
         {/* Center Links (Desktop) */}
@@ -47,18 +47,18 @@ export const FloatingNavbar = () => {
           <ThemeToggle />
 
           {isAuthenticated ? (
-            <Button onClick={handleDashboardClick} variant="default" size="sm" className="rounded-full hidden sm:inline-flex text-xs">
+            <Button onClick={handleDashboardClick} variant="default" size="sm" className="rounded-lg hidden sm:inline-flex text-xs">
               Dashboard
             </Button>
           ) : (
             <div className="hidden sm:flex items-center gap-2">
               <Link to={ROUTES.LOGIN}>
-                <Button variant="ghost" size="sm" className="rounded-full text-xs">
+                <Button variant="ghost" size="sm" className="rounded-lg text-xs">
                   Sign In
                 </Button>
               </Link>
               <Link to={ROUTES.SIGNUP}>
-                <Button variant="gradient" size="sm" className="rounded-full text-xs shadow-md shadow-brand-blue/20">
+                <Button variant="gradient" size="sm" className="rounded-lg text-xs shadow-sm">
                   Get Started
                 </Button>
               </Link>
@@ -69,7 +69,7 @@ export const FloatingNavbar = () => {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-surface-2/60 transition-colors cursor-pointer"
+            className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-2/60 transition-colors cursor-pointer"
             aria-label="Toggle Landing Menu"
           >
             {mobileMenuOpen ? <X className="w-5 h-5 text-foreground" /> : <Menu className="w-5 h-5" />}

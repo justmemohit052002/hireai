@@ -41,7 +41,34 @@ public interface EmailService {
     void sendPasswordResetEmail(com.vionsys.hireai.user.entity.User user, String token, java.time.LocalDateTime expiryDate);
 
     /**
+     * Send 6-digit email verification OTP to user.
+     */
+    void sendEmailVerificationOtp(com.vionsys.hireai.user.entity.User user, String otpCode, int expiryMinutes);
+
+    /**
+     * Send 6-digit OTP verification code to OAuth user requesting to set an account password.
+     */
+    void sendSetPasswordOtp(com.vionsys.hireai.user.entity.User user, String otpCode, int expiryMinutes);
+
+    /**
+     * Send 6-digit OTP verification code to OAuth user confirming account deletion.
+     */
+    void sendDeleteAccountOtp(com.vionsys.hireai.user.entity.User user, String otpCode, int expiryMinutes);
+
+    /**
      * Send generic HTML formatted email asynchronously.
      */
     void sendHtmlEmail(String toEmail, String subject, String htmlContent);
+
+    /**
+     * Returns true if SMTP outbound delivery is actively configured with valid credentials.
+     */
+    boolean isSmtpConfigured();
+
+    /**
+     * Mask email address for log hygiene (e.g. user@domain.com -> u***r@domain.com).
+     */
+    static String maskEmail(String email) {
+        return EmailServiceImpl.maskEmail(email);
+    }
 }

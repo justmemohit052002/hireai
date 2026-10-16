@@ -2,6 +2,10 @@
  * HireAI API Client
  * Centralized fetch client with automatic JWT header injection,
  * thread-safe single-flight token refresh handling, and standardized error extraction.
+ *
+ * NOTE ON TOKEN STORAGE & SECURITY ARCHITECTURE:
+ * Moving the refresh token to a secure httpOnly cookie is the planned follow-up
+ * to mitigate client-side script token access and complete XSS hardening.
  */
 
 const TOKEN_KEY = 'hireai_token';
@@ -35,6 +39,9 @@ export const setAuthSession = (authData) => {
     phone: authData.phone,
     role: authData.role,
     companyName: authData.companyName,
+    avatarUrl: authData.avatarUrl || authData.profilePhotoUrl || null,
+    hasPassword: authData.hasPassword !== undefined ? Boolean(authData.hasPassword) : true,
+    authProvider: authData.authProvider || 'LOCAL',
   };
   localStorage.setItem(USER_KEY, JSON.stringify(user));
   localStorage.setItem('hireai_auth', JSON.stringify(authData));
@@ -155,11 +162,22 @@ export async function request(endpoint, options = {}) {
     }
 
     if (!response.ok) {
-      const errorMsg =
-        (data && (data.message || data.error || (data.errors && Object.values(data.errors).join(', ')))) ||
-        `Request failed with status ${response.status}`;
+      const showDetails = import.meta.env.VITE_SHOW_ERROR_DETAILS === 'true';
+      const backendMsg = data && (data.message || data.error || (data.errors && Object.values(data.errors).join(', ')));
+      let errorMsg =
+        backendMsg ||
+        (response.status >= 500
+          ? 'An unexpected server error occurred. Please try again later.'
+          : `Request failed with status ${response.status}`);
+
+      // Sanitize unhandled 500 server errors when no domain message was provided
+      if (!showDetails && response.status === 500 && !backendMsg) {
+        errorMsg = 'An unexpected server error occurred. Please try again later.';
+      }
+
       const err = new Error(errorMsg);
       err.status = response.status;
+      err.error = data && typeof data === 'object' ? data.error : null;
       err.data = data;
       throw err;
     }
@@ -171,7 +189,9 @@ export async function request(endpoint, options = {}) {
 
     return data;
   } catch (error) {
-    console.error(`[API Error] ${method} ${endpoint}:`, error);
+    if (!options?.silent) {
+      console.error(`[API Error] ${method} ${endpoint}:`, error);
+    }
     throw error;
   }
 }
@@ -181,7 +201,15 @@ export const apiClient = {
   post: (url, body, options = {}) => request(url, { ...options, method: 'POST', body }),
   put: (url, body, options = {}) => request(url, { ...options, method: 'PUT', body }),
   patch: (url, body, options = {}) => request(url, { ...options, method: 'PATCH', body }),
-  delete: (url, options = {}) => request(url, { ...options, method: 'DELETE' }),
+  delete: (url, bodyOrOptions = {}, maybeOptions = {}) => {
+    if (bodyOrOptions && (bodyOrOptions.headers || bodyOrOptions.requireAuth !== undefined || bodyOrOptions.silent !== undefined)) {
+      return request(url, { ...bodyOrOptions, method: 'DELETE' });
+    }
+    if (bodyOrOptions && typeof bodyOrOptions === 'object' && Object.keys(bodyOrOptions).length > 0) {
+      return request(url, { ...maybeOptions, method: 'DELETE', body: bodyOrOptions });
+    }
+    return request(url, { ...bodyOrOptions, method: 'DELETE' });
+  },
   upload: (url, formData, options = {}) =>
     request(url, { ...options, method: 'POST', body: formData, isFormData: true }),
 };

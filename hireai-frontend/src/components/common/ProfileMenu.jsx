@@ -31,11 +31,15 @@ export const ProfileMenu = () => {
     navigate(ROUTES.HOME);
   };
 
+  const avatarSrc =
+    user?.avatarUrl ||
+    (role === 'candidate' ? '/candidate/profile/photo' : role === 'recruiter' ? '/recruiter/profile/photo' : null);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-2.5 rounded-full p-1 hover:bg-muted/60 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#F56681]">
-          <Avatar name={displayName} src={user.avatarUrl} size="md" />
+        <button className="flex items-center gap-2 rounded-xl p-1 hover:bg-muted/60 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-blue cursor-pointer">
+          <Avatar name={displayName} src={avatarSrc} size="md" />
           <div className="hidden md:flex flex-col text-left">
             <span className="text-xs font-bold text-foreground leading-tight">{displayName}</span>
             <span className="text-[10px] text-muted-foreground capitalize font-medium">{role}</span>
@@ -50,6 +54,13 @@ export const ProfileMenu = () => {
         </div>
 
         <div className="py-1">
+          {role === 'admin' && (
+            <DropdownMenuItem onClick={() => navigate(ROUTES.ADMIN_DASHBOARD)}>
+              <Settings className="w-3.5 h-3.5 text-brand-blue" />
+              <span className="font-bold text-brand-blue">Admin Console</span>
+            </DropdownMenuItem>
+          )}
+
           <DropdownMenuItem onClick={() => navigate(profileRoute)}>
             <UserIcon className="w-3.5 h-3.5 text-muted-foreground" />
             <span>Profile</span>

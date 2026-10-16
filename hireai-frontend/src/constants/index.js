@@ -7,6 +7,8 @@ export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
   SIGNUP: '/signup',
+  PRIVACY: '/privacy',
+  TERMS: '/terms',
 
   // Candidate
   CANDIDATE_JOBS: '/candidate/jobs',
@@ -23,6 +25,15 @@ export const ROUTES = {
   RECRUITER_INBOX: '/recruiter/inbox',
   RECRUITER_PROFILE: '/recruiter/profile',
   RECRUITER_SETTINGS: '/recruiter/settings',
+
+  // Admin
+  ADMIN_DASHBOARD: '/admin/dashboard',
+  ADMIN_HEALTH: '/admin/health',
+  ADMIN_LLM_USAGE: '/admin/llm-usage',
+  ADMIN_LOGS: '/admin/logs',
+  ADMIN_AUDIT: '/admin/audit',
+  ADMIN_USERS: '/admin/users',
+  ADMIN_PROVIDERS: '/admin/providers',
 };
 
 // ─────────────────────────────────────────
@@ -44,6 +55,15 @@ export const RECRUITER_NAV_ITEMS = [
   { label: 'Inbox', href: ROUTES.RECRUITER_INBOX, icon: 'MessageSquare' },
   { label: 'Profile', href: ROUTES.RECRUITER_PROFILE, icon: 'Building2' },
   { label: 'Settings', href: ROUTES.RECRUITER_SETTINGS, icon: 'Settings' },
+];
+
+export const ADMIN_NAV_ITEMS = [
+  { label: 'Overview & Health', href: ROUTES.ADMIN_DASHBOARD, icon: 'Activity' },
+  { label: 'LLM Usage & Quota', href: ROUTES.ADMIN_LLM_USAGE, icon: 'Cpu' },
+  { label: 'Call Logs & Audit', href: ROUTES.ADMIN_LOGS, icon: 'FileCode' },
+  { label: 'Audit Trail', href: ROUTES.ADMIN_AUDIT, icon: 'ShieldCheck' },
+  { label: 'User Roles & Access', href: ROUTES.ADMIN_USERS, icon: 'Users' },
+  { label: 'Provider & Keys', href: ROUTES.ADMIN_PROVIDERS, icon: 'Key' },
 ];
 
 // ─────────────────────────────────────────

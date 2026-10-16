@@ -76,8 +76,12 @@ public class JobRequest {
     @Builder.Default
     private Currency currency = Currency.INR;
 
-    @Schema(description = "List of required technical and functional skills (optional, auto-generated if omitted)", example = "[\"Java\", \"Spring Boot\", \"PostgreSQL\", \"Docker\", \"Microservices\"]")
+    @Schema(description = "List of required technical and functional skills (optional, auto-generated if omitted)", example = "[\"Java\", \"Spring Boot\", \"PostgreSQL\", \"REST APIs\"]")
     private List<String> skills;
+
+    @Schema(description = "List of preferred / nice-to-have technical skills", example = "[\"Docker\", \"AWS\", \"Redis\"]")
+    @JsonAlias({"preferred", "niceToHaveSkills", "preferred_skills", "nice_to_have_skills"})
+    private List<String> preferredSkills;
 
     @Schema(description = "Minimum educational qualification", example = "B.Tech / B.E in Computer Science or equivalent")
     @Size(max = 200)

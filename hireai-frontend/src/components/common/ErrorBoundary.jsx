@@ -36,9 +36,9 @@ export class ErrorBoundary extends Component {
             <div className="space-y-2">
               <h2 className="text-xl font-bold font-heading text-foreground">Something went wrong</h2>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                An unexpected interface error occurred. We have captured the details.
+                An unexpected application error occurred. Our team has recorded the incident.
               </p>
-              {this.state.error?.message && (
+              {import.meta.env.VITE_SHOW_ERROR_DETAILS === 'true' && this.state.error?.message && (
                 <div className="mt-3 p-3 rounded-xl bg-surface-2 text-left font-mono text-[11px] text-rose-400 border border-border/60 overflow-x-auto">
                   {this.state.error.message}
                 </div>

@@ -18,13 +18,8 @@ public final class JobApplicationMapper {
             return null;
         }
 
-        List<String> matchingSkills = app.getMatchingSkills() != null && !app.getMatchingSkills().isBlank()
-                ? Arrays.stream(app.getMatchingSkills().split(",")).map(String::trim).toList()
-                : Collections.emptyList();
-
-        List<String> missingSkills = app.getMissingSkills() != null && !app.getMissingSkills().isBlank()
-                ? Arrays.stream(app.getMissingSkills().split(",")).map(String::trim).toList()
-                : Collections.emptyList();
+        List<String> matchingSkills = splitSkillsSafely(app.getMatchingSkills());
+        List<String> missingSkills = splitSkillsSafely(app.getMissingSkills());
 
         UUID resumeId = app.getCandidate() != null && app.getCandidate().getResume() != null
                 ? app.getCandidate().getResume().getId()
@@ -66,5 +61,17 @@ public final class JobApplicationMapper {
                 .appliedAt(app.getCreatedAt())
                 .updatedAt(app.getUpdatedAt())
                 .build();
+    }
+
+    private static List<String> splitSkillsSafely(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return Collections.emptyList();
+        }
+        // Splits by comma while preserving commas enclosed within parentheses
+        String[] tokens = raw.split(",\\s*(?![^()]*\\))");
+        return Arrays.stream(tokens)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .toList();
     }
 }

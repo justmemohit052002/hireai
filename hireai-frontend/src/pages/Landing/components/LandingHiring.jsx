@@ -1,106 +1,140 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Check } from 'lucide-react';
+import { 
+  UserCheck, 
+  Briefcase, 
+  UserPlus, 
+  Sparkles, 
+  FileCheck, 
+  BadgeCheck, 
+  ArrowRight,
+  ShieldCheck,
+  CheckCircle2
+} from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ROUTES } from '@/constants';
 
 export const LandingHiring = () => {
   return (
-    <section id="hiring" className="py-12 md:py-16">
-      <div className="max-w-5xl mx-auto px-5">
-        {/* Heading */}
-        <div className="text-center">
-          <h2 className="text-4xl md:text-5xl font-bold font-heading tracking-tight text-foreground">
-            Simplify <span className="gradient-text-brand">Hiring.</span>
-          </h2>
+    <section id="hiring" className="py-14 sm:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Heading */}
+      <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
+        <span className="text-xs font-mono font-bold uppercase tracking-wider text-brand-blue">
+          Dual-Sided Platform
+        </span>
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold font-heading text-foreground tracking-tight mt-2">
+          Tailored for Engineering Teams & Candidates
+        </h2>
+        <p className="text-sm sm:text-base text-muted-foreground mt-2 font-sans">
+          Purpose-built recruitment infrastructure designed to connect technical hiring managers with exceptional developers.
+        </p>
+      </div>
 
-          <p className="mt-4 text-muted-foreground text-base md:text-md max-w-2xl mx-auto font-sans">
-            Tailored recruitment features built specifically for HR engineering managers and ambitious software developers.
-          </p>
-        </div>
-
-        {/* Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
-          {/* HR Card */}
-          <div className="bg-brand-blue-light/10 text-brand-blue border border-[#6D3DF5]/25 rounded-3xl p-8 md:p-10 glass dark:bg-brand-blue-light/15 text-brand-blue flex flex-col justify-between hover-lift transition">
-            <div>
-              <h3 className="text-4xl font-bold font-heading text-foreground">
-                For HR
-              </h3>
-
-              <p className="mt-6 text-sm md:text-base text-muted-foreground leading-relaxed max-w-md font-sans">
-                Post technical roles, let neural algorithms rank applicant code repositories, and shortlist top candidates instantly.
-              </p>
-
-              {/* Feature 1 */}
-              <div className="flex items-center gap-4 mt-8">
-                <div className="w-6 h-6 rounded-full bg-brand-blue text-white flex items-center justify-center shrink-0 shadow-md">
-                  <Check className="w-3.5 h-3.5 stroke-[3]" />
-                </div>
-                <h4 className="text-base font-medium text-foreground">
-                  Create and Manage Jobs
-                </h4>
-              </div>
-
-              {/* Feature 2 */}
-              <div className="flex items-center gap-4 mt-5">
-                <div className="w-6 h-6 rounded-full bg-brand-blue text-white flex items-center justify-center shrink-0 shadow-md">
-                  <Check className="w-3.5 h-3.5 stroke-[3]" />
-                </div>
-                <h4 className="text-base font-medium text-foreground">
-                  Neural Candidate Ranking & Analytics
-                </h4>
-              </div>
+      {/* Split Comparison Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+        {/* Recruiter Card */}
+        <div className="p-4 sm:p-8 lg:p-10 rounded-2xl bg-surface border border-border shadow-sm flex flex-col justify-between space-y-8 text-left hover:border-brand-blue/40 transition-all">
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-muted text-foreground text-xs font-mono font-bold uppercase">
+                <Briefcase className="w-3.5 h-3.5 text-brand-blue" />
+                For Recruiters & Engineering Leads
+              </span>
+              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                ● Active Sourcing
+              </span>
             </div>
 
-            <div className="mt-10">
-              <Link to={ROUTES.SIGNUP}>
-                <Button className="bg-brand-navy text-white hover:bg-brand-blue px-6 py-3 rounded-full text-lg font-semibold transition shadow-lg">
-                  Explore HR Dashboard
-                </Button>
-              </Link>
+            <h3 className="text-2xl sm:text-3xl font-extrabold font-heading text-foreground">
+              Build Your Engineering Dream Team
+            </h3>
+
+            <p className="text-sm text-muted-foreground leading-relaxed font-sans">
+              Post technical roles, let neural algorithms rank applicant code competencies, and shortlist top talent in minutes without manual triage.
+            </p>
+
+            {/* Feature List */}
+            <div className="space-y-3 pt-2">
+              {[
+                { title: 'Deterministic & Semantic ATS Scoring (0-100%)', icon: CheckCircle2 },
+                { title: 'Automated Candidate Shortlist Thresholds', icon: UserCheck },
+                { title: 'Integrated In-App Messaging & Interview Notes', icon: CheckCircle2 },
+                { title: 'Multi-Format Resume Parsing (.pdf, .docx in 1.2s)', icon: FileCheck },
+              ].map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.title} className="flex items-center gap-3 text-xs sm:text-sm font-medium text-foreground">
+                    <div className="w-6 h-6 rounded-lg bg-brand-blue/10 text-brand-blue flex items-center justify-center shrink-0">
+                      <Icon className="w-3.5 h-3.5" />
+                    </div>
+                    <span>{item.title}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Candidate Card */}
-          <div className="bg-brand-navy text-foreground border border-white/15 rounded-3xl p-8 md:p-10 shadow-2xl text-foreground flex flex-col justify-between hover-lift transition">
-            <div>
-              <h3 className="text-4xl font-bold font-heading text-foreground">
-                For Candidates
-              </h3>
+          <div className="pt-6 border-t border-border">
+            <Link to={ROUTES.SIGNUP}>
+              <Button className="w-full bg-brand-navy text-white hover:bg-brand-blue py-3 rounded-xl text-sm font-bold transition flex items-center justify-center gap-2">
+                <UserPlus className="w-4 h-4" />
+                <span>Create Recruiter Workspace</span>
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
 
-              <p className="mt-6 text-sm md:text-base text-foreground/80 leading-relaxed max-w-md font-sans">
-                Showcase developer profiles, receive direct recruiter feedback, and apply to top engineering teams in 1 click.
-              </p>
-
-              {/* Feature 1 */}
-              <div className="flex items-center gap-4 mt-8">
-                <div className="w-6 h-6 rounded-full bg-surface text-[#22214B] flex items-center justify-center shrink-0 shadow-md">
-                  <Check className="w-3.5 h-3.5 stroke-[3]" />
-                </div>
-                <h4 className="text-base font-medium text-foreground">
-                  1-Click AI Job Applications
-                </h4>
-              </div>
-
-              {/* Feature 2 */}
-              <div className="flex items-center gap-4 mt-5">
-                <div className="w-6 h-6 rounded-full bg-surface text-[#22214B] flex items-center justify-center shrink-0 shadow-md">
-                  <Check className="w-3.5 h-3.5 stroke-[3]" />
-                </div>
-                <h4 className="text-base font-medium text-foreground">
-                  Real-Time Skill Scoring & Verification
-                </h4>
-              </div>
+        {/* Candidate Card */}
+        <div className="p-4 sm:p-8 lg:p-10 rounded-2xl bg-surface border border-border shadow-sm flex flex-col justify-between space-y-8 text-left hover:border-brand-blue/40 transition-all">
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-muted text-foreground text-xs font-mono font-bold uppercase">
+                <UserCheck className="w-3.5 h-3.5 text-brand-blue" />
+                For Software Engineers & Candidates
+              </span>
+              <span className="text-xs font-semibold text-brand-blue">
+                100% Free For Talent
+              </span>
             </div>
 
-            <div className="mt-10">
-              <Link to={ROUTES.SIGNUP}>
-                <Button variant="gradient" className="bg-brand-accent text-brand-dark hover:opacity-95 text-foreground px-6 py-3 rounded-full text-lg font-semibold transition shadow-lg shadow-[#C63FC5]/30">
-                  Explore Candidates Dashboard
-                </Button>
-              </Link>
+            <h3 className="text-2xl sm:text-3xl font-extrabold font-heading text-foreground">
+              Land Roles Matching Your Real Skills
+            </h3>
+
+            <p className="text-sm text-muted-foreground leading-relaxed font-sans">
+              Showcase verified technical competencies, receive live match transparency before applying, and get shortlisted by top companies.
+            </p>
+
+            {/* Feature List */}
+            <div className="space-y-3 pt-2">
+              {[
+                { title: '1-Click Resume Semantic Matching & Application', icon: FileCheck },
+                { title: 'Transparent Skill Gap Feedback on Every Job', icon: BadgeCheck },
+                { title: 'Live Stage Progression (Applied → Screened → Offer)', icon: CheckCircle2 },
+                { title: 'Direct Chat with Hiring Managers & HR Teams', icon: UserCheck },
+              ].map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.title} className="flex items-center gap-3 text-xs sm:text-sm font-medium text-foreground">
+                    <div className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                      <Icon className="w-3.5 h-3.5" />
+                    </div>
+                    <span>{item.title}</span>
+                  </div>
+                );
+              })}
             </div>
+          </div>
+
+          <div className="pt-6 border-t border-border">
+            <Link to={ROUTES.SIGNUP}>
+              <Button variant="gradient" className="w-full font-bold py-3 rounded-xl text-sm transition flex items-center justify-center gap-2">
+                <BadgeCheck className="w-4 h-4" />
+                <span>Create Candidate Profile</span>
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

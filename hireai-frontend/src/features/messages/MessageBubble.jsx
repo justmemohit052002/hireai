@@ -22,7 +22,7 @@ export const MessageBubble = ({ message, isSelf, onSelectSlot }) => {
   if (isSystem) {
     return (
       <div className="flex justify-center my-3">
-        <div className="px-3.5 py-1.5 rounded-full bg-surface-2 border border-border text-xs text-muted-foreground flex items-center gap-1.5 shadow-2xs">
+        <div className="px-3.5 py-1.5 rounded-lg bg-surface-2 border border-border text-xs text-muted-foreground flex items-center gap-1.5 shadow-2xs">
           <Sparkles className="w-3.5 h-3.5 text-brand-blue" />
           <span>{text}</span>
         </div>

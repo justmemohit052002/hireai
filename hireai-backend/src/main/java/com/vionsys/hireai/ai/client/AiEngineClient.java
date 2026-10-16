@@ -34,12 +34,13 @@ import lombok.extern.slf4j.Slf4j;
 public class AiEngineClient {
 
     private final RestClient restClient;
+    private final RestClient adminRestClient;
     private final AiEngineProperties properties;
 
     public AiEngineClient(AiEngineProperties properties) {
         this.properties = properties != null ? properties : new AiEngineProperties();
 
-        int timeout = this.properties.getTimeoutMs() > 0 ? this.properties.getTimeoutMs() : 30000;
+        int timeout = this.properties.getTimeoutMs() > 0 ? this.properties.getTimeoutMs() : 120000;
         String baseUrl = this.properties.getBaseUrl() != null && !this.properties.getBaseUrl().isBlank()
                 ? this.properties.getBaseUrl()
                 : "http://localhost:8000";
@@ -48,9 +49,26 @@ public class AiEngineClient {
         factory.setConnectTimeout(Duration.ofMillis(timeout));
         factory.setReadTimeout(Duration.ofMillis(timeout));
 
+        String internalKey = this.properties.getInternalKey() != null ? this.properties.getInternalKey() : "";
+
         this.restClient = RestClient.builder()
                 .baseUrl(baseUrl)
                 .requestFactory(factory)
+                .defaultHeader("X-Internal-Key", internalKey)
+                .build();
+
+        // Dedicated fast RestClient for admin telemetry and monitoring calls
+        int adminConnectTimeout = this.properties.getHealthConnectTimeoutMs() > 0 ? this.properties.getHealthConnectTimeoutMs() : 2000;
+        int adminReadTimeout = this.properties.getHealthReadTimeoutMs() > 0 ? this.properties.getHealthReadTimeoutMs() : 3000;
+
+        SimpleClientHttpRequestFactory adminFactory = new SimpleClientHttpRequestFactory();
+        adminFactory.setConnectTimeout(Duration.ofMillis(adminConnectTimeout));
+        adminFactory.setReadTimeout(Duration.ofMillis(adminReadTimeout));
+
+        this.adminRestClient = RestClient.builder()
+                .baseUrl(baseUrl)
+                .requestFactory(adminFactory)
+                .defaultHeader("X-Internal-Key", internalKey)
                 .build();
     }
 
@@ -192,6 +210,148 @@ public class AiEngineClient {
             return Optional.ofNullable(response);
         } catch (Exception ex) {
             log.error("AI Engine finalizeDecision failed: {}", ex.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    public record HealthCheckResult(
+            boolean isSuccessful,
+            com.vionsys.hireai.admin.dto.AdminHealthResponse response,
+            String statusReasonCode,
+            String statusMessage,
+            Throwable cause
+    ) {}
+
+    /**
+     * Admin: AI Engine Health Summary for all 6 modules with granular error classification.
+     */
+    public HealthCheckResult checkAdminHealthDetailed() {
+        try {
+            com.vionsys.hireai.admin.dto.AdminHealthResponse response = adminRestClient.get()
+                    .uri("/api/v1/admin/health-summary")
+                    .retrieve()
+                    .body(com.vionsys.hireai.admin.dto.AdminHealthResponse.class);
+
+            if (response == null) {
+                return new HealthCheckResult(false, null, "SERVICE_ERROR", "AI Engine returned empty response payload", null);
+            }
+
+            boolean anyDegraded = false;
+            String degradedReason = null;
+            if (response.getModules() != null) {
+                for (com.vionsys.hireai.admin.dto.ModuleHealthDto mod : response.getModules()) {
+                    String st = mod.getStatus() != null ? mod.getStatus().toUpperCase() : "UNKNOWN";
+                    if (!"HEALTHY".equals(st) && !"UP".equals(st)) {
+                        anyDegraded = true;
+                        if (mod.getError() != null && !mod.getError().isBlank()) {
+                            degradedReason = mod.getName() + " (" + mod.getError() + ")";
+                        } else if (degradedReason == null) {
+                            degradedReason = mod.getName() + " is " + st;
+                        }
+                    }
+                }
+            }
+
+            if ("DEGRADED".equalsIgnoreCase(response.getOverallStatus()) || "DOWN".equalsIgnoreCase(response.getOverallStatus()) || anyDegraded) {
+                String msg = degradedReason != null
+                        ? "AI Engine operational but degraded: " + degradedReason
+                        : "AI Engine operational but one or more modules/providers are degraded";
+                response.setOverallStatus("MODULE_DEGRADED");
+                return new HealthCheckResult(true, response, "MODULE_DEGRADED", msg, null);
+            }
+
+            response.setOverallStatus("HEALTHY");
+            return new HealthCheckResult(true, response, "HEALTHY", "AI Engine and all modules operational", null);
+
+        } catch (org.springframework.web.client.ResourceAccessException ex) {
+            String detail = ex.getMessage();
+            boolean isTimeout = detail != null && (detail.toLowerCase().contains("timeout") || detail.toLowerCase().contains("timed out"));
+            String msg = isTimeout
+                    ? "AI Engine request timed out connecting to " + properties.getBaseUrl()
+                    : "AI Engine connection refused at " + properties.getBaseUrl() + " (Service Down)";
+            return new HealthCheckResult(false, null, "SERVICE_UNREACHABLE", msg, ex);
+        } catch (org.springframework.web.client.HttpStatusCodeException ex) {
+            String msg = "AI Engine HTTP " + ex.getStatusCode().value() + " error: " + ex.getStatusText();
+            return new HealthCheckResult(false, null, "SERVICE_ERROR", msg, ex);
+        } catch (org.springframework.web.client.RestClientResponseException ex) {
+            String msg = "AI Engine REST error (" + ex.getStatusCode() + "): " + ex.getMessage();
+            return new HealthCheckResult(false, null, "SERVICE_ERROR", msg, ex);
+        } catch (Exception ex) {
+            String msg = "AI Engine check failed: " + ex.getMessage();
+            return new HealthCheckResult(false, null, "SERVICE_ERROR", msg, ex);
+        }
+    }
+
+    /**
+     * Admin: AI Engine Health Summary (Backward-compatible Optional wrapper).
+     */
+    public Optional<com.vionsys.hireai.admin.dto.AdminHealthResponse> getAdminHealthSummary() {
+        HealthCheckResult result = checkAdminHealthDetailed();
+        return result.isSuccessful() ? Optional.ofNullable(result.response()) : Optional.empty();
+    }
+
+    /**
+     * Admin: AI Engine LLM Usage, Cost & Quota Statistics
+     */
+    public Optional<com.vionsys.hireai.admin.dto.AdminStatsResponse> getAdminStats(String range) {
+        try {
+            com.vionsys.hireai.admin.dto.AdminStatsResponse response = adminRestClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/api/v1/admin/stats")
+                            .queryParam("range", range != null && !range.isBlank() ? range : "all")
+                            .build())
+                    .retrieve()
+                    .body(com.vionsys.hireai.admin.dto.AdminStatsResponse.class);
+            return Optional.ofNullable(response);
+        } catch (Exception ex) {
+            log.warn("AI Engine stats check failed ({}).", ex.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Admin: AI Engine Call Logs and Audit Trail
+     */
+    public Optional<com.vionsys.hireai.admin.dto.AdminCallLogsResponse> getAdminLogs(
+            String query, String taskType, String status, String provider,
+            String from, String to, String correlationId, String candidateRef,
+            int page, int size) {
+        try {
+            com.vionsys.hireai.admin.dto.AdminCallLogsResponse response = adminRestClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/api/v1/admin/logs")
+                            .queryParam("query", query != null && !query.isBlank() ? query : null)
+                            .queryParam("task_type", taskType != null && !taskType.isBlank() && !"ALL".equalsIgnoreCase(taskType) ? taskType : null)
+                            .queryParam("status", status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status) ? status : null)
+                            .queryParam("provider", provider != null && !provider.isBlank() && !"ALL".equalsIgnoreCase(provider) ? provider : null)
+                            .queryParam("from_date", from != null && !from.isBlank() ? from : null)
+                            .queryParam("to_date", to != null && !to.isBlank() ? to : null)
+                            .queryParam("correlation_id", correlationId != null && !correlationId.isBlank() ? correlationId : null)
+                            .queryParam("candidate_ref", candidateRef != null && !candidateRef.isBlank() ? candidateRef : null)
+                            .queryParam("page", page > 0 ? page : 1)
+                            .queryParam("size", size > 0 ? size : 20)
+                            .build())
+                    .retrieve()
+                    .body(com.vionsys.hireai.admin.dto.AdminCallLogsResponse.class);
+            return Optional.ofNullable(response);
+        } catch (Exception ex) {
+            log.warn("AI Engine logs query failed ({}).", ex.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Admin: Retrieve a single call log entry by ID
+     */
+    public Optional<com.vionsys.hireai.admin.dto.AdminCallLogEntry> getAdminLogById(String id) {
+        try {
+            com.vionsys.hireai.admin.dto.AdminCallLogEntry response = adminRestClient.get()
+                    .uri("/api/v1/admin/logs/{id}", id)
+                    .retrieve()
+                    .body(com.vionsys.hireai.admin.dto.AdminCallLogEntry.class);
+            return Optional.ofNullable(response);
+        } catch (Exception ex) {
+            log.warn("AI Engine single log query failed for ID {} ({}).", id, ex.getMessage());
             return Optional.empty();
         }
     }

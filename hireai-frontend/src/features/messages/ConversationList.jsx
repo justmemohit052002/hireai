@@ -97,7 +97,7 @@ export const ConversationList = ({
                 </div>
 
                 {unreadCount > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-brand-accent text-slate-950 text-[10px] font-black shadow-xs shrink-0">
+                  <span className="px-2 py-0.5 rounded-md bg-brand-accent text-slate-950 text-[10px] font-black shadow-xs shrink-0">
                     {unreadCount}
                   </span>
                 )}

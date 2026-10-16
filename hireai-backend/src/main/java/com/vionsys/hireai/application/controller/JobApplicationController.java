@@ -114,6 +114,22 @@ public class JobApplicationController {
         return ResponseEntity.ok(ApiResponse.success(response, "Retrieved submitted applications"));
     }
 
+    @PatchMapping("/applications/{applicationId}/withdraw")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('CANDIDATE')")
+    @Operation(
+            summary = "Withdraw Application (Candidate)",
+            description = "Allows the applicant candidate to withdraw their submitted application."
+    )
+    public ResponseEntity<ApiResponse<JobApplicationResponse>> withdrawApplication(
+            @CurrentUser CustomUserDetails currentUser,
+            @PathVariable UUID applicationId) {
+
+        JobApplicationResponse response =
+                jobApplicationService.withdrawApplication(currentUser.getId(), applicationId);
+
+        return ResponseEntity.ok(ApiResponse.success(response, "Application withdrawn successfully"));
+    }
+
     // =========================================================
     // RECRUITER: VIEW APPLICANTS RANKED BY ATS SCORE
     // =========================================================
@@ -156,6 +172,38 @@ public class JobApplicationController {
         );
 
         return ResponseEntity.ok(ApiResponse.success(response, "Application stage updated successfully"));
+    }
+
+    // =========================================================
+    // RECRUITER / ADMIN: RESCORE APPLICATIONS
+    // =========================================================
+
+    @PostMapping("/applications/{applicationId}/rescore")
+    @PreAuthorize("hasRole('ADMIN') or (hasAuthority('application:update_status') and @applicationSecurity.canManageApplication(#applicationId, principal.id))")
+    @Operation(
+            summary = "Recalculate Application ATS Match Score",
+            description = "Re-evaluates the candidate's skills against job requirements with the upgraded ATS match engine."
+    )
+    public ResponseEntity<ApiResponse<JobApplicationResponse>> rescoreApplication(
+            @CurrentUser CustomUserDetails currentUser,
+            @PathVariable UUID applicationId) {
+
+        JobApplicationResponse response = jobApplicationService.rescoreApplication(applicationId);
+        return ResponseEntity.ok(ApiResponse.success(response, "Application rescored successfully"));
+    }
+
+    @PostMapping("/jobs/{jobId}/applications/rescore")
+    @PreAuthorize("hasRole('ADMIN') or (hasAuthority('application:read') and @jobSecurity.isJobOwner(#jobId, principal.id))")
+    @Operation(
+            summary = "Recalculate All ATS Match Scores for Job",
+            description = "Re-evaluates all candidates' skills for this job using the upgraded ATS match engine."
+    )
+    public ResponseEntity<ApiResponse<List<JobApplicationResponse>>> rescoreJobApplications(
+            @CurrentUser CustomUserDetails currentUser,
+            @PathVariable UUID jobId) {
+
+        List<JobApplicationResponse> response = jobApplicationService.rescoreJobApplications(jobId);
+        return ResponseEntity.ok(ApiResponse.success(response, "All job applications rescored successfully"));
     }
 
     // =========================================================
@@ -229,6 +277,7 @@ public class JobApplicationController {
         return ResponseEntity.ok()
                 .contentType(mediaType)
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
+                .header("X-Content-Type-Options", "nosniff")
                 .body(resource);
     }
 }

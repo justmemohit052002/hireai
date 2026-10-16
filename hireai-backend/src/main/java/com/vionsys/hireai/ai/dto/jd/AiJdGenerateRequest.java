@@ -16,4 +16,7 @@ public class AiJdGenerateRequest {
     private String jobTitle;
     private List<String> requiredSkills;
     private String experienceLevel;
+    private String description;
+    private String domain;
+    private Double yearsOfExperience;
 }

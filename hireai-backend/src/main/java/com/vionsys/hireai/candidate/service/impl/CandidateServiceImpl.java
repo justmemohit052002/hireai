@@ -329,13 +329,22 @@ public class CandidateServiceImpl implements CandidateService {
                 app.setMissingSkills(String.join(", ", atsResult.getMissingSkills()));
 
                 if (newScore >= atsProperties.getShortlistThreshold()) {
-                    app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.SHORTLISTED);
+                    if (app.getStatus() == com.vionsys.hireai.application.enums.ApplicationStatus.APPLIED ||
+                            app.getStatus() == com.vionsys.hireai.application.enums.ApplicationStatus.SCREENING ||
+                            (app.getStatus() == com.vionsys.hireai.application.enums.ApplicationStatus.REJECTED &&
+                                    app.getRecruiterNotes() != null && app.getRecruiterNotes().contains("ATS Skill Match Score"))) {
+                        app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.SHORTLISTED);
+                    }
                     app.setRecruiterNotes(String.format("Shortlisted for interview by AI ATS (Match Score: %d%% >= %d%% threshold)",
                             newScore, atsProperties.getShortlistThreshold()));
                 } else {
-                    app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.REJECTED);
-                    app.setRecruiterNotes(String.format("Application Rejected: ATS Skill Match Score (%d%%) is below the required %d%% threshold",
-                            newScore, atsProperties.getShortlistThreshold()));
+                    if (app.getStatus() == com.vionsys.hireai.application.enums.ApplicationStatus.REJECTED &&
+                            app.getRecruiterNotes() != null &&
+                            app.getRecruiterNotes().contains("ATS Skill Match Score")) {
+                        app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.APPLIED);
+                    }
+                    app.setRecruiterNotes(String.format("Application Received: ATS Match Score %d%%. Under review by recruiter.",
+                            newScore));
                 }
                 jobApplicationRepository.save(app);
             }
@@ -586,8 +595,14 @@ public class CandidateServiceImpl implements CandidateService {
         }
 
         String savedPath = photoStorageService.storePhoto(file);
+        String photoUrl = "/candidates/" + candidate.getId() + "/profile/photo";
         candidate.setProfilePhotoPath(savedPath);
-        candidate.setProfilePhotoUrl("/candidate/profile/photo");
+        candidate.setProfilePhotoUrl(photoUrl);
+
+        if (candidate.getUser() != null) {
+            candidate.getUser().setAvatarUrl(photoUrl);
+            userRepository.save(candidate.getUser());
+        }
 
         Candidate saved = candidateRepository.save(candidate);
         log.info("Updated profile photo for Candidate: {}", candidate.getCandidateId());
@@ -629,6 +644,11 @@ public class CandidateServiceImpl implements CandidateService {
             photoStorageService.deletePhoto(candidate.getProfilePhotoPath());
             candidate.setProfilePhotoPath(null);
             candidate.setProfilePhotoUrl(null);
+        }
+
+        if (candidate.getUser() != null) {
+            candidate.getUser().setAvatarUrl(null);
+            userRepository.save(candidate.getUser());
         }
 
         Candidate saved = candidateRepository.save(candidate);

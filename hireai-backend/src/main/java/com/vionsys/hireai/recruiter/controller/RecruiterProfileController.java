@@ -109,6 +109,7 @@ public class RecruiterProfileController {
         return ResponseEntity.ok()
                 .contentType(mediaType)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+                .header("X-Content-Type-Options", "nosniff")
                 .body(resource);
     }
 
@@ -123,6 +124,7 @@ public class RecruiterProfileController {
         return ResponseEntity.ok()
                 .contentType(mediaType)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline")
+                .header("X-Content-Type-Options", "nosniff")
                 .body(resource);
     }
 

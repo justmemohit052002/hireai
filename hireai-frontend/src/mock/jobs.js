@@ -89,7 +89,7 @@ export const MOCK_JOBS = [
     applicationDeadline: '2026-12-01',
     salary: { min: 130000, max: 170000, currency: 'USD', period: 'year' },
     skills: ['Figma', 'Design Systems', 'User Research', 'Prototyping', 'CSS'],
-    description: 'Design the future of project management for high-performance software teams. Linear is obsessed with craft and every pixel matters — this role is for someone who shares that obsession.',
+    description: 'Design the future of project management for high-performance software teams. Linear is obsessed with craft and every pixel matters, and this role is for someone who shares that obsession.',
     responsibilities: [
       'Own end-to-end design for key product areas',
       'Conduct user research and synthesize insights',

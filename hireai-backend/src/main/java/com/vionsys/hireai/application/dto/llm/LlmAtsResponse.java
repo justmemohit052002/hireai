@@ -21,6 +21,11 @@ public class LlmAtsResponse {
     private int atsScore;
     private List<String> matchingSkills;
     private List<String> missingSkills;
+    private List<String> relatedSkills;
+    private List<String> bonusSkills;
+    private Double skillCoveragePercent;
+    private Double experienceMatchPercent;
+    private String rationale;
     private String aiSummary;
     private boolean recommended;
     private String recommendation;

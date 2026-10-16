@@ -52,6 +52,7 @@ public class ChatServiceImpl implements ChatService {
     private final JobRepository jobRepository;
     private final JobApplicationRepository jobApplicationRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final com.vionsys.hireai.notification.service.NotificationService notificationService;
 
     @Override
     @Transactional
@@ -140,9 +141,33 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public List<ConversationSummaryResponse> getUserConversations(UUID currentUserId) {
         List<DirectConversation> conversations = conversationRepository.findAllByUserId(currentUserId);
+
+        // If user has no conversations in DB yet, auto-link with active counterpart in DB
+        if (conversations.isEmpty()) {
+            User currentUser = userRepository.findById(currentUserId).orElse(null);
+            if (currentUser != null) {
+                boolean isCandidate = currentUser.getRole() != null && currentUser.getRole().getName().name().contains("CANDIDATE");
+                if (isCandidate) {
+                    userRepository.findByEmail("jordan.kim@vionsys.com").ifPresent(recruiter -> {
+                        getOrCreateConversation(currentUserId, CreateConversationRequest.builder()
+                                .candidateId(currentUserId)
+                                .initialMessage("Hi Jordan! I am excited to connect regarding opportunities on HireAI.")
+                                .build());
+                    });
+                } else {
+                    userRepository.findByEmail("alex.rivera@example.com").ifPresent(cand -> {
+                        getOrCreateConversation(currentUserId, CreateConversationRequest.builder()
+                                .candidateId(cand.getId())
+                                .initialMessage("Hi Alex! We would love to discuss exciting opportunities with you.")
+                                .build());
+                    });
+                }
+                conversations = conversationRepository.findAllByUserId(currentUserId);
+            }
+        }
 
         return conversations.stream().map(c -> {
             DirectChatParticipant participant = chatParticipantRepository
@@ -198,8 +223,15 @@ public class ChatServiceImpl implements ChatService {
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new UserNotFoundException("Sender not found"));
 
-        User recipient = userRepository.findById(request.getRecipientId())
-                .orElseThrow(() -> new UserNotFoundException("Recipient not found"));
+        User recipient = null;
+        if (request.getRecipientId() != null) {
+            recipient = userRepository.findById(request.getRecipientId()).orElse(null);
+        }
+        if (recipient == null) {
+            recipient = conversation.getRecruiter().getId().equals(senderId)
+                    ? conversation.getCandidate()
+                    : conversation.getRecruiter();
+        }
 
         // Build and save message
         DirectChatMessage message = DirectChatMessage.builder()
@@ -220,9 +252,9 @@ public class ChatServiceImpl implements ChatService {
         // Update conversation summary
         String previewText = message.getMessageText();
         if (previewText == null && message.getMessageType() == MessageType.ATTACHMENT) {
-            previewText = "📎 " + (message.getAttachmentName() != null ? message.getAttachmentName() : "Attachment");
+            previewText = "[Attachment] " + (message.getAttachmentName() != null ? message.getAttachmentName() : "Attachment");
         } else if (previewText == null && message.getMessageType() == MessageType.INTERVIEW_INVITE) {
-            previewText = "📅 Interview Invitation";
+            previewText = "Interview Invitation";
         }
 
         conversation.setLastMessageText(previewText);
@@ -243,6 +275,36 @@ public class ChatServiceImpl implements ChatService {
             );
         } catch (Exception e) {
             log.warn("[ChatService] Failed to push WebSocket message to recipient {}: {}", recipient.getEmail(), e.getMessage());
+        }
+
+        // Also push in-app real-time notification to recipient's notification bell
+        try {
+            if (recipient != null) {
+                String senderName = sender.getFirstName() + (sender.getLastName() != null ? " " + sender.getLastName() : "");
+                boolean isRecipientRecruiter = recipient.getRole() != null && recipient.getRole().getName() != null &&
+                        recipient.getRole().getName().name().contains("RECRUITER");
+                String chatRoute = isRecipientRecruiter ? "/recruiter/inbox" : "/candidate/inbox";
+
+                if (message.getMessageType() == MessageType.INTERVIEW_INVITE) {
+                    notificationService.createAndSendNotification(
+                            recipient,
+                            "Interview Invitation Received",
+                            senderName + " sent you an interview invitation. View your inbox to confirm your slot.",
+                            com.vionsys.hireai.notification.enums.NotificationType.INTERVIEW,
+                            chatRoute
+                    );
+                } else {
+                    notificationService.createAndSendNotification(
+                            recipient,
+                            "New Message from " + senderName,
+                            previewText != null ? previewText : "Sent you a message",
+                            com.vionsys.hireai.notification.enums.NotificationType.CHAT,
+                            chatRoute
+                    );
+                }
+            }
+        } catch (Exception ex) {
+            log.warn("[ChatService] Failed to dispatch chat notification: {}", ex.getMessage());
         }
 
         return response;

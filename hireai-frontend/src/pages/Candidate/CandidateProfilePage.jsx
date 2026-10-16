@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   User,
   MapPin,
@@ -25,7 +25,8 @@ import {
   DollarSign,
   Clock,
   ShieldCheck,
-  FileText
+  FileText,
+  Camera
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Card } from '@/components/ui/Card';
@@ -64,10 +65,13 @@ const NOTICE_PERIOD_PRESETS = [
 ];
 
 export const CandidateProfilePage = () => {
-  const { user } = useAuth();
+  const { user, updateUserAvatar } = useAuth();
+  const photoInputRef = useRef(null);
   const [activeTab, setActiveTab] = useState('edit'); // 'edit' | 'preview'
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isPhotoUploading, setIsPhotoUploading] = useState(false);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [showBreakdown, setShowBreakdown] = useState(false);
@@ -93,6 +97,10 @@ export const CandidateProfilePage = () => {
       try {
         const profile = await candidateApi.getMyProfile();
         if (profile) {
+          if (profile.profilePhotoUrl) {
+            setProfilePhotoUrl(profile.profilePhotoUrl);
+            updateUserAvatar(profile.profilePhotoUrl);
+          }
           if (profile.currentDesignation || profile.designation) {
             setDesignation(profile.currentDesignation || profile.designation);
           }
@@ -126,6 +134,41 @@ export const CandidateProfilePage = () => {
     }
     loadProfile();
   }, []);
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
+      setErrorMsg('Invalid file format. Allowed formats: JPG, PNG, and WebP.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMsg('File size exceeds the 5MB limit.');
+      return;
+    }
+
+    setIsPhotoUploading(true);
+    setErrorMsg('');
+    try {
+      const response = await candidateApi.uploadPhoto(file);
+      const photoUrl =
+        response?.profilePhotoUrl ||
+        (user?.id ? `/users/${user.id}/avatar` : null) ||
+        '/candidate/profile/photo';
+      const timestamped = `${photoUrl}?t=${Date.now()}`;
+      setProfilePhotoUrl(timestamped);
+      updateUserAvatar(timestamped);
+      setSuccessMsg('Profile photo updated successfully!');
+      setTimeout(() => setSuccessMsg(''), 3500);
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to upload photo.');
+    } finally {
+      setIsPhotoUploading(false);
+    }
+  };
 
   // Skill Management Helpers
   const handleAddSkill = (skillToAdd) => {
@@ -370,7 +413,7 @@ export const CandidateProfilePage = () => {
     }
     return {
       badgeBg: 'bg-rose-500/15 border-rose-500/30 text-rose-400',
-      progressBar: 'from-rose-500 via-pink-400 to-red-400',
+      progressBar: 'from-rose-500 via-red-400 to-amber-500',
       ratingLabel: 'Needs Completion',
     };
   };
@@ -404,22 +447,47 @@ export const CandidateProfilePage = () => {
       )}
 
       {/* Hero Profile Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl glass border border-border/70 p-6 md:p-8 shadow-md">
+      <div className="relative overflow-hidden rounded-3xl glass border border-border/70 p-4 sm:p-6 md:p-8 shadow-md">
         <div className="absolute top-0 inset-x-0 h-1.5 bg-brand-blue" />
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-5">
-            <div className="relative">
-              <Avatar name={displayName} size="xl" />
-              <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center text-[10px] text-foreground font-bold" title="Verified Candidate">
-                ✓
+          <div className="flex items-center gap-4 sm:gap-5">
+            <div className="relative shrink-0 group">
+              <Avatar
+                name={displayName}
+                src={profilePhotoUrl || user?.avatarUrl}
+                size="xl"
+                className="w-16 h-16 sm:w-20 sm:h-20 text-xl border-2"
+              />
+              <input
+                type="file"
+                ref={photoInputRef}
+                onChange={handlePhotoUpload}
+                accept=".jpg,.jpeg,.png,.webp"
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => photoInputRef.current?.click()}
+                disabled={isPhotoUploading}
+                title="Upload or Change Profile Photo"
+                className="absolute inset-0 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-md"
+              >
+                {isPhotoUploading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Camera className="w-5 h-5" />
+                )}
+              </button>
+              <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center" title="Verified Candidate">
+                <Check className="w-3 h-3 text-white stroke-[3]" />
               </span>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1 min-w-0">
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-2xl sm:text-3xl font-bold font-heading text-foreground">{displayName}</h1>
-                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold font-heading text-foreground truncate">{displayName}</h1>
+                <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-primary">
                   {designation || 'Candidate'}
                 </span>
               </div>
@@ -517,7 +585,7 @@ export const CandidateProfilePage = () => {
             ) : (
               <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>🎉 All-Star Profile! 100% complete and fully optimized for top recruiter discovery & ATS rankings.</span>
+                <span>All-Star Profile: 100% complete and fully optimized for top recruiter discovery and ATS rankings.</span>
               </div>
             )}
           </div>
@@ -540,7 +608,7 @@ export const CandidateProfilePage = () => {
           <Card glass className="p-8 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border/50">
               <div className="flex items-center gap-4">
-                <Avatar name={displayName} size="xl" />
+                <Avatar name={displayName} src={profilePhotoUrl || user?.avatarUrl} size="xl" />
                 <div>
                   <h2 className="text-xl sm:text-2xl font-bold font-heading text-foreground">{displayName}</h2>
                   <p className="text-sm font-semibold text-primary">{designation || 'Software Engineer'}</p>

@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authApi } from '@/services/api/auth.api';
+import { candidateApi } from '@/services/api/candidate.api';
+import { recruiterApi } from '@/services/api/recruiter.api';
 import { getStoredToken, getStoredUser, clearAuthSession } from '@/services/api/apiClient';
 
 const AuthContext = createContext(null);
@@ -13,7 +15,9 @@ export function normalizeRole(backendRole) {
     roleStr = String(backendRole);
   }
   const upper = roleStr.toUpperCase();
-  if (upper.includes('RECRUITER') || upper.includes('ADMIN') || upper.includes('HR')) return 'recruiter';
+  if (upper.includes('SUB_ADMIN')) return 'sub_admin';
+  if (upper.includes('ADMIN')) return 'admin';
+  if (upper.includes('RECRUITER') || upper.includes('HR')) return 'recruiter';
   if (upper.includes('CANDIDATE') || upper.includes('USER') || upper.includes('JOB_SEEKER')) return 'candidate';
   return roleStr.toLowerCase();
 }
@@ -36,12 +40,41 @@ export function AuthProvider({ children }) {
     try {
       const me = await authApi.getMe();
       if (me) {
-        setUser((prev) => ({
-          ...prev,
-          ...me,
-          id: me.id || prev?.id,
-          role: me.role || prev?.role,
-        }));
+        let avatar = me.avatarUrl || null;
+        const userRole = normalizeRole(me.role);
+
+        if (!avatar) {
+          if (userRole === 'candidate') {
+            try {
+              const candProfile = await candidateApi.getMyProfile();
+              if (candProfile?.profilePhotoUrl) {
+                avatar = candProfile.profilePhotoUrl;
+              }
+            } catch {}
+          } else if (userRole === 'recruiter') {
+            try {
+              const recProfile = await recruiterApi.getMyProfile();
+              if (recProfile?.profilePhotoUrl) {
+                avatar = recProfile.profilePhotoUrl;
+              }
+            } catch {}
+          }
+        }
+
+        setUser((prev) => {
+          const updated = {
+            ...prev,
+            ...me,
+            id: me.id || prev?.id,
+            role: me.role || prev?.role,
+            avatarUrl: avatar || prev?.avatarUrl || null,
+            hasPassword: me.hasPassword !== undefined ? Boolean(me.hasPassword) : (prev?.hasPassword ?? true),
+            authProvider: me.authProvider || prev?.authProvider || 'LOCAL',
+            mustChangePassword: me.mustChangePassword !== undefined ? Boolean(me.mustChangePassword) : Boolean(prev?.mustChangePassword),
+          };
+          localStorage.setItem('hireai_user', JSON.stringify(updated));
+          return updated;
+        });
       }
     } catch (err) {
       console.warn('[AuthContext] Session validation failed:', err.message);
@@ -55,6 +88,33 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  const updateMustChangePassword = useCallback((mustChange) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, mustChangePassword: Boolean(mustChange) };
+      localStorage.setItem('hireai_user', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const updateUserAvatar = useCallback((newAvatarUrl) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, avatarUrl: newAvatarUrl };
+      localStorage.setItem('hireai_user', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const updateUserPasswordStatus = useCallback((hasPassword) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, hasPassword: Boolean(hasPassword) };
+      localStorage.setItem('hireai_user', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
   useEffect(() => {
     refreshUserProfile();
 
@@ -66,10 +126,10 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('hireai-logout', handleLogoutEvent);
   }, [refreshUserProfile]);
 
-  const login = async (email, password) => {
+  const login = async (email, password, requestedRole) => {
     setIsLoading(true);
     try {
-      const response = await authApi.login(email, password);
+      const response = await authApi.login(email, password, requestedRole);
       const loggedUser = {
         id: response.id || response.userId,
         email: response.email,
@@ -77,9 +137,13 @@ export function AuthProvider({ children }) {
         lastName: response.lastName,
         role: response.role,
         companyName: response.companyName,
+        avatarUrl: response.avatarUrl || response.profilePhotoUrl || null,
+        hasPassword: response.hasPassword !== undefined ? Boolean(response.hasPassword) : true,
+        mustChangePassword: Boolean(response.mustChangePassword),
+        authProvider: response.authProvider || 'LOCAL',
       };
       setUser(loggedUser);
-      return { success: true, user: loggedUser, role: normalizeRole(response.role) };
+      return { success: true, user: loggedUser, role: normalizeRole(response.role), mustChangePassword: Boolean(response.mustChangePassword) };
     } catch (error) {
       console.error('[AuthContext] Login failed:', error);
       throw error;
@@ -92,12 +156,18 @@ export function AuthProvider({ children }) {
     setIsLoading(true);
     try {
       const response = await authApi.registerCandidate(payload);
+      if (response && response.requiresVerification) {
+        return { requiresVerification: true, email: response.email, message: response.message };
+      }
       const registeredUser = {
         id: response.id || response.userId,
         email: response.email,
         firstName: response.firstName,
         lastName: response.lastName,
         role: response.role,
+        avatarUrl: response.avatarUrl || response.profilePhotoUrl || null,
+        hasPassword: true,
+        authProvider: 'LOCAL',
       };
       setUser(registeredUser);
       return { success: true, user: registeredUser, role: 'candidate' };
@@ -110,6 +180,9 @@ export function AuthProvider({ children }) {
     setIsLoading(true);
     try {
       const response = await authApi.registerRecruiter(payload);
+      if (response && response.requiresVerification) {
+        return { requiresVerification: true, email: response.email, message: response.message };
+      }
       const registeredUser = {
         id: response.id || response.userId,
         email: response.email,
@@ -117,9 +190,84 @@ export function AuthProvider({ children }) {
         lastName: response.lastName,
         role: response.role,
         companyName: response.companyName,
+        avatarUrl: response.avatarUrl || response.profilePhotoUrl || null,
+        hasPassword: true,
+        authProvider: 'LOCAL',
       };
       setUser(registeredUser);
       return { success: true, user: registeredUser, role: 'recruiter' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verifyEmailOtp = async ({ email, otp }) => {
+    setIsLoading(true);
+    try {
+      const response = await authApi.verifyEmailOtp({ email, otp });
+      const loggedUser = {
+        id: response.id || response.userId,
+        email: response.email,
+        firstName: response.firstName,
+        lastName: response.lastName,
+        role: response.role,
+        companyName: response.companyName,
+        avatarUrl: response.avatarUrl || response.profilePhotoUrl || null,
+        hasPassword: response.hasPassword !== undefined ? Boolean(response.hasPassword) : true,
+        authProvider: response.authProvider || 'LOCAL',
+      };
+      setUser(loggedUser);
+      return { success: true, user: loggedUser, role: normalizeRole(response.role) };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const resendEmailOtp = async ({ email }) => {
+    return authApi.resendEmailOtp({ email });
+  };
+
+  const loginWithGoogle = async (payload) => {
+    setIsLoading(true);
+    try {
+      const response = await authApi.loginWithGoogle(payload);
+      const effectiveRole = response?.role || payload?.role;
+      const loggedUser = {
+        id: response?.id || response?.userId,
+        email: response?.email,
+        firstName: response?.firstName,
+        lastName: response?.lastName,
+        role: effectiveRole,
+        companyName: response?.companyName || payload?.companyName,
+        avatarUrl: response?.avatarUrl || response?.profilePhotoUrl || null,
+        hasPassword: response?.hasPassword !== undefined ? Boolean(response.hasPassword) : false,
+        authProvider: response?.authProvider || 'GOOGLE',
+      };
+      setUser(loggedUser);
+      return { success: true, user: loggedUser, role: normalizeRole(effectiveRole) };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginWithLinkedIn = async (payload) => {
+    setIsLoading(true);
+    try {
+      const response = await authApi.loginWithLinkedIn(payload);
+      const effectiveRole = response?.role || payload?.role;
+      const loggedUser = {
+        id: response?.id || response?.userId,
+        email: response?.email,
+        firstName: response?.firstName,
+        lastName: response?.lastName,
+        role: effectiveRole,
+        companyName: response?.companyName || payload?.companyName,
+        avatarUrl: response?.avatarUrl || response?.profilePhotoUrl || null,
+        hasPassword: response?.hasPassword !== undefined ? Boolean(response.hasPassword) : false,
+        authProvider: response?.authProvider || 'LINKEDIN',
+      };
+      setUser(loggedUser);
+      return { success: true, user: loggedUser, role: normalizeRole(effectiveRole) };
     } finally {
       setIsLoading(false);
     }
@@ -144,8 +292,15 @@ export function AuthProvider({ children }) {
         login,
         registerCandidate,
         registerRecruiter,
+        verifyEmailOtp,
+        resendEmailOtp,
+        loginWithGoogle,
+        loginWithLinkedIn,
         logout,
         refreshUserProfile,
+        updateUserAvatar,
+        updateUserPasswordStatus,
+        updateMustChangePassword,
       }}
     >
       {children}

@@ -19,6 +19,8 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.vionsys.hireai.candidate.storage.FileSecurityValidator;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vionsys.hireai.ai.client.AiEngineClient;
 import com.vionsys.hireai.ai.config.AiEngineProperties;
@@ -58,6 +60,7 @@ public class ResumeServiceImpl implements ResumeService {
     @Value("${resume.max-file-size:10485760}")
     private long maxFileSize;
 
+    private final FileSecurityValidator fileSecurityValidator;
     private final CandidateRepository candidateRepository;
     private final ResumeRepository resumeRepository;
     private final SkillRepository skillRepository;
@@ -73,6 +76,8 @@ public class ResumeServiceImpl implements ResumeService {
     private final com.vionsys.hireai.application.repository.JobApplicationRepository jobApplicationRepository;
     private final com.vionsys.hireai.application.service.AtsMatchScoringService atsMatchScoringService;
     private final com.vionsys.hireai.application.config.AtsProperties atsProperties;
+    private final com.vionsys.hireai.notification.service.NotificationService notificationService;
+
 
     @Override
     public ResumeResponse uploadResume(UUID candidateId, MultipartFile file) {
@@ -235,22 +240,19 @@ public class ResumeServiceImpl implements ResumeService {
             log.warn("Could not serialize parsedDataJson: {}", ex.getMessage());
         }
 
-        // Auto-enrich Candidate profile with skills if present
+        // Auto-enrich Candidate profile with verified grounded skills from resume
         Candidate candidate = resume.getCandidate();
         if (candidate != null && parsedResult.getSkills() != null && !parsedResult.getSkills().isEmpty()) {
-            Set<Skill> existingSkills = candidate.getSkills() != null
-                    ? new HashSet<>(candidate.getSkills())
-                    : new HashSet<>();
-
+            Set<Skill> resumeSkills = new HashSet<>();
             for (String skillName : parsedResult.getSkills()) {
                 if (skillName == null || skillName.isBlank())
                     continue;
                 String trimmedName = skillName.trim();
                 Skill skill = skillRepository.findByNameIgnoreCase(trimmedName)
                         .orElseGet(() -> skillRepository.save(Skill.builder().name(trimmedName).build()));
-                existingSkills.add(skill);
+                resumeSkills.add(skill);
             }
-            candidate.setSkills(existingSkills);
+            candidate.setSkills(resumeSkills);
 
             if (candidate.getCurrentDesignation() == null && parsedResult.getCurrentRole() != null) {
                 candidate.setCurrentDesignation(parsedResult.getCurrentRole());
@@ -272,20 +274,46 @@ public class ResumeServiceImpl implements ResumeService {
                     app.setMatchingSkills(String.join(", ", atsResult.getMatchingSkills()));
                     app.setMissingSkills(String.join(", ", atsResult.getMissingSkills()));
 
+                    boolean newlyShortlisted = false;
                     if (newScore >= atsProperties.getShortlistThreshold()) {
-                        app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.SHORTLISTED);
+                        if (app.getStatus() == com.vionsys.hireai.application.enums.ApplicationStatus.APPLIED ||
+                                app.getStatus() == com.vionsys.hireai.application.enums.ApplicationStatus.SCREENING ||
+                                (app.getStatus() == com.vionsys.hireai.application.enums.ApplicationStatus.REJECTED &&
+                                        app.getRecruiterNotes() != null && app.getRecruiterNotes().contains("ATS Skill Match Score"))) {
+                            app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.SHORTLISTED);
+                            newlyShortlisted = true;
+                        }
                         app.setRecruiterNotes(
                                 String.format("Shortlisted for interview by AI ATS (Match Score: %d%% >= %d%% threshold)",
                                         newScore, atsProperties.getShortlistThreshold()));
                     } else {
-                        app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.REJECTED);
+                        if (app.getStatus() == com.vionsys.hireai.application.enums.ApplicationStatus.REJECTED &&
+                                app.getRecruiterNotes() != null &&
+                                app.getRecruiterNotes().contains("ATS Skill Match Score")) {
+                            app.setStatus(com.vionsys.hireai.application.enums.ApplicationStatus.APPLIED);
+                        }
                         app.setRecruiterNotes(
-                                String.format("Application Rejected: ATS Skill Match Score (%d%%) is below the required %d%% threshold",
-                                        newScore, atsProperties.getShortlistThreshold()));
+                                String.format("Application Received: ATS Match Score %d%%. Under review by recruiter.",
+                                        newScore));
                     }
                     jobApplicationRepository.save(app);
                     log.info("Auto-updated Application {} with freshly calculated ATS Match Score: {}%", app.getId(),
                             newScore);
+
+                    // Dispatch notification if newly auto-shortlisted
+                    if (newlyShortlisted && candidate != null && candidate.getUser() != null) {
+                        try {
+                            notificationService.createAndSendNotification(
+                                    candidate.getUser(),
+                                    "Application Auto-Shortlisted",
+                                    "Your newly parsed resume scored " + newScore + "% on " + app.getJob().getTitle() + " and was auto-shortlisted!",
+                                    com.vionsys.hireai.notification.enums.NotificationType.AI_MATCH,
+                                    "/candidate/applications"
+                            );
+                        } catch (Exception exNotif) {
+                            log.debug("Notice on re-score shortlist candidate notification: {}", exNotif.getMessage());
+                        }
+                    }
                 }
             } catch (Exception ex) {
                 log.warn("Failed to auto-update ATS score on existing applications: {}", ex.getMessage());
@@ -294,36 +322,47 @@ public class ResumeServiceImpl implements ResumeService {
 
         resumeRepository.save(resume);
         log.info("Successfully updated resume {} with AI parsed result", resumeId);
+
+        // Dispatch real-time notification to candidate
+        try {
+            if (candidate != null && candidate.getUser() != null) {
+                int skillCount = parsedResult.getSkills() != null ? parsedResult.getSkills().size() : 0;
+                notificationService.createAndSendNotification(
+                        candidate.getUser(),
+                        "Resume Parsed and ATS Feedback Ready",
+                        "We extracted " + skillCount + " skills from your resume. Your ATS profile has been updated for AI job matching!",
+                        com.vionsys.hireai.notification.enums.NotificationType.AI_MATCH,
+                        "/candidate/profile"
+                );
+            }
+        } catch (Exception ex) {
+            log.warn("Failed to dispatch resume parsing notification: {}", ex.getMessage());
+        }
     }
 
     private void markResumeParseFailed(UUID resumeId) {
         resumeRepository.findById(resumeId).ifPresent(resume -> {
             resume.setResumeStatus(ResumeStatus.PARSE_FAILED);
             resumeRepository.save(resume);
+
+            try {
+                if (resume.getCandidate() != null && resume.getCandidate().getUser() != null) {
+                    notificationService.createAndSendNotification(
+                            resume.getCandidate().getUser(),
+                            "Resume Parsing Needs Attention",
+                            "We couldn't extract all details from your resume. Please check your uploaded document format (PDF or DOCX recommended) and re-upload.",
+                            com.vionsys.hireai.notification.enums.NotificationType.AI_MATCH,
+                            "/candidate/profile"
+                    );
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to dispatch resume parse failure notification: {}", ex.getMessage());
+            }
         });
     }
 
     private void validateFile(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new FileStorageException("Resume file cannot be empty.");
-        }
-
-        if (file.getSize() > maxFileSize) {
-            throw new FileStorageException(
-                    "Resume file size exceeds maximum limit of " + (maxFileSize / (1024 * 1024)) + " MB.");
-        }
-
-        String fileName = file.getOriginalFilename();
-        if (fileName == null || fileName.isBlank()) {
-            throw new FileStorageException("Resume file name is missing.");
-        }
-
-        String lowerName = fileName.toLowerCase();
-        boolean validExt = lowerName.endsWith(".pdf") || lowerName.endsWith(".docx") || lowerName.endsWith(".doc");
-
-        if (!validExt) {
-            throw new FileStorageException("Only PDF, DOCX, and DOC resume files are allowed.");
-        }
+        fileSecurityValidator.validateResumeFile(file);
     }
 
     @Override

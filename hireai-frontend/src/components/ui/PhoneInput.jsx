@@ -227,7 +227,7 @@ export const PhoneInput = React.forwardRef(
             onChange={handleNumberChange}
             placeholder={placeholder || selectedCountry.placeholder}
             className={cn(
-              'flex h-11 w-full rounded-r-xl border border-border bg-surface-2/80 dark:bg-surface-2 text-foreground px-3.5 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F56681]/40 focus-visible:border-[#F56681] disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 shadow-xs font-mono',
+              'flex h-11 w-full rounded-r-xl border border-border bg-surface-2/80 dark:bg-surface-2 text-foreground px-3.5 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/30 focus-visible:border-brand-blue disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 shadow-xs font-mono',
               error && 'border-red-500 focus-visible:ring-red-500',
               className
             )}

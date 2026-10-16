@@ -13,7 +13,7 @@ export const ThemeToggle = () => {
       onClick={toggleTheme}
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       aria-label="Toggle theme"
-      className="rounded-full"
+      className="rounded-lg"
     >
       {theme === 'dark' ? (
         <Sun className="w-5 h-5 text-amber-400 transition-transform duration-300 hover:rotate-45" />

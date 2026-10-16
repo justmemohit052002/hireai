@@ -1,19 +1,24 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { User, Building2, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { User, Building2, Lock, Mail, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Logo } from '@/components/common/Logo';
+import { Logo } from '@/components/brand/Logo';
+import { OAuthButtons } from '@/components/auth/OAuthButtons';
 import { ROUTES } from '@/constants';
 
 export const LoginPage = () => {
-  const [role, setRole] = useState('candidate');
+  const location = useLocation();
+  const [role, setRole] = useState(() => location.state?.role || 'candidate');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isUnverified, setIsUnverified] = useState(false);
+
+  const infoMessage = location.state?.message;
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -21,18 +26,44 @@ export const LoginPage = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMsg('');
+    setIsUnverified(false);
     setIsLoading(true);
 
     try {
-      const result = await login(email, password);
+      const result = await login(email, password, role);
       const targetRole = result.role || role;
-      if (targetRole === 'candidate') {
-        navigate(ROUTES.CANDIDATE_JOBS);
-      } else {
+      if (targetRole === 'admin') {
+        navigate(ROUTES.ADMIN_DASHBOARD);
+      } else if (targetRole === 'recruiter') {
         navigate(ROUTES.RECRUITER_DASHBOARD);
+      } else {
+        navigate(ROUTES.CANDIDATE_JOBS);
       }
     } catch (err) {
-      setErrorMsg(err.message || 'Invalid email or password. Please try again.');
+      const msg = err.message || '';
+      if (
+        err.status === 403 ||
+        err.error === 'ACCOUNT_NOT_VERIFIED' ||
+        msg.toLowerCase().includes('not verified')
+      ) {
+        setIsUnverified(true);
+        setErrorMsg('Your account email is not verified yet. Please enter the 6-digit OTP code to complete activation.');
+      } else if (err.status === 404) {
+        setIsUnverified(false);
+        setErrorMsg(msg || 'User not found. Please sign up first.');
+      } else if (err.status === 401) {
+        setIsUnverified(false);
+        setErrorMsg(msg || 'Invalid email or password. Please try again.');
+      } else if (err.status === 429) {
+        setIsUnverified(false);
+        setErrorMsg(msg || 'Too many failed login attempts. Please try again later.');
+      } else if (err.status >= 500) {
+        setIsUnverified(false);
+        setErrorMsg('An unexpected server error occurred. Please try again later.');
+      } else {
+        setIsUnverified(false);
+        setErrorMsg(msg || 'Request failed. Please check your credentials and try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -40,19 +71,27 @@ export const LoginPage = () => {
 
   return (
     <div className="w-full my-auto">
-      <Card glass className="w-full max-w-md mx-auto p-6 sm:p-8 space-y-6 shadow-2xl rounded-[28px] border border-white/20 dark:border-white/10">
-        <div className="text-center space-y-1.5">
-          <Logo size="lg" className="justify-center mb-1.5" />
-          <h2 className="text-2xl font-bold font-heading text-foreground">Welcome Back</h2>
+      <Card glass className="w-full max-w-md mx-auto p-5 sm:p-6 space-y-4 sm:space-y-4.5 shadow-2xl rounded-[24px] border border-white/20 dark:border-white/10">
+        <div className="text-center space-y-1">
+          <Logo variant="full" size="lg" showPro className="justify-center mb-1" />
+          <h2 className="text-xl sm:text-2xl font-bold font-heading text-foreground">Welcome Back</h2>
           <p className="text-xs text-muted-foreground">Sign in to your HireAI account</p>
         </div>
+
+        {/* Success / Info Notice */}
+        {infoMessage && (
+          <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium flex items-start gap-2.5">
+            <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-500" />
+            <span>{infoMessage}</span>
+          </div>
+        )}
 
         {/* Role Selector Tabs */}
         <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-muted/60 glass border border-white/10">
           <button
             type="button"
             onClick={() => setRole('candidate')}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all ${
               role === 'candidate'
                 ? 'bg-brand-accent text-slate-950 shadow-md shadow-brand-accent/20'
                 : 'text-muted-foreground hover:text-foreground'
@@ -63,9 +102,9 @@ export const LoginPage = () => {
           <button
             type="button"
             onClick={() => setRole('recruiter')}
-            className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all ${
               role === 'recruiter'
-                ? 'bg-brand-navy text-foreground shadow-md shadow-[#22214B]/20'
+                ? 'bg-brand-accent text-slate-950 shadow-md shadow-brand-accent/20'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -75,9 +114,22 @@ export const LoginPage = () => {
 
         {/* Error Notice */}
         {errorMsg && (
-          <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-medium flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>{errorMsg}</span>
+          <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-medium space-y-2">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{errorMsg}</span>
+            </div>
+            {isUnverified && (
+              <Button
+                type="button"
+                variant="gradient"
+                size="sm"
+                onClick={() => navigate(ROUTES.SIGNUP, { state: { email, step: 3, role } })}
+                className="w-full mt-2 font-bold shadow-md"
+              >
+                Verify Email Now <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              </Button>
+            )}
           </div>
         )}
 
@@ -88,7 +140,10 @@ export const LoginPage = () => {
               Email Address
             </label>
             <Input
+              id="login-email"
+              name="email"
               type="email"
+              autoComplete="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -102,11 +157,14 @@ export const LoginPage = () => {
               Password
             </label>
             <Input
+              id="login-password"
+              name="password"
               type="password"
+              autoComplete="current-password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••••"
+              placeholder="Enter your password"
               icon={<Lock className="w-4 h-4" />}
             />
           </div>
@@ -117,9 +175,11 @@ export const LoginPage = () => {
           </Button>
         </form>
 
+        <OAuthButtons role={role} onError={(err) => setErrorMsg(err)} />
+
         <div className="text-center pt-2 text-xs text-muted-foreground">
           Don't have an account yet?{' '}
-          <Link to={ROUTES.SIGNUP} className="font-bold text-[#F56681] hover:underline">
+          <Link to={ROUTES.SIGNUP} state={{ role }} className="font-bold text-brand-blue dark:text-brand-accent hover:underline">
             Sign Up
           </Link>
         </div>

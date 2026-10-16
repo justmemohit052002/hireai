@@ -20,10 +20,18 @@ export const ProtectedRoute = ({ allowedRole }) => {
     return <Navigate to={ROUTES.LOGIN} replace />;
   }
 
-  if (allowedRole && role && role !== allowedRole) {
-    // Redirect candidates trying to access recruiter routes or vice-versa
-    const fallback = role === 'candidate' ? ROUTES.CANDIDATE_JOBS : ROUTES.RECRUITER_DASHBOARD;
-    return <Navigate to={fallback} replace />;
+  if (allowedRole && role) {
+    // If route requires admin, admin and sub_admin are allowed
+    if (allowedRole === 'admin' && role !== 'admin' && role !== 'sub_admin') {
+      const fallback = role === 'candidate' ? ROUTES.CANDIDATE_JOBS : ROUTES.RECRUITER_DASHBOARD;
+      return <Navigate to={fallback} replace />;
+    }
+
+    // If route requires recruiter or candidate, ensure match
+    if (allowedRole !== 'admin' && role !== allowedRole && role !== 'admin' && role !== 'sub_admin') {
+      const fallback = role === 'candidate' ? ROUTES.CANDIDATE_JOBS : ROUTES.RECRUITER_DASHBOARD;
+      return <Navigate to={fallback} replace />;
+    }
   }
 
   return <Outlet />;

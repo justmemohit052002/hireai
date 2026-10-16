@@ -1,9 +1,10 @@
 import React, { lazy, Suspense } from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { CandidateLayout } from '@/components/layout/CandidateLayout';
 import { RecruiterLayout } from '@/components/layout/RecruiterLayout';
+import { AdminLayout } from '@/components/layout/AdminLayout';
 import { ProtectedRoute } from './ProtectedRoute';
 import { ROUTES } from '@/constants';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -12,6 +13,8 @@ import { Skeleton } from '@/components/ui/Skeleton';
 const LandingPage = lazy(() => import('@/pages/Landing/LandingPage').then((m) => ({ default: m.LandingPage })));
 const LoginPage = lazy(() => import('@/pages/Auth/LoginPage').then((m) => ({ default: m.LoginPage })));
 const SignupPage = lazy(() => import('@/pages/Auth/SignupPage').then((m) => ({ default: m.SignupPage })));
+const PrivacyPolicyPage = lazy(() => import('@/pages/Legal/PrivacyPolicyPage').then((m) => ({ default: m.PrivacyPolicyPage })));
+const TermsConditionsPage = lazy(() => import('@/pages/Legal/TermsConditionsPage').then((m) => ({ default: m.TermsConditionsPage })));
 
 // Candidate pages
 const CandidateJobsPage = lazy(() => import('@/pages/Candidate/CandidateJobsPage').then((m) => ({ default: m.CandidateJobsPage })));
@@ -28,6 +31,14 @@ const LeaderboardPage = lazy(() => import('@/pages/Recruiter/LeaderboardPage').t
 const RecruiterInboxPage = lazy(() => import('@/pages/Recruiter/RecruiterInboxPage').then((m) => ({ default: m.RecruiterInboxPage })));
 const RecruiterProfilePage = lazy(() => import('@/pages/Recruiter/RecruiterProfilePage').then((m) => ({ default: m.RecruiterProfilePage })));
 const RecruiterSettingsPage = lazy(() => import('@/pages/Recruiter/RecruiterSettingsPage').then((m) => ({ default: m.RecruiterSettingsPage })));
+
+// Admin pages
+const AdminDashboardPage = lazy(() => import('@/pages/Admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })));
+const AdminLlmUsagePage = lazy(() => import('@/pages/Admin/AdminLlmUsagePage').then((m) => ({ default: m.AdminLlmUsagePage })));
+const AdminCallLogsPage = lazy(() => import('@/pages/Admin/AdminCallLogsPage').then((m) => ({ default: m.AdminCallLogsPage })));
+const AdminAuditPage = lazy(() => import('@/pages/Admin/AdminAuditPage').then((m) => ({ default: m.AdminAuditPage })));
+const AdminUsersPage = lazy(() => import('@/pages/Admin/AdminUsersPage').then((m) => ({ default: m.AdminUsersPage })));
+const AdminProvidersPage = lazy(() => import('@/pages/Admin/AdminProvidersPage').then((m) => ({ default: m.AdminProvidersPage })));
 
 const SuspenseFallback = () => (
   <div className="p-8 space-y-4 max-w-4xl mx-auto">
@@ -47,6 +58,22 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<SuspenseFallback />}>
             <LandingPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: ROUTES.PRIVACY,
+        element: (
+          <Suspense fallback={<SuspenseFallback />}>
+            <PrivacyPolicyPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: ROUTES.TERMS,
+        element: (
+          <Suspense fallback={<SuspenseFallback />}>
+            <TermsConditionsPage />
           </Suspense>
         ),
       },
@@ -201,9 +228,88 @@ const router = createBrowserRouter([
               </Suspense>
             ),
           },
+          {
+            path: 'candidates',
+            element: <Navigate to="/recruiter/jobs" replace />,
+          },
         ],
       },
     ],
+  },
+
+  // Admin Protected Layout Routes
+  {
+    path: '/admin',
+    element: <ProtectedRoute allowedRole="admin" />,
+    children: [
+      {
+        element: <AdminLayout />,
+        children: [
+          {
+            path: 'dashboard',
+            element: (
+              <Suspense fallback={<SuspenseFallback />}>
+                <AdminDashboardPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'health',
+            element: <Navigate to="/admin/dashboard" replace />,
+          },
+          {
+            path: 'llm-usage',
+            element: (
+              <Suspense fallback={<SuspenseFallback />}>
+                <AdminLlmUsagePage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'logs',
+            element: (
+              <Suspense fallback={<SuspenseFallback />}>
+                <AdminCallLogsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'audit',
+            element: (
+              <Suspense fallback={<SuspenseFallback />}>
+                <AdminAuditPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'users',
+            element: (
+              <Suspense fallback={<SuspenseFallback />}>
+                <AdminUsersPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'providers',
+            element: (
+              <Suspense fallback={<SuspenseFallback />}>
+                <AdminProvidersPage />
+              </Suspense>
+            ),
+          },
+          {
+            index: true,
+            element: <Navigate to="/admin/dashboard" replace />,
+          },
+        ],
+      },
+    ],
+  },
+
+  // Fallback Catch-all Route
+  {
+    path: '*',
+    element: <Navigate to="/" replace />,
   },
 ]);
 

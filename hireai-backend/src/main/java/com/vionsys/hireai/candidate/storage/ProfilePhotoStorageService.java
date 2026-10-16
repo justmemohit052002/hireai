@@ -1,13 +1,16 @@
 package com.vionsys.hireai.candidate.storage;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Arrays;
-import java.util.List;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -21,55 +24,59 @@ import com.vionsys.hireai.candidate.exception.FileStorageException;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Service for securely storing, serving, and deleting candidate and recruiter profile photos.
+ * Ensures:
+ * - Content, extension, and magic-byte validation (blocking SVG/scripts/executables)
+ * - Isolated storage location outside web root
+ * - Cryptographically random UUID filenames with sanitized extensions
+ * - Strict non-executable file permissions on creation
+ * - Path traversal defense
+ */
 @Slf4j
 @Service
 public class ProfilePhotoStorageService {
 
     private final Path photoUploadPath;
-    private final long maxPhotoSize;
-
-    private static final List<String> ALLOWED_IMAGE_EXTENSIONS = Arrays.asList(
-            ".jpg", ".jpeg", ".png", ".webp", ".gif"
-    );
-
-    private static final List<String> ALLOWED_IMAGE_MIME_TYPES = Arrays.asList(
-            "image/jpeg", "image/png", "image/webp", "image/gif"
-    );
+    private final FileSecurityValidator fileSecurityValidator;
 
     public ProfilePhotoStorageService(
             @Value("${photo.upload-dir:uploads/profile-photos}") String photoUploadDir,
-            @Value("${photo.max-file-size:5242880}") long maxPhotoSize) {
+            FileSecurityValidator fileSecurityValidator) {
+        this.fileSecurityValidator = fileSecurityValidator;
         this.photoUploadPath = Paths.get(photoUploadDir).toAbsolutePath().normalize();
-        this.maxPhotoSize = maxPhotoSize;
 
         try {
             Files.createDirectories(this.photoUploadPath);
-            log.info("Initialized profile photo storage directory at: {}", this.photoUploadPath);
+            log.info("Initialized secure profile photo storage directory at: {}", this.photoUploadPath);
         } catch (IOException ex) {
             throw new FileStorageException("Could not initialize photo upload directory: " + this.photoUploadPath, ex);
         }
     }
 
     public String storePhoto(MultipartFile file) {
-        validateImageFile(file);
+        // 1. Deep security validation (magic bytes, MIME type, size, ImageIO decode, no embedded scripts)
+        fileSecurityValidator.validateProfilePhoto(file);
 
         String originalFileName = file.getOriginalFilename();
-        String extension = "";
-        int extIndex = originalFileName != null ? originalFileName.lastIndexOf(".") : -1;
-        if (extIndex > 0) {
-            extension = originalFileName.substring(extIndex).toLowerCase();
-        }
+        String extension = fileSecurityValidator.getSanitizedExtension(
+                originalFileName, FileSecurityValidator.ALLOWED_IMAGE_EXTENSIONS);
 
+        // 2. Generate cryptographically random filename with safe extension
         String storedFileName = "photo_" + UUID.randomUUID() + extension;
         Path targetLocation = this.photoUploadPath.resolve(storedFileName).normalize();
 
-        if (!targetLocation.getParent().equals(this.photoUploadPath)) {
-            throw new FileStorageException("Security violation: path traversal attempt.");
+        if (!targetLocation.startsWith(this.photoUploadPath)) {
+            throw new FileStorageException("Security violation: path traversal attempt during photo storage.");
         }
 
         try {
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-            log.info("Saved profile photo {} -> {}", originalFileName, targetLocation);
+
+            // 3. Guarantee photo cannot be executed as code on disk
+            enforceNonExecutablePermissions(targetLocation);
+
+            log.info("Saved validated profile photo {} -> {}", originalFileName, targetLocation);
             return targetLocation.toString();
         } catch (IOException ex) {
             throw new FileStorageException("Failed to store profile photo: " + ex.getMessage(), ex);
@@ -81,8 +88,18 @@ public class ProfilePhotoStorageService {
             throw new FileStorageException("Profile photo path is missing.");
         }
 
+        // Check for directory traversal sequences
+        if (filePath.contains("..") || filePath.contains("\0")) {
+            throw new FileStorageException("Unauthorized photo access path.");
+        }
+
         try {
             Path path = Paths.get(filePath).toAbsolutePath().normalize();
+            if (!path.startsWith(this.photoUploadPath)) {
+                // If relative filename passed, resolve against photoUploadPath
+                path = this.photoUploadPath.resolve(Paths.get(filePath).getFileName()).normalize();
+            }
+
             if (!path.startsWith(this.photoUploadPath)) {
                 throw new FileStorageException("Unauthorized photo access path.");
             }
@@ -104,6 +121,10 @@ public class ProfilePhotoStorageService {
 
         try {
             Path path = Paths.get(filePath).toAbsolutePath().normalize();
+            if (!path.startsWith(this.photoUploadPath)) {
+                path = this.photoUploadPath.resolve(Paths.get(filePath).getFileName()).normalize();
+            }
+
             if (path.startsWith(this.photoUploadPath)) {
                 Files.deleteIfExists(path);
                 log.info("Deleted profile photo at: {}", path);
@@ -128,33 +149,23 @@ public class ProfilePhotoStorageService {
         return MediaType.IMAGE_JPEG;
     }
 
-    private void validateImageFile(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("Profile photo file cannot be empty.");
-        }
-
-        if (file.getSize() > maxPhotoSize) {
-            throw new IllegalArgumentException(String.format("Profile photo size exceeds maximum limit of %d MB.", maxPhotoSize / (1024 * 1024)));
-        }
-
-        String originalName = file.getOriginalFilename();
-        if (originalName == null || originalName.isBlank()) {
-            throw new IllegalArgumentException("File name is missing.");
-        }
-
-        String ext = "";
-        int extIndex = originalName.lastIndexOf(".");
-        if (extIndex > 0) {
-            ext = originalName.substring(extIndex).toLowerCase();
-        }
-
-        if (!ALLOWED_IMAGE_EXTENSIONS.contains(ext)) {
-            throw new IllegalArgumentException("Unsupported image format: " + ext + ". Allowed formats: JPG, JPEG, PNG, WEBP, GIF.");
-        }
-
-        String contentType = file.getContentType();
-        if (contentType != null && !contentType.isBlank() && !ALLOWED_IMAGE_MIME_TYPES.contains(contentType.toLowerCase())) {
-            throw new IllegalArgumentException("Invalid image content type: " + contentType);
+    private void enforceNonExecutablePermissions(Path path) {
+        try {
+            if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
+                Set<PosixFilePermission> permissions = EnumSet.of(
+                        PosixFilePermission.OWNER_READ,
+                        PosixFilePermission.OWNER_WRITE,
+                        PosixFilePermission.GROUP_READ
+                );
+                Files.setPosixFilePermissions(path, permissions);
+            } else {
+                File file = path.toFile();
+                file.setReadable(true, false);
+                file.setWritable(true, true);
+                file.setExecutable(false, false);
+            }
+        } catch (Exception ex) {
+            log.warn("Could not enforce strict non-executable permissions on {}: {}", path, ex.getMessage());
         }
     }
 }

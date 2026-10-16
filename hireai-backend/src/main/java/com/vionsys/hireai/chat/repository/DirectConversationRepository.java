@@ -49,4 +49,11 @@ public interface DirectConversationRepository extends JpaRepository<DirectConver
         WHERE c.id = :id AND c.isActive = true
     """)
     Optional<DirectConversation> findByIdWithDetails(@Param("id") UUID id);
+
+    @Query("""
+        SELECT c FROM DirectConversation c
+        WHERE (c.recruiter.id = :userId OR c.candidate.id = :userId)
+          AND c.isActive = true
+    """)
+    List<DirectConversation> findAllByAnyUserId(@Param("userId") UUID userId);
 }

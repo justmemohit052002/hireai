@@ -32,11 +32,13 @@ import com.vionsys.hireai.auth.dto.RefreshTokenRequest;
 import com.vionsys.hireai.auth.entity.RefreshToken;
 import com.vionsys.hireai.auth.repository.PasswordResetTokenRepository;
 import com.vionsys.hireai.auth.repository.RefreshTokenRepository;
+import com.vionsys.hireai.candidate.repository.CandidateRepository;
 import com.vionsys.hireai.common.enums.RoleType;
 import com.vionsys.hireai.email.EmailService;
 import com.vionsys.hireai.exception.AccountLockedException;
 import com.vionsys.hireai.exception.InvalidTokenException;
 import com.vionsys.hireai.exception.TokenReuseDetectedException;
+import com.vionsys.hireai.exception.UserNotFoundException;
 import com.vionsys.hireai.recruiter.repository.RecruiterProfileRepository;
 import com.vionsys.hireai.role.entity.Role;
 import com.vionsys.hireai.role.repository.RoleRepository;
@@ -75,6 +77,9 @@ class AuthServiceSecurityTest {
 
     @Mock
     private RecruiterProfileRepository recruiterProfileRepository;
+
+    @Mock
+    private CandidateRepository candidateRepository;
 
     @Mock
     private EmailService emailService;
@@ -243,6 +248,35 @@ class AuthServiceSecurityTest {
                 .build();
 
         assertThrows(AccountLockedException.class, () -> authService.login(request));
+        verify(authenticationManager, never()).authenticate(any());
+    }
+
+    @Test
+    void testLogin_UnregisteredEmail_ThrowsUserNotFoundException() {
+        when(userRepository.findByEmail("unregistered@example.com")).thenReturn(Optional.empty());
+
+        LoginRequest request = LoginRequest.builder()
+                .email("unregistered@example.com")
+                .password("Password123!")
+                .build();
+
+        UserNotFoundException ex = assertThrows(UserNotFoundException.class, () -> authService.login(request));
+        assertEquals("User not found. Please sign up first.", ex.getMessage());
+        verify(authenticationManager, never()).authenticate(any());
+    }
+
+    @Test
+    void testLogin_WhenAccountDeleted_ThrowsDisabledException() {
+        testUser.setDeleted(true);
+        when(userRepository.findByEmail("candidate@example.com")).thenReturn(Optional.of(testUser));
+
+        LoginRequest request = LoginRequest.builder()
+                .email("candidate@example.com")
+                .password("any-password")
+                .build();
+
+        assertThrows(org.springframework.security.authentication.DisabledException.class,
+                () -> authService.login(request));
         verify(authenticationManager, never()).authenticate(any());
     }
 }

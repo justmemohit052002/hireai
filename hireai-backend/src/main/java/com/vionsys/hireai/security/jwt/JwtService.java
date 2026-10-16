@@ -142,9 +142,24 @@ public class JwtService {
             UserDetails userDetails) {
 
         String username = extractUsername(token);
+        if (!username.equals(userDetails.getUsername()) || isTokenExpired(token)) {
+            return false;
+        }
 
-        return username.equals(userDetails.getUsername())
-                && !isTokenExpired(token);
+        if (!userDetails.isEnabled() || !userDetails.isAccountNonLocked()) {
+            return false;
+        }
+
+        String tokenRole = extractRole(token);
+        if (tokenRole != null && !tokenRole.isBlank()) {
+            boolean roleMatches = userDetails.getAuthorities() != null && userDetails.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals(tokenRole));
+            if (!roleMatches) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

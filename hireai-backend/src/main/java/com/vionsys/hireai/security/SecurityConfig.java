@@ -1,7 +1,9 @@
 package com.vionsys.hireai.security;
 
+import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -36,6 +38,10 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final com.vionsys.hireai.security.ratelimit.RateLimitingFilter rateLimitingFilter;
+    private final MustChangePasswordFilter mustChangePasswordFilter;
+
+    @Value("${app.cors.allowed-origins:http://localhost:5173}")
+    private String allowedOrigins;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -53,7 +59,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
+        List<String> origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toList();
+        configuration.setAllowedOrigins(origins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
         configuration.setExposedHeaders(List.of("Authorization"));
@@ -121,17 +131,21 @@ public class SecurityConfig {
                         // ADMIN APIs
                         // =====================================================
 
-                        .requestMatchers("/admin/**")
-                        .hasRole("ADMIN")
+                        .requestMatchers("/admin", "/admin/**")
+                        .hasAnyRole("ADMIN", "SUB_ADMIN")
 
 
                         // =====================================================
                         // RECRUITER APIs
                         // =====================================================
 
-                        // Shared profile photo viewing
-                        .requestMatchers(HttpMethod.GET, "/candidates/*/profile/photo", "/recruiter/profile/*/photo")
-                        .authenticated()
+                        // Public Profile Photos & Static Image Assets (enables browser <img> tag rendering without JWT headers)
+                        .requestMatchers(HttpMethod.GET,
+                                "/candidates/*/profile/photo",
+                                "/recruiter/profile/*/photo",
+                                "/users/*/avatar",
+                                "/uploads/profile-photos/**")
+                        .permitAll()
 
                         .requestMatchers("/recruiter/**")
                         .hasAnyRole("RECRUITER", "ADMIN")
@@ -166,7 +180,7 @@ public class SecurityConfig {
                         // USER SELF-SERVICE & OTHER AUTHENTICATED APIS
                         // =====================================================
 
-                        .requestMatchers("/users/**", "/test")
+                        .requestMatchers("/users/**", "/api/v1/users/**", "/api/users/**", "/test")
                         .authenticated()
 
                         .anyRequest()
@@ -178,8 +192,11 @@ public class SecurityConfig {
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(
+                        mustChangePasswordFilter,
+                        JwtAuthenticationFilter.class)
+                .addFilterAfter(
                         rateLimitingFilter,
-                        JwtAuthenticationFilter.class);
+                        MustChangePasswordFilter.class);
 
         return http.build();
     }

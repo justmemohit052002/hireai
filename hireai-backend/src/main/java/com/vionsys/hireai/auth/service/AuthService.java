@@ -2,6 +2,7 @@ package com.vionsys.hireai.auth.service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.security.authentication.AuthenticationManager;
@@ -10,6 +11,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.vionsys.hireai.auth.dto.AuthResponse;
 import com.vionsys.hireai.auth.dto.ForgotPasswordRequest;
@@ -47,6 +50,17 @@ import com.vionsys.hireai.user.entity.User;
 import com.vionsys.hireai.user.repository.UserRepository;
 import com.vionsys.hireai.security.ratelimit.AccountBackoffManager;
 
+import java.security.SecureRandom;
+import com.vionsys.hireai.auth.dto.OAuthRequest;
+import com.vionsys.hireai.auth.dto.OAuthUserInfo;
+import com.vionsys.hireai.auth.dto.ResendOtpRequest;
+import com.vionsys.hireai.auth.dto.VerifyEmailOtpRequest;
+import com.vionsys.hireai.auth.entity.EmailVerificationOtp;
+import com.vionsys.hireai.auth.repository.EmailVerificationOtpRepository;
+import com.vionsys.hireai.auth.util.EmailDomainValidator;
+import com.vionsys.hireai.email.EmailService;
+import com.vionsys.hireai.exception.AccountNotVerifiedException;
+import com.vionsys.hireai.exception.InvalidOtpException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -66,8 +80,18 @@ public class AuthService {
     private final RecruiterProfileRepository recruiterProfileRepository;
     private final CandidateRepository candidateRepository;
     private final CandidateIdGenerator candidateIdGenerator;
-    private final com.vionsys.hireai.email.EmailService emailService;
+    private final EmailService emailService;
     private final com.vionsys.hireai.security.ratelimit.AccountBackoffManager accountBackoffManager;
+    private final EmailVerificationOtpRepository emailVerificationOtpRepository;
+    private final OAuthService oauthService;
+    private final com.vionsys.hireai.notification.service.NotificationService notificationService;
+    private final com.vionsys.hireai.candidate.repository.ResumeRepository resumeRepository;
+
+    private String generate6DigitOtp() {
+        SecureRandom random = new SecureRandom();
+        int code = 100000 + random.nextInt(900000);
+        return String.valueOf(code);
+    }
 
     @Transactional
     public AuthResponse registerCandidate(RegisterRequest request) {
@@ -76,127 +100,327 @@ public class AuthService {
 
     @Transactional
     public AuthResponse registerRecruiter(RecruiterRegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new UserAlreadyExistsException("Email already exists");
-        }
+        String email = request.getEmail().trim().toLowerCase();
+        EmailDomainValidator.validateEmail(email);
 
-        Role role = roleRepository.findByName(RoleType.ROLE_RECRUITER)
+        Optional<User> existingUserOpt = userRepository.findByEmail(email);
+        User user;
+
+        Role recruiterRole = roleRepository.findByName(RoleType.ROLE_RECRUITER)
                 .orElseThrow(() -> new RoleNotFoundException("Role not found"));
 
-        User user = User.builder()
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .phoneNumber(request.getPhoneNumber())
-                .enabled(true)
-                .accountNonLocked(true)
-                .failedLoginAttempts(0)
-                .role(role)
-                .build();
-
-        User savedUser = userRepository.save(user);
-
-        // Auto-create RecruiterProfile with company name
-        RecruiterProfile recruiterProfile = RecruiterProfile.builder()
-                .user(savedUser)
-                .companyName(request.getCompanyName())
-                .verified(false)
-                .build();
-        recruiterProfileRepository.save(recruiterProfile);
-
-        // Send automated welcome email asynchronously
-        try {
-            emailService.sendWelcomeRecruiterEmail(savedUser);
-        } catch (Exception ex) {
-            log.warn("Failed to send welcome recruiter email: {}", ex.getMessage());
+        if (existingUserOpt.isPresent()) {
+            User existing = existingUserOpt.get();
+            if (Boolean.TRUE.equals(existing.getEnabled())) {
+                throw new UserAlreadyExistsException("Email already exists");
+            }
+            // Update unverified user's credentials and ensure role is ROLE_RECRUITER
+            existing.setFirstName(request.getFirstName());
+            existing.setLastName(request.getLastName());
+            existing.setPassword(passwordEncoder.encode(request.getPassword()));
+            existing.setPhoneNumber(request.getPhoneNumber());
+            existing.setRole(recruiterRole);
+            user = userRepository.save(existing);
+        } else {
+            user = User.builder()
+                    .firstName(request.getFirstName())
+                    .lastName(request.getLastName())
+                    .email(email)
+                    .password(passwordEncoder.encode(request.getPassword()))
+                    .phoneNumber(request.getPhoneNumber())
+                    .enabled(false)
+                    .accountNonLocked(true)
+                    .failedLoginAttempts(0)
+                    .role(recruiterRole)
+                    .build();
+            user = userRepository.save(user);
         }
 
-        CustomUserDetails userDetails = CustomUserDetails.fromUser(savedUser);
-        String accessToken = jwtService.generateAccessToken(userDetails);
-        String refreshToken = createAndSaveRefreshToken(savedUser);
+        // Auto-create RecruiterProfile with company name
+        ensureRecruiterProfile(user, request.getCompanyName());
+
+        // Invalidate any older unused OTPs for this user
+        emailVerificationOtpRepository.findTopByUserAndUsedFalseOrderByCreatedAtDesc(user)
+                .ifPresent(old -> {
+                    old.setUsed(true);
+                    emailVerificationOtpRepository.save(old);
+                });
+
+        // Issue and send 6-digit OTP
+        String otpCode = generate6DigitOtp();
+        EmailVerificationOtp otpEntity = EmailVerificationOtp.builder()
+                .user(user)
+                .otpCode(otpCode)
+                .expiryDate(LocalDateTime.now().plusMinutes(10))
+                .used(false)
+                .attempts(0)
+                .build();
+        emailVerificationOtpRepository.save(otpEntity);
+
+        final User finalRecruiter = user;
+        final String finalRecruiterOtp = otpCode;
+        executeAfterCommit(() -> {
+            emailService.sendEmailVerificationOtp(finalRecruiter, finalRecruiterOtp, 10);
+            log.info("Sent 6-digit verification OTP to recruiter: {}", EmailService.maskEmail(finalRecruiter.getEmail()));
+        });
 
         return AuthResponse.builder()
-                .userId(savedUser.getId())
-                .firstName(savedUser.getFirstName())
-                .lastName(savedUser.getLastName())
-                .email(savedUser.getEmail())
-                .role(savedUser.getRole().getName().name())
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
+                .userId(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(user.getRole().getName().name())
+                .hasPassword(true)
+                .authProvider("LOCAL")
+                .requiresVerification(true)
+                .emailVerified(false)
+                .message("Registration successful! A 6-digit verification code has been sent to your email.")
                 .build();
     }
 
     private AuthResponse register(RegisterRequest request, RoleType roleType) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new UserAlreadyExistsException("Email already exists");
-        }
+        String email = request.getEmail().trim().toLowerCase();
+        EmailDomainValidator.validateEmail(email);
+
+        Optional<User> existingUserOpt = userRepository.findByEmail(email);
+        User user;
 
         Role role = roleRepository.findByName(roleType)
                 .orElseThrow(() -> new RoleNotFoundException("Role not found"));
 
-        User user = User.builder()
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .phoneNumber(request.getPhoneNumber())
-                .enabled(true)
-                .accountNonLocked(true)
-                .failedLoginAttempts(0)
-                .role(role)
-                .build();
+        if (existingUserOpt.isPresent()) {
+            User existing = existingUserOpt.get();
+            if (Boolean.TRUE.equals(existing.getEnabled())) {
+                throw new UserAlreadyExistsException("Email already exists");
+            }
+            // Update unverified user's credentials and role
+            existing.setFirstName(request.getFirstName());
+            existing.setLastName(request.getLastName());
+            existing.setPassword(passwordEncoder.encode(request.getPassword()));
+            existing.setPhoneNumber(request.getPhoneNumber());
+            existing.setRole(role);
+            user = userRepository.save(existing);
+        } else {
+            user = User.builder()
+                    .firstName(request.getFirstName())
+                    .lastName(request.getLastName())
+                    .email(email)
+                    .password(passwordEncoder.encode(request.getPassword()))
+                    .phoneNumber(request.getPhoneNumber())
+                    .enabled(false)
+                    .accountNonLocked(true)
+                    .failedLoginAttempts(0)
+                    .role(role)
+                    .build();
+            user = userRepository.save(user);
+        }
 
-        User savedUser = userRepository.save(user);
-
-        // Auto-create Candidate Profile for candidate users
         if (roleType == RoleType.ROLE_CANDIDATE) {
-            try {
-                Candidate candidate = Candidate.builder()
-                        .user(savedUser)
-                        .candidateId(candidateIdGenerator.generateCandidateId())
-                        .firstName(savedUser.getFirstName())
-                        .lastName(savedUser.getLastName())
-                        .email(savedUser.getEmail())
-                        .phone(savedUser.getPhoneNumber())
-                        .candidateStatus(CandidateStatus.ACTIVE)
-                        .deleted(false)
-                        .build();
-                candidateRepository.save(candidate);
-                log.info("Auto-created Candidate profile for user: {}", savedUser.getEmail());
-            } catch (Exception ex) {
-                log.warn("Failed to auto-create Candidate profile: {}", ex.getMessage());
-            }
+            ensureCandidateProfile(user);
+        } else if (roleType == RoleType.ROLE_RECRUITER) {
+            ensureRecruiterProfile(user, null);
         }
 
-        // Send automated welcome email asynchronously
-        try {
-            if (roleType == RoleType.ROLE_CANDIDATE) {
-                emailService.sendWelcomeCandidateEmail(savedUser);
-            }
-        } catch (Exception ex) {
-            log.warn("Failed to send welcome candidate email: {}", ex.getMessage());
-        }
+        // Invalidate any older unused OTPs for this user
+        emailVerificationOtpRepository.findTopByUserAndUsedFalseOrderByCreatedAtDesc(user)
+                .ifPresent(old -> {
+                    old.setUsed(true);
+                    emailVerificationOtpRepository.save(old);
+                });
 
-        CustomUserDetails userDetails = CustomUserDetails.fromUser(savedUser);
-        String accessToken = jwtService.generateAccessToken(userDetails);
-        String refreshToken = createAndSaveRefreshToken(savedUser);
+        // Issue and send 6-digit OTP
+        String otpCode = generate6DigitOtp();
+        EmailVerificationOtp otpEntity = EmailVerificationOtp.builder()
+                .user(user)
+                .otpCode(otpCode)
+                .expiryDate(LocalDateTime.now().plusMinutes(10))
+                .used(false)
+                .attempts(0)
+                .build();
+        emailVerificationOtpRepository.save(otpEntity);
+
+        final User finalCandidate = user;
+        final String finalCandidateOtp = otpCode;
+        executeAfterCommit(() -> {
+            emailService.sendEmailVerificationOtp(finalCandidate, finalCandidateOtp, 10);
+            log.info("Sent 6-digit verification OTP to candidate: {}", EmailService.maskEmail(finalCandidate.getEmail()));
+        });
 
         return AuthResponse.builder()
-                .userId(savedUser.getId())
-                .firstName(savedUser.getFirstName())
-                .lastName(savedUser.getLastName())
-                .email(savedUser.getEmail())
-                .role(savedUser.getRole().getName().name())
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
+                .userId(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(user.getRole().getName().name())
+                .hasPassword(true)
+                .authProvider("LOCAL")
+                .requiresVerification(true)
+                .emailVerified(false)
+                .message("Registration successful! A 6-digit verification code has been sent to your email.")
                 .build();
     }
 
     @Transactional
+    public AuthResponse verifyEmailOtp(VerifyEmailOtpRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("No account found with email: " + email));
+
+        if (Boolean.TRUE.equals(user.getEnabled())) {
+            CustomUserDetails userDetails = CustomUserDetails.fromUser(user);
+            String accessToken = jwtService.generateAccessToken(userDetails);
+            String refreshToken = createAndSaveRefreshToken(user);
+            return AuthResponse.builder()
+                    .userId(user.getId())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .email(user.getEmail())
+                    .role(user.getRole().getName().name())
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .avatarUrl(resolveUserAvatar(user))
+                    .hasPassword(user.hasPassword())
+                    .authProvider(user.getAuthProvider())
+                    .requiresVerification(false)
+                    .emailVerified(true)
+                    .message("Account is already verified.")
+                    .build();
+        }
+
+        EmailVerificationOtp otpEntity = emailVerificationOtpRepository
+                .findTopByUserAndUsedFalseOrderByCreatedAtDesc(user)
+                .orElseThrow(() -> new InvalidOtpException("No pending verification code found. Please request a new code."));
+
+        if (otpEntity.isExpired()) {
+            throw new InvalidOtpException("Verification code has expired. Please request a new code.");
+        }
+
+        if (otpEntity.getAttempts() >= 5) {
+            throw new InvalidOtpException("Too many incorrect attempts. Please request a new verification code.");
+        }
+
+        if (!otpEntity.getOtpCode().equals(request.getOtp().trim())) {
+            otpEntity.setAttempts(otpEntity.getAttempts() + 1);
+            emailVerificationOtpRepository.save(otpEntity);
+            int remaining = 5 - otpEntity.getAttempts();
+            if (remaining <= 0) {
+                throw new InvalidOtpException("Too many incorrect attempts. Please request a new verification code.");
+            }
+            throw new InvalidOtpException("Invalid verification code. " + remaining + " attempt(s) remaining.");
+        }
+
+        // OTP is correct!
+        otpEntity.setUsed(true);
+        emailVerificationOtpRepository.save(otpEntity);
+
+        user.setEnabled(true);
+        userRepository.save(user);
+
+        // Ensure profile exists for the verified user
+        if (user.getRole().getName() == RoleType.ROLE_RECRUITER) {
+            ensureRecruiterProfile(user, null);
+        } else {
+            ensureCandidateProfile(user);
+        }
+
+        // Send welcome email asynchronously
+        final User finalVerifiedUser = user;
+        executeAfterCommit(() -> {
+            try {
+                if (finalVerifiedUser.getRole() != null && finalVerifiedUser.getRole().getName() == RoleType.ROLE_RECRUITER) {
+                    emailService.sendWelcomeRecruiterEmail(finalVerifiedUser);
+                } else {
+                    emailService.sendWelcomeCandidateEmail(finalVerifiedUser);
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to send welcome email after OTP verification: {}", ex.getMessage());
+            }
+        });
+
+        CustomUserDetails userDetails = CustomUserDetails.fromUser(user);
+        String accessToken = jwtService.generateAccessToken(userDetails);
+        String refreshToken = createAndSaveRefreshToken(user);
+
+        return AuthResponse.builder()
+                .userId(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(user.getRole().getName().name())
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .avatarUrl(resolveUserAvatar(user))
+                .hasPassword(user.hasPassword())
+                .authProvider(user.getAuthProvider())
+                .requiresVerification(false)
+                .emailVerified(true)
+                .message("Email verified successfully! Welcome to HireAI.")
+                .build();
+    }
+
+    @Transactional
+    public void resendEmailOtp(ResendOtpRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("No account found with email: " + email));
+
+        if (Boolean.TRUE.equals(user.getEnabled())) {
+            throw new IllegalStateException("Your account is already verified. Please log in.");
+        }
+
+        // Check 60-second cooldown
+        emailVerificationOtpRepository.findTopByUserAndUsedFalseOrderByCreatedAtDesc(user)
+                .ifPresent(latestOtp -> {
+                    if (latestOtp.getCreatedAt() != null) {
+                        long secondsSinceLast = Duration.between(latestOtp.getCreatedAt(), LocalDateTime.now()).getSeconds();
+                        if (secondsSinceLast < 60) {
+                            long wait = 60 - secondsSinceLast;
+                            throw new InvalidOtpException("Please wait " + wait + " second(s) before requesting a new code.");
+                        }
+                    }
+                    latestOtp.setUsed(true);
+                    emailVerificationOtpRepository.save(latestOtp);
+                });
+
+        String newOtpCode = generate6DigitOtp();
+        EmailVerificationOtp newOtp = EmailVerificationOtp.builder()
+                .user(user)
+                .otpCode(newOtpCode)
+                .expiryDate(LocalDateTime.now().plusMinutes(10))
+                .used(false)
+                .attempts(0)
+                .build();
+        emailVerificationOtpRepository.save(newOtp);
+
+        final User finalResendUser = user;
+        final String finalResendOtp = newOtpCode;
+        executeAfterCommit(() -> {
+            emailService.sendEmailVerificationOtp(finalResendUser, finalResendOtp, 10);
+            log.info("Resent 6-digit verification OTP to: {}", EmailService.maskEmail(finalResendUser.getEmail()));
+        });
+    }
+
+    @Transactional(noRollbackFor = {
+            BadCredentialsException.class,
+            UserNotFoundException.class,
+            AccountNotVerifiedException.class,
+            AccountLockedException.class
+    })
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
+        User user = userRepository.findByEmail(request.getEmail().trim().toLowerCase())
+                .orElseThrow(() -> new UserNotFoundException("User not found. Please sign up first."));
+
+        if (Boolean.TRUE.equals(user.getDeleted())) {
+            throw new org.springframework.security.authentication.DisabledException("This account has been deleted.");
+        }
+
+        // Check email verification status before authenticating
+        if (!Boolean.TRUE.equals(user.getEnabled())) {
+            throw new AccountNotVerifiedException(
+                    "Your email address is not verified. Please verify your account using the 6-digit OTP sent to your email.",
+                    user.getEmail()
+            );
+        }
 
         // 1. Check account exponential backoff and lockout state
         AccountBackoffManager.BackoffResult inMemoryBackoff = accountBackoffManager.checkBackoff(request.getEmail());
@@ -253,12 +477,73 @@ public class AuthService {
             userRepository.save(user);
         }
 
-        // 4. Send security login notification email asynchronously
-        try {
-            emailService.sendLoginAlertEmail(user);
-        } catch (Exception ex) {
-            log.warn("Failed to send login alert email: {}", ex.getMessage());
+        // 4. If caller explicitly requested a specific role (e.g. user toggled RECRUITER tab on login screen)
+        // Note: Never downgrade or alter ROLE_ADMIN or ROLE_SUB_ADMIN
+        if (user.getRole().getName() != RoleType.ROLE_ADMIN && user.getRole().getName() != RoleType.ROLE_SUB_ADMIN && request.getRole() != null && !request.getRole().isBlank()) {
+            String requestedRole = request.getRole().trim().toUpperCase();
+            if (requestedRole.contains("RECRUITER")) {
+                if (user.getRole().getName() != RoleType.ROLE_RECRUITER) {
+                    Role recruiterRole = roleRepository.findByName(RoleType.ROLE_RECRUITER)
+                            .orElseThrow(() -> new RoleNotFoundException("Role not found"));
+                    user.setRole(recruiterRole);
+                    user = userRepository.save(user);
+                    log.info("Updated user {} active role to ROLE_RECRUITER", user.getEmail());
+                }
+                ensureRecruiterProfile(user, null);
+            } else if (requestedRole.contains("CANDIDATE")) {
+                if (user.getRole().getName() != RoleType.ROLE_CANDIDATE) {
+                    Role candidateRole = roleRepository.findByName(RoleType.ROLE_CANDIDATE)
+                            .orElseThrow(() -> new RoleNotFoundException("Role not found"));
+                    user.setRole(candidateRole);
+                    user = userRepository.save(user);
+                    log.info("Updated user {} active role to ROLE_CANDIDATE", user.getEmail());
+                }
+                ensureCandidateProfile(user);
+            }
         }
+
+        // Record last login activity
+        user.setLastLoginAt(LocalDateTime.now());
+        user = userRepository.save(user);
+
+        // 5. Send security login notification email & in-app alerts post-commit
+        final User finalLoginUser = user;
+        executeAfterCommit(() -> {
+            try {
+                emailService.sendLoginAlertEmail(finalLoginUser);
+            } catch (Exception ex) {
+                log.warn("Failed to send login alert email: {}", ex.getMessage());
+            }
+
+            try {
+                boolean isRecruiter = finalLoginUser.getRole() != null && finalLoginUser.getRole().getName() != null &&
+                        finalLoginUser.getRole().getName().name().contains("RECRUITER");
+                String settingsRoute = isRecruiter ? "/recruiter/settings" : "/candidate/settings";
+
+                notificationService.createAndSendNotification(
+                        finalLoginUser,
+                        "Security Alert: Account Sign-in",
+                        "New sign-in detected on your HireAI account. If this wasn't you, review your security settings.",
+                        com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
+                        settingsRoute
+                );
+
+                if (!isRecruiter) {
+                    boolean hasResume = resumeRepository.findByCandidateUserIdAndDeletedFalse(finalLoginUser.getId()).isPresent();
+                    if (!hasResume) {
+                        notificationService.createAndSendNotification(
+                                finalLoginUser,
+                                "Profile Completion Reminder",
+                                "Upload your resume to complete your candidate profile and unlock automatic AI job matching!",
+                                com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
+                                "/candidate/profile"
+                        );
+                    }
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to dispatch in-app login notifications: {}", ex.getMessage());
+            }
+        });
 
         CustomUserDetails userDetails = CustomUserDetails.fromUser(user);
         String accessToken = jwtService.generateAccessToken(userDetails);
@@ -270,9 +555,222 @@ public class AuthService {
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .role(user.getRole().getName().name())
+                .avatarUrl(resolveUserAvatar(user))
+                .hasPassword(user.hasPassword())
+                .authProvider(user.getAuthProvider())
+                .mustChangePassword(Boolean.TRUE.equals(user.getMustChangePassword()))
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
+    }
+
+    /**
+     * Authenticates or registers a user via Google or LinkedIn OAuth.
+     * OAuth emails are pre-verified, so users are enabled immediately without requiring an OTP.
+     */
+    @Transactional
+    public AuthResponse processOAuthLogin(OAuthRequest request, String provider) {
+        OAuthUserInfo userInfo = oauthService.extractUserInfo(provider, request);
+        String email = userInfo.getEmail().toLowerCase().trim();
+
+        Optional<User> existingUserOpt = userRepository.findByEmail(email);
+        User user;
+
+        // Block mock OAuth tokens from hijacking administrative accounts
+        if (userInfo.getProviderId() != null && userInfo.getProviderId().startsWith("mock-")) {
+            if (existingUserOpt.isPresent()) {
+                RoleType existingRole = existingUserOpt.get().getRole() != null ? existingUserOpt.get().getRole().getName() : null;
+                if (existingRole == RoleType.ROLE_ADMIN || existingRole == RoleType.ROLE_SUB_ADMIN) {
+                    log.error("Security alert: Attempted mock OAuth sign-in to administrative account: {}", email);
+                    throw new InvalidTokenException("Mock OAuth tokens cannot be used to authenticate administrative accounts.");
+                }
+            }
+        }
+
+        RoleType desiredRoleType = RoleType.ROLE_CANDIDATE;
+        if (request.getRole() != null && request.getRole().trim().toUpperCase().contains("RECRUITER")) {
+            desiredRoleType = RoleType.ROLE_RECRUITER;
+        }
+
+        Role desiredRole = roleRepository.findByName(desiredRoleType)
+                .orElseThrow(() -> new RoleNotFoundException("Role not found"));
+
+        if (existingUserOpt.isPresent()) {
+            User existing = existingUserOpt.get();
+            if (Boolean.TRUE.equals(existing.getDeleted())) {
+                existing.setEmail("deleted_" + existing.getId() + "@deleted.hireai.internal");
+                userRepository.save(existing);
+                existingUserOpt = Optional.empty();
+            }
+        }
+
+        if (existingUserOpt.isPresent()) {
+            user = existingUserOpt.get();
+            // Provider verified the email, so ensure enabled = true
+            user.setEnabled(true);
+            user.setAuthProvider(provider);
+            if (userInfo.getProviderId() != null) {
+                user.setProviderId(userInfo.getProviderId());
+            }
+            if (userInfo.getAvatarUrl() != null && (user.getAvatarUrl() == null || user.getAvatarUrl().isBlank())) {
+                user.setAvatarUrl(userInfo.getAvatarUrl());
+            }
+
+            // Update user role to match the explicitly selected role from UI (Recruiter or Candidate)
+            if (user.getRole() == null || user.getRole().getName() != RoleType.ROLE_ADMIN) {
+                user.setRole(desiredRole);
+            }
+            user = userRepository.save(user);
+
+            // Ensure profile exists for the active role
+            if (user.getRole().getName() == RoleType.ROLE_RECRUITER) {
+                ensureRecruiterProfile(user, request.getCompanyName());
+            } else {
+                ensureCandidateProfile(user);
+            }
+        } else {
+            user = User.builder()
+                    .firstName(userInfo.getFirstName())
+                    .lastName(userInfo.getLastName())
+                    .email(email)
+                    .password(null)
+                    .passwordSet(false)
+                    .enabled(true) // Pre-verified via OAuth!
+                    .accountNonLocked(true)
+                    .failedLoginAttempts(0)
+                    .authProvider(provider)
+                    .providerId(userInfo.getProviderId())
+                    .avatarUrl(userInfo.getAvatarUrl())
+                    .role(desiredRole)
+                    .build();
+            user = userRepository.save(user);
+
+            if (desiredRoleType == RoleType.ROLE_RECRUITER) {
+                ensureRecruiterProfile(user, request.getCompanyName());
+            } else {
+                ensureCandidateProfile(user);
+            }
+
+            // Send welcome email asynchronously
+            try {
+                if (desiredRoleType == RoleType.ROLE_RECRUITER) {
+                    emailService.sendWelcomeRecruiterEmail(user);
+                } else {
+                    emailService.sendWelcomeCandidateEmail(user);
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to send welcome email for OAuth user: {}", ex.getMessage());
+            }
+        }
+
+        // Send in-app security sign-in notification & profile completion prompt post-commit
+        final User finalOAuthUser = user;
+        executeAfterCommit(() -> {
+            try {
+                boolean isRecruiter = finalOAuthUser.getRole() != null && finalOAuthUser.getRole().getName() != null &&
+                        finalOAuthUser.getRole().getName().name().contains("RECRUITER");
+                String settingsRoute = isRecruiter ? "/recruiter/settings" : "/candidate/settings";
+
+                notificationService.createAndSendNotification(
+                        finalOAuthUser,
+                        "Security Alert: Account Sign-in",
+                        "New sign-in detected on your HireAI account via " + provider + ". If this wasn't you, review your security settings.",
+                        com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
+                        settingsRoute
+                );
+
+                // Check if candidate needs to upload resume for profile completion
+                if (!isRecruiter) {
+                    boolean hasResume = resumeRepository.findByCandidateUserIdAndDeletedFalse(finalOAuthUser.getId()).isPresent();
+                    if (!hasResume) {
+                        notificationService.createAndSendNotification(
+                                finalOAuthUser,
+                                "Profile Completion Reminder",
+                                "Upload your resume to complete your candidate profile and unlock automatic AI job matching!",
+                                com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
+                                "/candidate/profile"
+                        );
+                    }
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to dispatch in-app OAuth login notifications: {}", ex.getMessage());
+            }
+        });
+
+        // Record last login activity
+        user.setLastLoginAt(LocalDateTime.now());
+        user = userRepository.save(user);
+
+        // Generate JWT session tokens
+        CustomUserDetails userDetails = CustomUserDetails.fromUser(user);
+        String accessToken = jwtService.generateAccessToken(userDetails);
+        String refreshToken = createAndSaveRefreshToken(user);
+
+        return AuthResponse.builder()
+                .userId(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(user.getRole().getName().name())
+                .avatarUrl(resolveUserAvatar(user))
+                .hasPassword(user.hasPassword())
+                .authProvider(user.getAuthProvider())
+                .mustChangePassword(Boolean.TRUE.equals(user.getMustChangePassword()))
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .requiresVerification(false)
+                .emailVerified(true)
+                .message("Successfully authenticated via " + provider)
+                .build();
+    }
+
+    private void ensureCandidateProfile(User user) {
+        try {
+            Optional<Candidate> existingCandidateOpt = candidateRepository.findByEmailNative(user.getEmail());
+            if (existingCandidateOpt.isPresent()) {
+                Candidate existingCandidate = existingCandidateOpt.get();
+                if (existingCandidate.getUser() == null) {
+                    existingCandidate.setUser(user);
+                    existingCandidate.setDeleted(false);
+                    candidateRepository.save(existingCandidate);
+                    log.info("Linked existing Candidate profile ({}) to user: {}", existingCandidate.getCandidateId(), user.getEmail());
+                }
+            } else if (!candidateRepository.existsByUserIdNative(user.getId())) {
+                Candidate candidate = Candidate.builder()
+                        .user(user)
+                        .candidateId(candidateIdGenerator.generateCandidateId())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .email(user.getEmail())
+                        .phone(user.getPhoneNumber())
+                        .candidateStatus(CandidateStatus.ACTIVE)
+                        .deleted(false)
+                        .build();
+                candidateRepository.save(candidate);
+                log.info("Auto-created Candidate profile for user: {}", user.getEmail());
+            }
+        } catch (Exception ex) {
+            log.warn("Failed to ensure Candidate profile: {}", ex.getMessage());
+        }
+    }
+
+    private void ensureRecruiterProfile(User user, String companyName) {
+        try {
+            if (!recruiterProfileRepository.existsByUserId(user.getId())) {
+                String comp = companyName != null && !companyName.isBlank()
+                        ? companyName
+                        : (user.getLastName() + " Organization");
+                RecruiterProfile recruiterProfile = RecruiterProfile.builder()
+                        .user(user)
+                        .companyName(comp)
+                        .verified(false)
+                        .build();
+                recruiterProfileRepository.save(recruiterProfile);
+                log.info("Auto-created Recruiter profile for user: {}", user.getEmail());
+            }
+        } catch (Exception ex) {
+            log.warn("Failed to ensure Recruiter profile: {}", ex.getMessage());
+        }
     }
 
     /**
@@ -339,6 +837,9 @@ public class AuthService {
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .role(user.getRole().getName().name())
+                .avatarUrl(resolveUserAvatar(user))
+                .hasPassword(user.hasPassword())
+                .authProvider(user.getAuthProvider())
                 .accessToken(newAccessToken)
                 .refreshToken(newRefreshToken)
                 .build();
@@ -401,12 +902,13 @@ public class AuthService {
 
         passwordResetTokenRepository.save(resetToken);
 
-        // Send password reset email asynchronously
-        try {
-            emailService.sendPasswordResetEmail(user, token, expiresAt);
-        } catch (Exception ex) {
-            log.warn("Failed to send password reset email: {}", ex.getMessage());
-        }
+        final User finalForgotUser = user;
+        final String finalForgotToken = token;
+        final LocalDateTime finalForgotExpiresAt = expiresAt;
+        executeAfterCommit(() -> {
+            emailService.sendPasswordResetEmail(finalForgotUser, finalForgotToken, finalForgotExpiresAt);
+            log.info("Dispatched password reset token to: {}", EmailService.maskEmail(finalForgotUser.getEmail()));
+        });
 
         return ForgotPasswordResponse.builder()
                 .success(true)
@@ -459,6 +961,7 @@ public class AuthService {
 
         User user = resetToken.getUser();
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setPasswordSet(true);
         user.setFailedLoginAttempts(0);
         user.setLockoutUntil(null);
         userRepository.save(user);
@@ -469,6 +972,78 @@ public class AuthService {
 
         resetToken.setUsed(true);
         passwordResetTokenRepository.save(resetToken);
+
+        // Send security alert notification to user post-commit
+        final User finalResetUser = user;
+        executeAfterCommit(() -> {
+            try {
+                boolean isRecruiter = finalResetUser.getRole() != null && finalResetUser.getRole().getName() != null &&
+                        finalResetUser.getRole().getName().name().contains("RECRUITER");
+                notificationService.createAndSendNotification(
+                        finalResetUser,
+                        "Security Alert: Password Changed",
+                        "Your HireAI account password was recently updated. If you did not make this change, please contact support immediately.",
+                        com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
+                        isRecruiter ? "/recruiter/settings" : "/candidate/settings"
+                );
+            } catch (Exception ex) {
+                log.warn("Failed to dispatch password change notification: {}", ex.getMessage());
+            }
+        });
     }
 
+    private void executeAfterCommit(Runnable task) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    try {
+                        task.run();
+                    } catch (com.vionsys.hireai.exception.EmailDeliveryException ex) {
+                        throw ex;
+                    } catch (Exception ex) {
+                        log.warn("Post-commit background task execution error: {}", ex.getMessage());
+                    }
+                }
+            });
+        } else {
+            try {
+                task.run();
+            } catch (com.vionsys.hireai.exception.EmailDeliveryException ex) {
+                throw ex;
+            } catch (Exception ex) {
+                log.warn("Background task execution error: {}", ex.getMessage());
+            }
+        }
+    }
+
+    private String resolveUserAvatar(User user) {
+        if (user == null) {
+            return null;
+        }
+        if (user.getAvatarUrl() != null && !user.getAvatarUrl().isBlank()) {
+            return user.getAvatarUrl();
+        }
+        if (candidateRepository != null) {
+            Optional<com.vionsys.hireai.candidate.entity.Candidate> candidateOpt =
+                    candidateRepository.findByUserId(user.getId());
+            if (candidateOpt.isPresent() && candidateOpt.get().getProfilePhotoPath() != null) {
+                String url = "/candidate/profile/photo";
+                user.setAvatarUrl(url);
+                userRepository.save(user);
+                return url;
+            }
+        }
+        if (recruiterProfileRepository != null) {
+            Optional<com.vionsys.hireai.recruiter.entity.RecruiterProfile> recruiterOpt =
+                    recruiterProfileRepository.findByUserId(user.getId());
+            if (recruiterOpt.isPresent() && recruiterOpt.get().getProfilePhotoPath() != null) {
+                String url = "/recruiter/profile/photo";
+                user.setAvatarUrl(url);
+                userRepository.save(user);
+                return url;
+            }
+        }
+        return null;
+    }
 }

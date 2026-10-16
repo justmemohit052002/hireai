@@ -31,6 +31,8 @@ public class JobServiceImpl implements JobService {
     private final JobRepository jobRepository;
     private final RecruiterProfileRepository recruiterProfileRepository;
     private final com.vionsys.hireai.application.repository.JobApplicationRepository jobApplicationRepository;
+    private final com.vionsys.hireai.notification.service.NotificationService notificationService;
+    private final com.vionsys.hireai.candidate.repository.CandidateRepository candidateRepository;
 
 
     // =========================================================
@@ -57,6 +59,37 @@ public class JobServiceImpl implements JobService {
 
         Job savedJob =
                 jobRepository.save(job);
+
+        // Send real-time notifications for job creation
+        try {
+            // 1. Confirmation to recruiter
+            if (recruiterProfile.getUser() != null) {
+                notificationService.createAndSendNotification(
+                        recruiterProfile.getUser(),
+                        "Job Posted Successfully",
+                        "Your job posting '" + savedJob.getTitle() + "' is now live and accepting applications.",
+                        com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
+                        "/recruiter/jobs"
+                );
+            }
+
+            // 2. Smart Job Recommendations to candidates
+            candidateRepository.findAll(org.springframework.data.domain.PageRequest.of(0, 10))
+                    .getContent()
+                    .stream()
+                    .filter(c -> c.getUser() != null)
+                    .forEach(c -> {
+                        notificationService.createAndSendNotification(
+                                c.getUser(),
+                                "Smart Job Recommendation",
+                                "New opening for " + savedJob.getTitle() + " at " + recruiterProfile.getCompanyName() + ". Check it out and apply today!",
+                                com.vionsys.hireai.notification.enums.NotificationType.AI_MATCH,
+                                "/candidate/jobs"
+                        );
+                    });
+        } catch (Exception ex) {
+            // Notification failure shouldn't fail job creation
+        }
 
         return JobMapper.toResponse(
                 savedJob,
@@ -202,6 +235,10 @@ public class JobServiceImpl implements JobService {
 
         job.setSkills(
                 request.getSkills()
+        );
+
+        job.setPreferredSkills(
+                request.getPreferredSkills()
         );
 
         job.setEducation(

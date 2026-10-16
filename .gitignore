@@ -17,6 +17,8 @@ hireai-frontend/pnpm-debug.log*
 
 hireai-backend/target/
 hireai-backend/.mvn/wrapper/maven-wrapper.jar
+hireai-backend/src/main/resources/application.properties
+!hireai-backend/src/main/resources/application.properties.example
 
 *.class
 *.jar

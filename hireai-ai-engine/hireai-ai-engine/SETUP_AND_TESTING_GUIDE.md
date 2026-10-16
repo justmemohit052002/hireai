@@ -159,6 +159,11 @@ any endpoint, click "Try it out," edit the example values, click
   code should not hold an HTTP connection open waiting — start the job,
   store the `jobId`, and check back later (a scheduled task or a
   short-interval poll works)
+- **Internal Service Endpoints (`/api/v1/*`)**:
+  - All `/api/v1/*` routes (jd, resumes, match, chatbot, interview, decision, admin) require the `X-Internal-Key` header matching `INTERNAL_API_KEY`.
+  - The Spring Boot backend automatically attaches this header to all outgoing requests via `AiEngineClient`.
+  - Fail closed: In non-development environments, the engine refuses to start if `INTERNAL_API_KEY` is missing, blank, or equals the default.
+  - Optional correlation headers (`X-Request-Id`, `X-Candidate-Ref`) are logged for full audit traceability.
 - Full request/response shapes for every endpoint are documented in
   `API_CONTRACT.md`
 

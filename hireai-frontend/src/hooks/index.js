@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 // ─────────────────────────────────────────
-// Custom Hooks — Shared
+// Custom Hooks: Shared
 // ─────────────────────────────────────────
 
 /** Debounces a value by `delay` ms. Useful for search inputs. */

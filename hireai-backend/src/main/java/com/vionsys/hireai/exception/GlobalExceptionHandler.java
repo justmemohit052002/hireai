@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -22,6 +23,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+	@Value("${hireai.error.show-details:${SHOW_ERROR_DETAILS:false}}")
+	private boolean showDetails;
 
 	// =========================================================
 	// AUTHENTICATION & SECURITY EXCEPTIONS
@@ -41,6 +45,23 @@ public class GlobalExceptionHandler {
 
 		return ResponseEntity
 				.status(HttpStatus.UNAUTHORIZED)
+				.body(response);
+	}
+
+	@ExceptionHandler(org.springframework.security.authentication.DisabledException.class)
+	public ResponseEntity<ErrorResponse> handleDisabled(
+			org.springframework.security.authentication.DisabledException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.FORBIDDEN.value(),
+				HttpStatus.FORBIDDEN.getReasonPhrase(),
+				ex.getMessage() != null ? ex.getMessage() : "This account has been deleted or deactivated.",
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.FORBIDDEN)
 				.body(response);
 	}
 
@@ -98,6 +119,57 @@ public class GlobalExceptionHandler {
 				.body(response);
 	}
 
+	@ExceptionHandler(AccountNotVerifiedException.class)
+	public ResponseEntity<ErrorResponse> handleAccountNotVerified(
+			AccountNotVerifiedException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.FORBIDDEN.value(),
+				"ACCOUNT_NOT_VERIFIED",
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.FORBIDDEN)
+				.body(response);
+	}
+
+	@ExceptionHandler(InvalidOtpException.class)
+	public ResponseEntity<ErrorResponse> handleInvalidOtp(
+			InvalidOtpException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.BAD_REQUEST.value(),
+				HttpStatus.BAD_REQUEST.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.BAD_REQUEST)
+				.body(response);
+	}
+
+	@ExceptionHandler(InvalidEmailException.class)
+	public ResponseEntity<ErrorResponse> handleInvalidEmail(
+			InvalidEmailException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.BAD_REQUEST.value(),
+				"INVALID_EMAIL_DOMAIN",
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.BAD_REQUEST)
+				.body(response);
+	}
+
 	@ExceptionHandler(AccessDeniedException.class)
 	public ResponseEntity<ErrorResponse> handleAccessDenied(
 			AccessDeniedException ex,
@@ -123,6 +195,23 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(UserNotFoundException.class)
 	public ResponseEntity<ErrorResponse> handleUserNotFound(
 			UserNotFoundException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.NOT_FOUND.value(),
+				HttpStatus.NOT_FOUND.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.NOT_FOUND)
+				.body(response);
+	}
+
+	@ExceptionHandler(AiCallLogNotFoundException.class)
+	public ResponseEntity<ErrorResponse> handleAiCallLogNotFound(
+			AiCallLogNotFoundException ex,
 			HttpServletRequest request) {
 
 		ErrorResponse response = new ErrorResponse(
@@ -261,11 +350,13 @@ public class GlobalExceptionHandler {
 			NoResourceFoundException ex,
 			HttpServletRequest request) {
 
+		String message = "Endpoint not found: " + request.getMethod() + " " + request.getRequestURI();
+
 		ErrorResponse response = new ErrorResponse(
 				false,
 				HttpStatus.NOT_FOUND.value(),
 				HttpStatus.NOT_FOUND.getReasonPhrase(),
-				"Requested endpoint or static resource was not found",
+				message,
 				request.getRequestURI());
 
 		return ResponseEntity
@@ -276,6 +367,23 @@ public class GlobalExceptionHandler {
 	// =========================================================
 	// CONFLICT & DUPLICATE RESOURCE EXCEPTIONS
 	// =========================================================
+
+	@ExceptionHandler(AdminConflictException.class)
+	public ResponseEntity<ErrorResponse> handleAdminConflict(
+			AdminConflictException ex,
+			HttpServletRequest request) {
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.CONFLICT.value(),
+				HttpStatus.CONFLICT.getReasonPhrase(),
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.CONFLICT)
+				.body(response);
+	}
 
 	@ExceptionHandler(UserAlreadyExistsException.class)
 	public ResponseEntity<ErrorResponse> handleUserAlreadyExists(
@@ -333,13 +441,24 @@ public class GlobalExceptionHandler {
 			DataIntegrityViolationException ex,
 			HttpServletRequest request) {
 
-		log.error("Data integrity violation on {}: {}", request.getRequestURI(), ex.getMessage());
+		log.error("Data integrity violation on {} [{}]: ", request.getMethod(), request.getRequestURI(), ex);
+
+		String detailMessage = "Database constraint violation: duplicate record or unique field conflict";
+		Throwable root = ex.getRootCause();
+		if (root != null && root.getMessage() != null) {
+			String msg = root.getMessage().toLowerCase();
+			if (msg.contains("unique") || msg.contains("duplicate key")) {
+				detailMessage = "An account or profile with this email or identifier already exists.";
+			} else if (msg.contains("not-null") || msg.contains("violates not-null constraint")) {
+				detailMessage = "Required profile field is missing. Please complete all required information.";
+			}
+		}
 
 		ErrorResponse response = new ErrorResponse(
 				false,
 				HttpStatus.CONFLICT.value(),
 				HttpStatus.CONFLICT.getReasonPhrase(),
-				"Database constraint violation: duplicate record or unique field conflict",
+				detailMessage,
 				request.getRequestURI());
 
 		return ResponseEntity
@@ -397,11 +516,17 @@ public class GlobalExceptionHandler {
 			FileStorageException ex,
 			HttpServletRequest request) {
 
+		log.error("File storage error on {} [{}]: ", request.getMethod(), request.getRequestURI(), ex);
+
+		String message = showDetails && ex.getMessage() != null && !ex.getMessage().isBlank()
+				? ex.getMessage()
+				: "Unable to process the uploaded file. Please ensure it is a valid document and try again.";
+
 		ErrorResponse response = new ErrorResponse(
 				false,
 				HttpStatus.BAD_REQUEST.value(),
 				HttpStatus.BAD_REQUEST.getReasonPhrase(),
-				ex.getMessage(),
+				message,
 				request.getRequestURI());
 
 		return ResponseEntity
@@ -414,11 +539,17 @@ public class GlobalExceptionHandler {
 			IllegalArgumentException ex,
 			HttpServletRequest request) {
 
+		log.warn("Illegal argument on {} [{}]: {}", request.getMethod(), request.getRequestURI(), ex.getMessage(), ex);
+
+		String message = showDetails && ex.getMessage() != null && !ex.getMessage().isBlank()
+				? ex.getMessage()
+				: (ex.getMessage() != null && !ex.getMessage().contains("java.") && !ex.getMessage().contains("class ") ? ex.getMessage() : "Invalid input parameters provided.");
+
 		ErrorResponse response = new ErrorResponse(
 				false,
 				HttpStatus.BAD_REQUEST.value(),
 				HttpStatus.BAD_REQUEST.getReasonPhrase(),
-				ex.getMessage(),
+				message,
 				request.getRequestURI());
 
 		return ResponseEntity
@@ -431,11 +562,17 @@ public class GlobalExceptionHandler {
 			IllegalStateException ex,
 			HttpServletRequest request) {
 
+		log.warn("Illegal state on {} [{}]: {}", request.getMethod(), request.getRequestURI(), ex.getMessage(), ex);
+
+		String message = showDetails && ex.getMessage() != null && !ex.getMessage().isBlank()
+				? ex.getMessage()
+				: "The requested operation cannot be performed in the current application state.";
+
 		ErrorResponse response = new ErrorResponse(
 				false,
 				HttpStatus.BAD_REQUEST.value(),
 				HttpStatus.BAD_REQUEST.getReasonPhrase(),
-				ex.getMessage(),
+				message,
 				request.getRequestURI());
 
 		return ResponseEntity
@@ -452,11 +589,17 @@ public class GlobalExceptionHandler {
 			AiEngineException ex,
 			HttpServletRequest request) {
 
+		log.error("AI service error on {} [{}]: ", request.getMethod(), request.getRequestURI(), ex);
+
+		String message = showDetails && ex.getMessage() != null && !ex.getMessage().isBlank()
+				? ex.getMessage()
+				: "The AI processing service is temporarily unavailable. Please try again later.";
+
 		ErrorResponse response = new ErrorResponse(
 				false,
 				HttpStatus.BAD_GATEWAY.value(),
 				"AI Service Error",
-				ex.getMessage(),
+				message,
 				request.getRequestURI());
 
 		return ResponseEntity
@@ -468,18 +611,87 @@ public class GlobalExceptionHandler {
 	// GENERIC FALLBACK EXCEPTION
 	// =========================================================
 
-	@ExceptionHandler(Exception.class)
-	public ResponseEntity<ErrorResponse> handleException(
-			Exception ex,
+	@ExceptionHandler(EmailDeliveryException.class)
+	public ResponseEntity<ErrorResponse> handleEmailDeliveryException(
+			EmailDeliveryException ex,
 			HttpServletRequest request) {
 
-		log.error("Unhandled exception processing request {}: ", request.getRequestURI(), ex);
+		log.error("Email delivery failed on {} [{}]: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.BAD_GATEWAY.value(),
+				"Email Delivery Failure",
+				ex.getMessage(),
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.BAD_GATEWAY)
+				.body(response);
+	}
+
+	@ExceptionHandler(org.springframework.transaction.TransactionSystemException.class)
+	public ResponseEntity<ErrorResponse> handleTransactionSystemException(
+			org.springframework.transaction.TransactionSystemException ex,
+			HttpServletRequest request) {
+
+		Throwable cause = ex;
+		while (cause != null) {
+			if (cause instanceof EmailDeliveryException emailEx) {
+				return handleEmailDeliveryException(emailEx, request);
+			}
+			cause = cause.getCause();
+		}
+
+		log.error("Transaction system failure on {} [{}]: {}", request.getMethod(), request.getRequestURI(), ex.getMessage(), ex);
 
 		ErrorResponse response = new ErrorResponse(
 				false,
 				HttpStatus.INTERNAL_SERVER_ERROR.value(),
 				HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-				ex.getMessage() != null ? ex.getMessage() : "Something went wrong.",
+				"A transaction system error occurred. Please try again.",
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(response);
+	}
+
+	@ExceptionHandler(org.springframework.transaction.UnexpectedRollbackException.class)
+	public ResponseEntity<ErrorResponse> handleUnexpectedRollback(
+			org.springframework.transaction.UnexpectedRollbackException ex,
+			HttpServletRequest request) {
+
+		log.error("Transaction rolled back on {} [{}]: {}", request.getMethod(), request.getRequestURI(), ex.getMessage(), ex);
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.INTERNAL_SERVER_ERROR.value(),
+				"Transaction Rollback Error",
+				"A transaction conflict occurred. Please retry your request.",
+				request.getRequestURI());
+
+		return ResponseEntity
+				.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(response);
+	}
+
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<ErrorResponse> handleException(
+			Exception ex,
+			HttpServletRequest request) {
+
+		log.error("Unhandled exception processing request {} [{}]: ", request.getMethod(), request.getRequestURI(), ex);
+
+		String message = showDetails && ex.getMessage() != null && !ex.getMessage().isBlank()
+				? ex.getMessage()
+				: "An unexpected internal server error occurred. Please try again later or contact support.";
+
+		ErrorResponse response = new ErrorResponse(
+				false,
+				HttpStatus.INTERNAL_SERVER_ERROR.value(),
+				HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+				message,
 				request.getRequestURI());
 
 		return ResponseEntity

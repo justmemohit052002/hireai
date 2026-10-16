@@ -1,0 +1,153 @@
+# ==============================================================================
+# HireAI Backend - Configuration Template (application.properties.example)
+# Copy this file to application.properties and provide your actual secrets.
+# ==============================================================================
+
+# ===============================
+# Application
+# ===============================
+spring.application.name=hireai-backend
+spring.devtools.restart.enabled=false
+
+# ===============================
+# Server & CORS Configuration
+# ===============================
+server.port=8080
+# Comma-separated list of allowed origins. Defaults to http://localhost:5173
+app.cors.allowed-origins=http://localhost:5173
+
+# ===============================
+# PostgreSQL Database
+# ===============================
+spring.datasource.url=jdbc:postgresql://localhost:5432/hireai
+spring.datasource.username=postgres
+# REQUIRED: No default value. Set SPRING_DATASOURCE_PASSWORD in your environment.
+spring.datasource.password=your_database_password_here
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# ===============================
+# JPA / Hibernate
+# ===============================
+# Note: ddl-auto=update is strictly for development only. In staging/production, schema migrations should be managed explicitly.
+# Defaults to "validate" outside the dev profile. Can be overridden via SPRING_JPA_HIBERNATE_DDL_AUTO.
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.format_sql=false
+spring.jpa.open-in-view=false
+
+# ===============================
+# Logging
+# ===============================
+logging.level.org.springframework.security=INFO
+
+# ===============================
+# Error Handling & Security Sanitization
+# ===============================
+server.error.include-stacktrace=never
+server.error.include-message=never
+server.error.include-exception=false
+server.error.include-binding-errors=never
+server.error.whitelabel.enabled=false
+hireai.error.show-details=false
+
+# ===============================
+# JWT Configuration
+# ===============================
+# REQUIRED: No default value. Must be a Base64-encoded 256-bit+ HMAC key. Set JWT_SECRET in your environment.
+jwt.secret=your_base64_encoded_256_bit_jwt_secret_here
+jwt.access-token-expiration=900000
+jwt.refresh-token-expiration=604800000
+
+# ===============================
+# ATS & AI LLM Configuration
+# ===============================
+ats.shortlist-threshold=70
+ats.llm.enabled=true
+ats.llm.service-url=http://localhost:8000/api/v1/match/score
+ats.llm.timeout-ms=30000
+
+# ===============================
+# AI Engine Microservice & Admin Governance
+# ===============================
+ai-engine.base-url=http://localhost:8000
+ai-engine.timeout-ms=120000
+ai-engine.polling-interval-ms=3000
+ai-engine.polling-max-attempts=30
+# REQUIRED: No default value. Shared secret key. Set AI_ENGINE_INTERNAL_KEY in your environment.
+ai-engine.internal-key=your_ai_engine_internal_secret_key_here
+
+# Admin Health Monitoring & Polling
+admin.health.connect-timeout-ms=2000
+admin.health.read-timeout-ms=3000
+admin.health.poll-rate-ms=45000
+
+# Admin User Seeding Governance (Disabled by default; requires password with min 12 characters)
+hireai.admin.seed.enabled=false
+hireai.admin.seed.password=your_secure_admin_password_min_12_chars
+
+# Demo Users Seeding (Only active under 'dev' Spring profile; never hardcoded)
+hireai.dev.demo-password=your_dev_demo_password
+
+# ===============================
+# File Upload & Secure Storage
+# ===============================
+file.upload-dir=uploads/resumes
+file.attachment-dir=uploads/attachments
+photo.upload-dir=uploads/profile-photos
+resume.max-file-size=10485760
+photo.max-file-size=5242880
+chat.attachment.max-file-size=10485760
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=10MB
+
+# ===============================
+# Automated Email Notifications
+# ===============================
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=your_email@domain.com
+spring.mail.password=your_smtp_app_password
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+spring.mail.properties.mail.smtp.connectiontimeout=5000
+spring.mail.properties.mail.smtp.timeout=5000
+spring.mail.properties.mail.smtp.writetimeout=5000
+
+hireai.mail.enabled=false
+hireai.mail.from=your_email@domain.com
+hireai.mail.sender-name=HireAI Recruitment Platform
+
+# ===============================
+# Swagger / OpenAPI UI Configuration
+# ===============================
+springdoc.api-docs.path=/v3/api-docs
+springdoc.swagger-ui.path=/swagger-ui.html
+springdoc.swagger-ui.operations-sorter=method
+springdoc.swagger-ui.tags-sorter=alpha
+springdoc.swagger-ui.persist-authorization=true
+springdoc.swagger-ui.try-it-out-enabled=true
+
+# ===============================
+# Rate Limiting & Abuse Prevention
+# ===============================
+hireai.rate-limit.enabled=true
+hireai.rate-limit.auth.ip.capacity=15
+hireai.rate-limit.auth.ip.window-seconds=60
+hireai.rate-limit.auth.account.base-attempts=5
+hireai.rate-limit.auth.account.window-seconds=300
+hireai.rate-limit.auth.account.initial-backoff-seconds=15
+hireai.rate-limit.auth.account.multiplier=2.0
+hireai.rate-limit.auth.account.max-backoff-seconds=900
+hireai.rate-limit.public-endpoints.capacity=60
+hireai.rate-limit.public-endpoints.window-seconds=60
+hireai.rate-limit.authenticated.capacity=180
+hireai.rate-limit.authenticated.window-seconds=60
+
+# ===============================
+# Social OAuth 2.0 Credentials (Optional)
+# ===============================
+google.oauth.client-id=your_google_oauth_client_id
+google.oauth.client-secret=your_google_oauth_client_secret
+
+linkedin.oauth.client-id=your_linkedin_oauth_client_id
+linkedin.oauth.client-secret=your_linkedin_oauth_client_secret

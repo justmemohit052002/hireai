@@ -24,6 +24,10 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() ->
                         new UsernameNotFoundException("User not found with email: " + email));
 
+        if (Boolean.TRUE.equals(user.getDeleted())) {
+            throw new org.springframework.security.authentication.DisabledException("Account has been deleted");
+        }
+
         return CustomUserDetails.fromUser(user);
     }
 }

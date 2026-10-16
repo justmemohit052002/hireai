@@ -1,0 +1,327 @@
+{
+  "aliases": {
+    "javascript": ["js", "javascript", "ecmascript", "es6", "es6+"],
+    "typescript": ["ts", "typescript"],
+    "python": ["python", "py", "python3"],
+    "java": ["java", "core java", "java 8", "java 8+", "java 11", "java 17", "java 21", "java programming language", "java programming"],
+    "c++": ["c++", "cpp"],
+    "c#": ["c#", "csharp", "c sharp"],
+    ".net": [".net", "dotnet", ".net core", "asp.net"],
+    "golang": ["go", "golang"],
+    "rust": ["rust", "rustlang"],
+    "php": ["php", "php8"],
+    "ruby": ["ruby", "ruby on rails", "rails"],
+    "kotlin": ["kotlin"],
+    "swift": ["swift"],
+    "dart": ["dart", "flutter/dart"],
+    "object-oriented programming": [
+      "oop",
+      "oops",
+      "object oriented programming",
+      "object-oriented programming",
+      "object-oriented programming (oop)",
+      "object-oriented programming concepts",
+      "oop concepts",
+      "oops concepts"
+    ],
+    "data structures and algorithms": [
+      "dsa",
+      "data structures and algorithms",
+      "data structures & algorithms",
+      "data structures",
+      "algorithms",
+      "data structures and algorithms (dsa)",
+      "data structures & algorithms (dsa)"
+    ],
+    "database management systems": [
+      "dbms",
+      "rdbms",
+      "database management",
+      "database management systems",
+      "database management system",
+      "relational database management systems",
+      "relational database management system",
+      "relational databases",
+      "relational database"
+    ],
+    "version control": [
+      "version control",
+      "version control systems",
+      "version control system",
+      "source control",
+      "vcs",
+      "source code management"
+    ],
+    "cloud computing platforms": [
+      "cloud computing platforms",
+      "cloud computing platform",
+      "cloud platforms",
+      "cloud platform",
+      "cloud computing",
+      "cloud infrastructure",
+      "cloud services",
+      "cloud"
+    ],
+    "testing frameworks": [
+      "testing frameworks",
+      "testing framework",
+      "automated testing frameworks",
+      "unit testing frameworks",
+      "test frameworks",
+      "test automation",
+      "testing"
+    ],
+    "java testing frameworks": [
+      "java-based testing frameworks",
+      "java-based testing framework",
+      "java testing frameworks",
+      "java testing tools",
+      "java testing"
+    ],
+    "sql": ["sql", "structured query language", "ansi sql"],
+    "mysql": ["mysql", "my sql"],
+    "postgresql": ["postgresql", "postgres", "postgre sql", "psql"],
+    "mongodb": ["mongodb", "mongo", "mongo db"],
+    "redis": ["redis"],
+    "cassandra": ["cassandra", "apache cassandra"],
+    "sqlite": ["sqlite", "sqlite3"],
+    "oracle": ["oracle", "oracle database", "oracle db"],
+    "sql server": ["sql server", "mssql", "microsoft sql server"],
+    "spring boot": ["spring boot", "springboot", "spring-boot"],
+    "spring framework": ["spring", "spring framework", "spring mvc", "spring security", "spring data jpa"],
+    "hibernate": ["hibernate", "hibernate orm"],
+    "jpa": ["jpa", "java persistence api", "jakarta persistence"],
+    "rest apis": [
+      "rest",
+      "restful",
+      "rest api",
+      "rest apis",
+      "restful api",
+      "restful apis",
+      "restful web services",
+      "rest web services"
+    ],
+    "graphql": ["graphql", "graph ql"],
+    "microservices": ["microservices", "microservice", "microservices architecture", "microservice architecture"],
+    "docker": ["docker", "containerization", "docker containers"],
+    "kubernetes": ["k8s", "kubernetes", "kube"],
+    "aws": ["aws", "amazon web services", "amazon aws", "ec2", "s3", "lambda"],
+    "gcp": ["gcp", "google cloud platform", "google cloud"],
+    "azure": ["azure", "microsoft azure", "ms azure"],
+    "git": ["git", "git version control"],
+    "github": ["github", "git hub"],
+    "gitlab": ["gitlab", "git lab"],
+    "bitbucket": ["bitbucket"],
+    "junit": ["junit", "junit 4", "junit 5", "junit jupiter", "junit testing", "junit testing framework", "junit framework"],
+    "mockito": ["mockito"],
+    "ci/cd": [
+      "ci/cd",
+      "ci-cd",
+      "cicd",
+      "continuous integration",
+      "continuous integration / continuous deployment",
+      "continuous integration and continuous deployment",
+      "ci/cd pipelines"
+    ],
+    "react": ["react", "react.js", "reactjs"],
+    "angular": ["angular", "angular.js", "angularjs", "angular 2+"],
+    "vue": ["vue", "vue.js", "vuejs"],
+    "node.js": ["node", "node.js", "nodejs"],
+    "express": ["express", "express.js", "expressjs"],
+    "html": ["html", "html5"],
+    "css": ["css", "css3"],
+    "tailwind css": ["tailwind", "tailwind css", "tailwindcss"],
+    "bootstrap": ["bootstrap", "bootstrap 5"],
+    "linux": ["linux", "unix", "ubuntu", "bash", "shell scripting"],
+    "maven": ["maven", "apache maven"],
+    "gradle": ["gradle"],
+    "postman": ["postman"],
+    "swagger/openapi": ["swagger", "openapi", "swagger/openapi", "open api"],
+    "kafka": ["kafka", "apache kafka"],
+    "rabbitmq": ["rabbitmq", "rabbit mq"],
+    "agile": [
+      "agile",
+      "agile methodologies",
+      "agile methodology",
+      "agile development",
+      "agile development methodologies",
+      "agile development methodology",
+      "scrum",
+      "kanban",
+      "sprint planning",
+      "scrum master"
+    ],
+    "sdlc": [
+      "sdlc",
+      "software development life cycle",
+      "software development lifecycle"
+    ],
+    "design patterns": [
+      "design patterns",
+      "design pattern",
+      "gang of four",
+      "gof patterns"
+    ],
+    "operating systems": [
+      "os",
+      "operating systems",
+      "operating system"
+    ],
+    "multithreading": [
+      "multithreading",
+      "concurrency",
+      "multi-threading",
+      "thread safety",
+      "threads"
+    ],
+    "collections": [
+      "collections",
+      "java collections",
+      "collections framework"
+    ],
+    "streams": [
+      "streams",
+      "java streams",
+      "stream api"
+    ],
+    "exception handling": [
+      "exception handling",
+      "error handling"
+    ],
+    "svn": [
+      "svn",
+      "apache subversion",
+      "subversion"
+    ],
+    "testng": [
+      "testng",
+      "test ng"
+    ],
+    "system design": [
+      "system design",
+      "systems design",
+      "distributed system design",
+      "high-level design",
+      "hld",
+      "low-level design",
+      "lld"
+    ],
+    "distributed systems": [
+      "distributed systems",
+      "distributed system",
+      "distributed architecture",
+      "distributed computing"
+    ],
+    "rest apis": [
+      "rest apis",
+      "rest api",
+      "restful apis",
+      "restful api",
+      "restful web services",
+      "rest web services",
+      "rest"
+    ],
+    "postman": [
+      "postman",
+      "postman api"
+    ],
+    "maven": [
+      "maven",
+      "apache maven"
+    ],
+    "gradle": [
+      "gradle"
+    ],
+    "mentoring": [
+      "mentoring",
+      "mentor",
+      "mentorship",
+      "coaching",
+      "technical mentoring",
+      "engineering mentorship"
+    ],
+    "team leadership": [
+      "team leadership",
+      "technical leadership",
+      "tech lead",
+      "engineering leadership"
+    ],
+    "architecture ownership": [
+      "architecture ownership",
+      "software architecture",
+      "solution architecture",
+      "system architecture"
+    ],
+    "ci/cd": [
+      "ci/cd",
+      "ci cd",
+      "continuous integration",
+      "continuous delivery",
+      "continuous deployment",
+      "ci/cd pipelines"
+    ],
+    "linux": [
+      "linux",
+      "unix",
+      "linux/unix",
+      "ubuntu",
+      "redhat",
+      "centos"
+    ]
+  },
+  "categories": {
+    "version control": ["git", "github", "gitlab", "bitbucket", "svn", "mercurial"],
+    "version control systems": ["git", "github", "gitlab", "bitbucket", "svn", "mercurial"],
+    "cloud computing platforms": ["aws", "azure", "gcp", "ec2", "s3", "lambda", "cloudwatch", "google cloud", "amazon web services", "microsoft azure"],
+    "cloud computing": ["aws", "azure", "gcp", "ec2", "s3", "lambda", "cloudwatch", "google cloud", "amazon web services", "microsoft azure"],
+    "database management systems": ["mysql", "postgresql", "postgres", "oracle", "sql server", "sqlite", "mariadb", "sql", "dbms", "rdbms", "mongodb", "redis"],
+    "database management": ["mysql", "postgresql", "postgres", "oracle", "sql server", "sqlite", "mariadb", "sql", "dbms", "rdbms", "mongodb", "redis"],
+    "relational databases": ["mysql", "postgresql", "postgres", "oracle", "sql server", "sqlite", "mariadb", "sql", "dbms", "rdbms"],
+    "nosql": ["mongodb", "cassandra", "couchdb", "dynamodb", "redis", "neo4j"],
+    "testing frameworks": ["junit", "testng", "mockito", "pytest", "jest", "cypress", "selenium", "mocha"],
+    "java testing frameworks": ["junit", "testng", "mockito", "powermock", "assertj"],
+    "java-based testing frameworks": ["junit", "testng", "mockito", "powermock", "assertj"],
+    "spring framework": ["spring", "spring boot", "spring mvc", "spring security", "spring data jpa", "spring framework", "spring framework experience"],
+    "spring framework experience": ["spring", "spring boot", "spring mvc", "spring security", "spring data jpa", "spring framework"],
+    "spring": ["spring", "spring boot", "spring mvc", "spring security", "spring data jpa", "spring framework"],
+    "agile development methodologies": ["agile", "agile methodologies", "scrum", "kanban", "sdlc"],
+    "agile development methodology": ["agile", "agile methodologies", "scrum", "kanban", "sdlc"],
+    "agile methodologies": ["agile", "agile methodologies", "scrum", "kanban", "sdlc"],
+    "agile development": ["agile", "agile methodologies", "scrum", "kanban", "sdlc"],
+    "agile": ["agile", "agile methodologies", "scrum", "kanban", "sdlc"],
+    "orm frameworks": ["hibernate", "jpa", "spring data jpa", "sqlalchemy", "prisma", "typeorm"],
+    "containerization": ["docker", "podman", "containerd"],
+    "container orchestration": ["kubernetes", "k8s", "docker swarm", "openshift"],
+    "frontend frameworks": ["react", "angular", "vue", "svelte", "next.js", "nuxt.js"]
+  },
+  "specific_tools": [
+    "docker", "kubernetes", "typescript", "javascript", "python", "java",
+    "c++", "c#", ".net", "golang", "rust", "php", "ruby", "kotlin", "swift", "dart",
+    "mysql", "postgresql", "mongodb", "redis", "cassandra", "sqlite", "oracle", "sql server",
+    "spring boot", "hibernate", "jpa", "react", "angular", "vue", "node.js", "express",
+    "aws", "azure", "gcp", "git", "github", "gitlab", "bitbucket", "junit", "mockito",
+    "kafka", "rabbitmq", "tailwind css", "bootstrap", "next.js"
+  ],
+  "related_skills": {
+    "typescript": ["javascript"],
+    "javascript": ["typescript"],
+    "azure": ["aws", "gcp"],
+    "aws": ["azure", "gcp"],
+    "gcp": ["aws", "azure"],
+    "docker": ["podman", "containerd"],
+    "podman": ["docker"],
+    "kubernetes": ["docker swarm", "openshift"],
+    "mongodb": ["cassandra", "couchdb", "dynamodb"],
+    "kafka": ["rabbitmq", "activemq"],
+    "rabbitmq": ["kafka", "activemq"],
+    "react": ["angular", "vue", "svelte", "react native"],
+    "angular": ["react", "vue"],
+    "vue": ["react", "angular"],
+    "postgresql": ["mysql", "oracle", "sql server"],
+    "mysql": ["postgresql", "oracle", "sql server"],
+    "oracle": ["mysql", "postgresql", "sql server"],
+    "c#": ["java"],
+    "java": ["c#", "kotlin"],
+    "kotlin": ["java"]
+  }
+}

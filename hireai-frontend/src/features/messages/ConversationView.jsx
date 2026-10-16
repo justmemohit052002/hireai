@@ -170,7 +170,7 @@ export const ConversationView = ({
               <span>Invite</span>
             </Button>
           )}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-bold text-emerald-500">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-bold text-emerald-500">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             <span className="hidden sm:inline">Live Chat</span>
             <span className="sm:hidden">Live</span>
@@ -228,7 +228,7 @@ export const ConversationView = ({
             key={idx}
             type="button"
             onClick={() => applyAiPrompt(prompt)}
-            className="px-3 py-1 rounded-full text-[11px] bg-surface border border-border hover:border-brand-blue hover:bg-brand-blue/10 text-foreground transition-all shrink-0 font-medium cursor-pointer shadow-2xs whitespace-nowrap"
+            className="px-3 py-1 rounded-lg text-[11px] bg-surface border border-border hover:border-brand-blue hover:bg-brand-blue/10 text-foreground transition-all shrink-0 font-medium cursor-pointer shadow-2xs whitespace-nowrap"
           >
             {prompt}
           </button>
@@ -238,8 +238,11 @@ export const ConversationView = ({
       {/* Selected File Badge */}
       {selectedFile && (
         <div className="shrink-0 px-4 py-1.5 bg-brand-blue/15 border-t border-brand-blue/30 flex items-center justify-between text-xs text-brand-blue font-medium">
-          <span className="truncate">📎 Ready to send: {selectedFile.name}</span>
-          <button type="button" onClick={() => setSelectedFile(null)} className="p-1 hover:bg-brand-blue/20 rounded-full cursor-pointer">
+          <span className="truncate flex items-center gap-1.5">
+            <Paperclip className="w-3.5 h-3.5 shrink-0" />
+            Ready to send: {selectedFile.name}
+          </span>
+          <button type="button" onClick={() => setSelectedFile(null)} className="p-1 hover:bg-brand-blue/20 rounded-md cursor-pointer">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>

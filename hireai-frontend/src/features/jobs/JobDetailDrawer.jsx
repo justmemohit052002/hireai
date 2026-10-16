@@ -41,7 +41,7 @@ export const JobDetailDrawer = ({
       <div className="space-y-4 pb-5 border-b border-border/50">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#C63FC5]/20 via-[#F56681]/20 to-[#FC9559]/20 border border-[#F56681]/30 flex items-center justify-center font-bold text-2xl text-foreground shrink-0 shadow-md">
+            <div className="w-14 h-14 rounded-2xl bg-brand-navy/10 border border-brand-blue/30 flex items-center justify-center font-bold text-2xl text-brand-blue shrink-0 shadow-sm">
               {companyInitial}
             </div>
             <div>
@@ -72,12 +72,12 @@ export const JobDetailDrawer = ({
           <Badge variant="default">{getJobTypeLabel(job.type) || job.jobType || 'Full-time'}</Badge>
           <Badge variant="secondary" className="capitalize">{job.workplaceType || 'Hybrid'}</Badge>
           <Badge variant="secondary">{getExperienceLevelLabel(job.level) || job.experienceLevel || 'Mid Level'}</Badge>
-          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-2 border border-border/50 text-xs text-muted-foreground">
+          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-surface-2 border border-border/50 text-xs text-muted-foreground">
             <MapPin className="w-3.5 h-3.5 text-primary" />
             <span>{job.location || 'Remote'}</span>
           </div>
           {job.postedAt && (
-            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-2 border border-border/50 text-xs text-muted-foreground">
+            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-surface-2 border border-border/50 text-xs text-muted-foreground">
               <Clock className="w-3.5 h-3.5 text-muted-foreground" />
               <span>{formatRelativeTime(job.postedAt)}</span>
             </div>
@@ -147,7 +147,7 @@ export const JobDetailDrawer = ({
           <div className="flex flex-wrap gap-2">
             {job.benefits.map((benefit, idx) => (
               <span key={idx} className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-surface-2 border border-border/60 text-foreground">
-                ✨ {benefit}
+                {benefit}
               </span>
             ))}
           </div>
