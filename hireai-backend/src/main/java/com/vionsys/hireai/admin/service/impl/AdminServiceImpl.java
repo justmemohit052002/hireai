@@ -47,7 +47,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
 
     private final UserRepository userRepository;
@@ -62,6 +61,33 @@ public class AdminServiceImpl implements AdminService {
     private final com.vionsys.hireai.job.repository.JobRepository jobRepository;
     private final com.vionsys.hireai.application.repository.JobApplicationRepository jobApplicationRepository;
     private final com.vionsys.hireai.security.ApiMetricsFilter apiMetricsFilter;
+
+    public AdminServiceImpl(
+            UserRepository userRepository,
+            RoleRepository roleRepository,
+            AdminAuditLogRepository auditLogRepository,
+            AdminHealthPollerService healthPollerService,
+            AiEngineClient aiEngineClient,
+            RefreshTokenRepository refreshTokenRepository,
+            com.vionsys.hireai.email.EmailService emailService,
+            com.vionsys.hireai.email.EmailProperties emailProperties,
+            org.springframework.security.crypto.password.PasswordEncoder passwordEncoder,
+            com.vionsys.hireai.job.repository.JobRepository jobRepository,
+            com.vionsys.hireai.application.repository.JobApplicationRepository jobApplicationRepository,
+            com.vionsys.hireai.security.ApiMetricsFilter apiMetricsFilter) {
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.auditLogRepository = auditLogRepository;
+        this.healthPollerService = healthPollerService;
+        this.aiEngineClient = aiEngineClient;
+        this.refreshTokenRepository = refreshTokenRepository;
+        this.emailService = emailService;
+        this.emailProperties = emailProperties;
+        this.passwordEncoder = passwordEncoder;
+        this.jobRepository = jobRepository;
+        this.jobApplicationRepository = jobApplicationRepository;
+        this.apiMetricsFilter = apiMetricsFilter;
+    }
 
     @org.springframework.beans.factory.annotation.Value("${admin.metrics.cache-ttl-seconds:120}")
     private long metricsCacheTtlSeconds = 120L;
@@ -697,6 +723,7 @@ public class AdminServiceImpl implements AdminService {
                         .lastSuccessAt(m.getLastSuccessAt())
                         .lastFailureAt(m.getLastFailureAt())
                         .durationInCurrentStateSeconds(durationSec)
+                        .error(m.getError())
                         .build());
             }
         }
@@ -706,6 +733,10 @@ public class AdminServiceImpl implements AdminService {
                 .backendStartedAt(healthPollerService.getBackendStartedInstant().toString())
                 .databaseConnectivity(healthSnapshot.getDatabaseStatus() != null ? healthSnapshot.getDatabaseStatus() : "UP")
                 .aiEngineReachability(healthSnapshot.getOverallStatus())
+                .statusReasonCode(healthSnapshot.getStatusReasonCode())
+                .statusMessage(healthSnapshot.getStatusMessage())
+                .lastSuccessfulPoll(healthSnapshot.getLastSuccessfulPoll())
+                .consecutiveFailures(healthSnapshot.getConsecutiveFailures())
                 .emailSmtpConfigured(emailService.isSmtpConfigured())
                 .lastHealthPollAt(healthPollerService.getLastSuccessfulHealthPollInstant() != null ? healthPollerService.getLastSuccessfulHealthPollInstant().toString() : healthSnapshot.getLastCheckedAt())
                 .modules(moduleStates)

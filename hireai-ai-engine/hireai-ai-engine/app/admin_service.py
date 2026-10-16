@@ -204,9 +204,12 @@ def get_system_health() -> Dict[str, Any]:
                 break
 
         # Status determination logic:
+        error_message = None
         if not requires_llm:
             # Deterministic math/rule modules stay HEALTHY unless recently failed
             status = "HEALTHY" if recent_failure_count == 0 else "DEGRADED"
+            if recent_failure_count > 0:
+                error_message = f"{recent_failure_count} recent calculation failure(s)"
         else:
             provider_ok = (
                 (active_prov == "ollama" and ollama_reachable)
@@ -222,8 +225,21 @@ def get_system_health() -> Dict[str, Any]:
             else:
                 status = "HEALTHY"
 
+            if not provider_ok:
+                if active_prov == "ollama" and not ollama_reachable:
+                    error_message = f"Ollama unreachable at {OLLAMA_BASE_URL}"
+                elif active_prov == "gemini" and not gemini_configured:
+                    error_message = "Gemini API key not configured"
+                elif active_prov == "groq" and not groq_configured:
+                    error_message = "Groq API key not configured"
+                else:
+                    error_message = f"{active_prov} provider unavailable"
+            elif recent_failure_count > 0:
+                error_message = f"{recent_failure_count} recent call failure(s)"
+
         return {
             "status": status,
+            "error": error_message,
             "lastSuccessAt": last_success_at,
             "lastFailureAt": last_failure_at,
             "recentFailureCount": recent_failure_count,
@@ -233,6 +249,7 @@ def get_system_health() -> Dict[str, Any]:
     module_definitions = [
         {
             "id": "jd_generator",
+            "taskType": "jd_generation",
             "name": "Job Description Generator",
             "category": "Synchronous LLM",
             "endpoint": "/api/v1/jd/generate",
@@ -243,6 +260,7 @@ def get_system_health() -> Dict[str, Any]:
         },
         {
             "id": "resume_parser",
+            "taskType": "resume_parsing",
             "name": "Resume Parser (Async Worker)",
             "category": "Asynchronous Polling LLM",
             "endpoint": "/api/v1/resumes/parse",
@@ -253,6 +271,7 @@ def get_system_health() -> Dict[str, Any]:
         },
         {
             "id": "match_engine",
+            "taskType": "match_scoring",
             "name": "Match Engine (Vector Similarity)",
             "category": "Deterministic Vector / TF-IDF",
             "endpoint": "/api/v1/match/score",
@@ -263,6 +282,7 @@ def get_system_health() -> Dict[str, Any]:
         },
         {
             "id": "chatbot",
+            "taskType": "chatbot_message",
             "name": "Pre-Screening Chatbot",
             "category": "Conversational LLM",
             "endpoint": "/api/v1/chatbot/message",
@@ -273,6 +293,7 @@ def get_system_health() -> Dict[str, Any]:
         },
         {
             "id": "interview_ai",
+            "taskType": "interview_ai",
             "name": "Interview AI (Q&A & Evaluator)",
             "category": "Evaluator LLM",
             "endpoint": "/api/v1/interview/questions & /evaluate",
@@ -283,6 +304,7 @@ def get_system_health() -> Dict[str, Any]:
         },
         {
             "id": "decision_engine",
+            "taskType": "decision_finalize",
             "name": "Decision Engine (Composite)",
             "category": "Weighted Composite Rule Engine",
             "endpoint": "/api/v1/decision/finalize",

@@ -35,6 +35,7 @@ export default defineConfig({
       '/chat': proxyConfig,
       '/notifications': proxyConfig,
       '/uploads': proxyConfig,
+      '/admin': proxyConfig,
       '/api': proxyConfig,
       '/ws/chat': {
         target: backendTarget,

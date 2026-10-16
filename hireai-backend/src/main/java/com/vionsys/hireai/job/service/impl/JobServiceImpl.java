@@ -66,7 +66,7 @@ public class JobServiceImpl implements JobService {
             if (recruiterProfile.getUser() != null) {
                 notificationService.createAndSendNotification(
                         recruiterProfile.getUser(),
-                        "Job Posted Successfully 🚀",
+                        "Job Posted Successfully",
                         "Your job posting '" + savedJob.getTitle() + "' is now live and accepting applications.",
                         com.vionsys.hireai.notification.enums.NotificationType.SYSTEM,
                         "/recruiter/jobs"
@@ -81,7 +81,7 @@ public class JobServiceImpl implements JobService {
                     .forEach(c -> {
                         notificationService.createAndSendNotification(
                                 c.getUser(),
-                                "Smart Job Recommendation 💼",
+                                "Smart Job Recommendation",
                                 "New opening for " + savedJob.getTitle() + " at " + recruiterProfile.getCompanyName() + ". Check it out and apply today!",
                                 com.vionsys.hireai.notification.enums.NotificationType.AI_MATCH,
                                 "/candidate/jobs"

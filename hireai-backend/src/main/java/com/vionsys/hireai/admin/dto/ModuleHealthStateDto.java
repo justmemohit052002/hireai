@@ -18,4 +18,5 @@ public class ModuleHealthStateDto {
     private String lastSuccessAt;
     private String lastFailureAt;
     private long durationInCurrentStateSeconds;
+    private String error;
 }

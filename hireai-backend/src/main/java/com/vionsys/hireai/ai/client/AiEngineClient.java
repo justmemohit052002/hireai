@@ -214,20 +214,80 @@ public class AiEngineClient {
         }
     }
 
+    public record HealthCheckResult(
+            boolean isSuccessful,
+            com.vionsys.hireai.admin.dto.AdminHealthResponse response,
+            String statusReasonCode,
+            String statusMessage,
+            Throwable cause
+    ) {}
+
     /**
-     * Admin: AI Engine Health Summary for all 6 modules
+     * Admin: AI Engine Health Summary for all 6 modules with granular error classification.
      */
-    public Optional<com.vionsys.hireai.admin.dto.AdminHealthResponse> getAdminHealthSummary() {
+    public HealthCheckResult checkAdminHealthDetailed() {
         try {
             com.vionsys.hireai.admin.dto.AdminHealthResponse response = adminRestClient.get()
                     .uri("/api/v1/admin/health-summary")
                     .retrieve()
                     .body(com.vionsys.hireai.admin.dto.AdminHealthResponse.class);
-            return Optional.ofNullable(response);
+
+            if (response == null) {
+                return new HealthCheckResult(false, null, "SERVICE_ERROR", "AI Engine returned empty response payload", null);
+            }
+
+            boolean anyDegraded = false;
+            String degradedReason = null;
+            if (response.getModules() != null) {
+                for (com.vionsys.hireai.admin.dto.ModuleHealthDto mod : response.getModules()) {
+                    String st = mod.getStatus() != null ? mod.getStatus().toUpperCase() : "UNKNOWN";
+                    if (!"HEALTHY".equals(st) && !"UP".equals(st)) {
+                        anyDegraded = true;
+                        if (mod.getError() != null && !mod.getError().isBlank()) {
+                            degradedReason = mod.getName() + " (" + mod.getError() + ")";
+                        } else if (degradedReason == null) {
+                            degradedReason = mod.getName() + " is " + st;
+                        }
+                    }
+                }
+            }
+
+            if ("DEGRADED".equalsIgnoreCase(response.getOverallStatus()) || "DOWN".equalsIgnoreCase(response.getOverallStatus()) || anyDegraded) {
+                String msg = degradedReason != null
+                        ? "AI Engine operational but degraded: " + degradedReason
+                        : "AI Engine operational but one or more modules/providers are degraded";
+                response.setOverallStatus("MODULE_DEGRADED");
+                return new HealthCheckResult(true, response, "MODULE_DEGRADED", msg, null);
+            }
+
+            response.setOverallStatus("HEALTHY");
+            return new HealthCheckResult(true, response, "HEALTHY", "AI Engine and all modules operational", null);
+
+        } catch (org.springframework.web.client.ResourceAccessException ex) {
+            String detail = ex.getMessage();
+            boolean isTimeout = detail != null && (detail.toLowerCase().contains("timeout") || detail.toLowerCase().contains("timed out"));
+            String msg = isTimeout
+                    ? "AI Engine request timed out connecting to " + properties.getBaseUrl()
+                    : "AI Engine connection refused at " + properties.getBaseUrl() + " (Service Down)";
+            return new HealthCheckResult(false, null, "SERVICE_UNREACHABLE", msg, ex);
+        } catch (org.springframework.web.client.HttpStatusCodeException ex) {
+            String msg = "AI Engine HTTP " + ex.getStatusCode().value() + " error: " + ex.getStatusText();
+            return new HealthCheckResult(false, null, "SERVICE_ERROR", msg, ex);
+        } catch (org.springframework.web.client.RestClientResponseException ex) {
+            String msg = "AI Engine REST error (" + ex.getStatusCode() + "): " + ex.getMessage();
+            return new HealthCheckResult(false, null, "SERVICE_ERROR", msg, ex);
         } catch (Exception ex) {
-            log.warn("AI Engine admin health summary check failed ({}). Marking modules as degraded.", ex.getMessage());
-            return Optional.empty();
+            String msg = "AI Engine check failed: " + ex.getMessage();
+            return new HealthCheckResult(false, null, "SERVICE_ERROR", msg, ex);
         }
+    }
+
+    /**
+     * Admin: AI Engine Health Summary (Backward-compatible Optional wrapper).
+     */
+    public Optional<com.vionsys.hireai.admin.dto.AdminHealthResponse> getAdminHealthSummary() {
+        HealthCheckResult result = checkAdminHealthDetailed();
+        return result.isSuccessful() ? Optional.ofNullable(result.response()) : Optional.empty();
     }
 
     /**

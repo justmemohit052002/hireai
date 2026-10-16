@@ -201,8 +201,14 @@ export const AdminUsersPage = () => {
 
     try {
       setIsCreatingSubAdmin(true);
+      const rawName = subAdminForm.name.trim();
+      const nameParts = rawName.split(/\s+/);
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : nameParts[0] || '';
+
       await adminApi.createSubAdmin({
-        name: subAdminForm.name.trim(),
+        firstName,
+        lastName,
         email: subAdminForm.email.trim().toLowerCase(),
         password: subAdminForm.password,
         confirmPassword: subAdminForm.confirmPassword,

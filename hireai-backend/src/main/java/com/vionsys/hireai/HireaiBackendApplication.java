@@ -12,6 +12,6 @@ public class HireaiBackendApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(HireaiBackendApplication.class, args);
-		
+
 	}
 }

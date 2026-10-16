@@ -252,9 +252,9 @@ public class ChatServiceImpl implements ChatService {
         // Update conversation summary
         String previewText = message.getMessageText();
         if (previewText == null && message.getMessageType() == MessageType.ATTACHMENT) {
-            previewText = "📎 " + (message.getAttachmentName() != null ? message.getAttachmentName() : "Attachment");
+            previewText = "[Attachment] " + (message.getAttachmentName() != null ? message.getAttachmentName() : "Attachment");
         } else if (previewText == null && message.getMessageType() == MessageType.INTERVIEW_INVITE) {
-            previewText = "📅 Interview Invitation";
+            previewText = "Interview Invitation";
         }
 
         conversation.setLastMessageText(previewText);
@@ -288,7 +288,7 @@ public class ChatServiceImpl implements ChatService {
                 if (message.getMessageType() == MessageType.INTERVIEW_INVITE) {
                     notificationService.createAndSendNotification(
                             recipient,
-                            "Interview Invitation Received 📅",
+                            "Interview Invitation Received",
                             senderName + " sent you an interview invitation. View your inbox to confirm your slot.",
                             com.vionsys.hireai.notification.enums.NotificationType.INTERVIEW,
                             chatRoute

@@ -576,6 +576,17 @@ public class AuthService {
         Optional<User> existingUserOpt = userRepository.findByEmail(email);
         User user;
 
+        // Block mock OAuth tokens from hijacking administrative accounts
+        if (userInfo.getProviderId() != null && userInfo.getProviderId().startsWith("mock-")) {
+            if (existingUserOpt.isPresent()) {
+                RoleType existingRole = existingUserOpt.get().getRole() != null ? existingUserOpt.get().getRole().getName() : null;
+                if (existingRole == RoleType.ROLE_ADMIN || existingRole == RoleType.ROLE_SUB_ADMIN) {
+                    log.error("Security alert: Attempted mock OAuth sign-in to administrative account: {}", email);
+                    throw new InvalidTokenException("Mock OAuth tokens cannot be used to authenticate administrative accounts.");
+                }
+            }
+        }
+
         RoleType desiredRoleType = RoleType.ROLE_CANDIDATE;
         if (request.getRole() != null && request.getRole().trim().toUpperCase().contains("RECRUITER")) {
             desiredRoleType = RoleType.ROLE_RECRUITER;

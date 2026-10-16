@@ -288,4 +288,24 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("Your account has been deleted successfully."));
     }
+
+    @Test
+    @DisplayName("GET /users/{userId} - Returns user response for authorized caller")
+    void getUserById_Success() throws Exception {
+        UUID userId = UUID.randomUUID();
+        UserResponse response = UserResponse.builder()
+                .id(userId)
+                .email("target@example.com")
+                .firstName("Target")
+                .lastName("User")
+                .role("CANDIDATE")
+                .build();
+
+        when(userService.getUserById(userId)).thenReturn(response);
+
+        mockMvc.perform(get("/users/" + userId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("target@example.com"))
+                .andExpect(jsonPath("$.id").value(userId.toString()));
+    }
 }

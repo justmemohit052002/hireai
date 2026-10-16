@@ -130,6 +130,17 @@ export const AdminDashboardPage = () => {
     return `${m}m`;
   };
 
+  const formatLastSeen = (timestamp) => {
+    if (!timestamp) return 'Never';
+    const diffSec = Math.max(0, Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000));
+    if (diffSec < 60) return `${diffSec}s ago`;
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin} min ago`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return new Date(timestamp).toLocaleDateString();
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
       {/* Header Banner */}
@@ -191,16 +202,25 @@ export const AdminDashboardPage = () => {
         </div>
       </div>
 
-      {/* Amber alert when engine is unreachable */}
+      {/* Informative alert banner when engine is not fully healthy */}
       {overallStatus !== 'HEALTHY' && (
         <div className="flex items-start sm:items-center gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300">
           <AlertTriangle className="w-5 h-5 shrink-0 text-amber-500 mt-0.5 sm:mt-0" />
           <div className="space-y-0.5">
             <p className="text-xs font-bold text-amber-800 dark:text-amber-200 uppercase tracking-wider">
-              AI Engine Status: {overallStatus}
+              {overallStatus === 'SERVICE_UNREACHABLE' || overallStatus === 'OFFLINE'
+                ? 'AI Engine: Service Unreachable (Port 8000)'
+                : overallStatus === 'SERVICE_ERROR'
+                ? 'AI Engine: Service Error'
+                : overallStatus === 'MODULE_DEGRADED'
+                ? 'AI Engine: Module Degraded'
+                : `AI Engine Status: ${overallStatus}`}
             </p>
             <p className="text-xs">
-              AI background poller snapshot indicates module degradation. Requests fail-safe to cached states.
+              {healthData?.statusMessage || sysHealth.statusMessage ||
+                (overallStatus === 'SERVICE_UNREACHABLE' || overallStatus === 'OFFLINE'
+                  ? `AI engine microservice on port 8000 is not reachable (connection refused or timeout). Last seen: ${formatLastSeen(sysHealth.lastSuccessfulPoll || healthData?.lastSuccessfulPoll)}. Requests fail-safe to cached states.`
+                  : 'AI background poller snapshot indicates module degradation. Requests fail-safe to cached states.')}
             </p>
           </div>
         </div>
@@ -225,7 +245,11 @@ export const AdminDashboardPage = () => {
           </div>
           <div>
             <div className="text-2xl font-black text-foreground flex items-center gap-2">
-              {overallStatus === 'HEALTHY' ? '6 / 6 Modules UP' : 'Degraded State'}
+              {overallStatus === 'HEALTHY'
+                ? '6 / 6 Modules UP'
+                : overallStatus === 'SERVICE_UNREACHABLE' || overallStatus === 'OFFLINE'
+                ? 'Engine Unreachable'
+                : 'Degraded State'}
             </div>
             <p className="text-[11px] text-muted-foreground mt-0.5">
               Uptime: <span className="font-bold text-foreground">{formatDuration(sysHealth.backendUptimeSeconds)}</span> : DB: <span className="font-bold text-emerald-500">{sysHealth.databaseConnectivity || 'UP'}</span>
@@ -375,6 +399,15 @@ export const AdminDashboardPage = () => {
                     <span>State Duration:</span>
                     <span className="font-mono text-foreground font-semibold">{formatDuration(durationSec)}</span>
                   </div>
+                  {(overallStatus === 'SERVICE_UNREACHABLE' || overallStatus === 'OFFLINE' || mod.status === 'OFFLINE') ? (
+                    <div className="pt-1 text-[11px] text-rose-500/90 dark:text-rose-400 font-medium truncate">
+                      AI engine unreachable (last seen {formatLastSeen(sysHealth.lastSuccessfulPoll || healthData?.lastSuccessfulPoll)})
+                    </div>
+                  ) : mod.error ? (
+                    <div className="pt-1 text-[11px] text-amber-600 dark:text-amber-400 font-medium truncate" title={mod.error}>
+                      Module degraded: {mod.error}
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="pt-2 border-t border-border/50 flex items-center justify-between text-[11px]">

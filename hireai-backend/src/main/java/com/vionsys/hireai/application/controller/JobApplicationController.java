@@ -277,6 +277,7 @@ public class JobApplicationController {
         return ResponseEntity.ok()
                 .contentType(mediaType)
                 .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
+                .header("X-Content-Type-Options", "nosniff")
                 .body(resource);
     }
 }

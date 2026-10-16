@@ -253,10 +253,13 @@ public class CandidateController {
 						? Sort.Direction.ASC
 						: Sort.Direction.DESC;
 
+		int safePage = Math.max(page, 0);
+		int safeSize = Math.min(Math.max(size, 1), 100);
+
 		PageRequest pageable =
 				PageRequest.of(
-						page,
-						size,
+						safePage,
+						safeSize,
 						Sort.by(
 								sortDirection,
 								sortBy

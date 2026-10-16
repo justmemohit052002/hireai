@@ -26,4 +26,9 @@ public class AdminHealthResponse {
     private ProvidersConfigDto providers;
     private EnvironmentConfigDto environment;
     private String error;
+    private String statusReasonCode;
+    private String statusMessage;
+    private String lastSuccessfulPoll;
+    private String lastAttempt;
+    private Integer consecutiveFailures;
 }

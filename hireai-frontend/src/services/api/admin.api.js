@@ -99,7 +99,7 @@ export const adminApi = {
 
   /**
    * Creates a new sub-administrator account (ADMIN only)
-   * @param {Object} payload - { name, email, password, confirmPassword }
+   * @param {Object} payload - { firstName, lastName, email, password, confirmPassword }
    */
   createSubAdmin: (payload) => apiClient.post('/admin/sub-admins', payload),
 

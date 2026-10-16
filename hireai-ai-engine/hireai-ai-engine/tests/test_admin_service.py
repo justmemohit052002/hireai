@@ -103,3 +103,47 @@ def test_jsonl_log_source_with_malformed_and_missing_timestamps():
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
+
+def test_get_system_health_structure():
+    from app.admin_service import get_system_health
+    health = get_system_health()
+
+    assert health["service"] == "HireAI AI Engine"
+    assert "overallStatus" in health
+    assert "checkedAt" in health
+    assert len(health["modules"]) == 6
+
+    expected_ids = {"jd_generator", "resume_parser", "match_engine", "chatbot", "interview_ai", "decision_engine"}
+    found_ids = {m["id"] for m in health["modules"]}
+    assert found_ids == expected_ids
+
+    for m in health["modules"]:
+        assert "taskType" in m
+        assert "status" in m
+        assert "error" in m
+        assert m["status"] in ("HEALTHY", "DEGRADED", "DOWN")
+
+
+def test_get_system_health_provider_degradation(monkeypatch):
+    from app import admin_service
+
+    # Simulate Ollama being unreachable
+    monkeypatch.setattr(admin_service, "check_ollama_reachable", lambda: False)
+    monkeypatch.setattr(admin_service, "get_active_provider_info", lambda: ("ollama", "llama3.2:3b"))
+    monkeypatch.setattr(admin_service, "GEMINI_API_KEY", "")
+    monkeypatch.setattr(admin_service, "GROQ_API_KEY", "")
+
+    health = admin_service.get_system_health()
+    assert health["overallStatus"] in ("DEGRADED", "DOWN")
+
+    modules_by_id = {m["id"]: m for m in health["modules"]}
+
+    # Non-LLM deterministic modules stay HEALTHY
+    assert modules_by_id["match_engine"]["status"] == "HEALTHY"
+    assert modules_by_id["decision_engine"]["status"] == "HEALTHY"
+
+    # LLM modules show DEGRADED or DOWN with error reason
+    assert modules_by_id["jd_generator"]["status"] in ("DEGRADED", "DOWN")
+    assert "Ollama unreachable" in str(modules_by_id["jd_generator"]["error"])
+
+

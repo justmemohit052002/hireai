@@ -45,11 +45,22 @@ public class OAuthService {
     @org.springframework.beans.factory.annotation.Value("${google.oauth.client-id:}")
     private String configuredGoogleClientId;
 
+    @org.springframework.beans.factory.annotation.Value("${hireai.oauth.allow-mock-tokens:false}")
+    private boolean allowMockTokens;
+
+    public void setAllowMockTokens(boolean allowMockTokens) {
+        this.allowMockTokens = allowMockTokens;
+    }
+
     private OAuthUserInfo verifyGoogleToken(OAuthRequest request) {
         String token = request.getToken() != null ? request.getToken().trim() : "";
 
         // Simulated / development mode token
         if (token.startsWith("mock-") || token.startsWith("simulated-") || "demo-token".equalsIgnoreCase(token)) {
+            if (!allowMockTokens) {
+                log.warn("Rejected mock Google OAuth token attempt while mock tokens are disabled");
+                throw new InvalidTokenException("Mock OAuth tokens are disabled in this environment.");
+            }
             log.info("Processing simulated Google OAuth token for: {}", request.getEmail());
             return buildMockUserInfo(request, "GOOGLE");
         }
@@ -149,6 +160,10 @@ public class OAuthService {
 
         // Simulated / development mode token
         if (token.startsWith("mock-") || token.startsWith("simulated-") || "demo-token".equalsIgnoreCase(token)) {
+            if (!allowMockTokens) {
+                log.warn("Rejected mock LinkedIn OAuth token attempt while mock tokens are disabled");
+                throw new InvalidTokenException("Mock OAuth tokens are disabled in this environment.");
+            }
             log.info("Processing simulated LinkedIn OAuth token for: {}", request.getEmail());
             return buildMockUserInfo(request, "LINKEDIN");
         }

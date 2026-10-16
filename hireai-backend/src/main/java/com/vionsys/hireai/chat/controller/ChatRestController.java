@@ -99,7 +99,9 @@ public class ChatRestController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "30") int size
     ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by("createdAt").descending());
         PagedResponse<ChatMessageResponse> messages = chatService.getConversationMessages(currentUser.getId(), conversationId, pageable);
         return ResponseEntity.ok(ApiResponse.success(messages, "Messages retrieved successfully"));
     }

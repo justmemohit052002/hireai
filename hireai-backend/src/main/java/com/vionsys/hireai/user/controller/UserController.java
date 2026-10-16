@@ -6,6 +6,8 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -48,8 +50,9 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Get User by ID", description = "Fetch public user information by UUID")
+    @Operation(summary = "Get User by ID", description = "Fetch user information by UUID (Admin or account owner only)")
     @GetMapping("/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUB_ADMIN') or (principal != null and #userId.equals(principal.id))")
     public ResponseEntity<UserResponse> getUserById(
             @PathVariable UUID userId) {
         UserResponse response = userService.getUserById(userId);
