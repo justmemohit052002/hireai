@@ -430,14 +430,14 @@ export const AdminUsersPage = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-border/50 text-muted-foreground">
-                  <th className="pb-3 font-bold">User</th>
-                  <th className="pb-3 font-bold">Role</th>
-                  <th className="pb-3 font-bold">Status</th>
-                  <th className="pb-3 font-bold">Last Login</th>
-                  <th className="pb-3 font-bold">Provider</th>
-                  <th className="pb-3 font-bold">Created</th>
-                  <th className="pb-3 font-bold text-right">Actions</th>
+                <tr className="border-b border-border/50 text-muted-foreground whitespace-nowrap">
+                  <th className="pb-3 font-bold min-w-[200px]">User</th>
+                  <th className="pb-3 font-bold min-w-[120px]">Role</th>
+                  <th className="pb-3 font-bold min-w-[110px]">Status</th>
+                  <th className="pb-3 font-bold min-w-[150px]">Last Login</th>
+                  <th className="pb-3 font-bold min-w-[90px]">Provider</th>
+                  <th className="pb-3 font-bold min-w-[100px]">Created</th>
+                  <th className="pb-3 font-bold text-right min-w-[180px]">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
@@ -457,28 +457,29 @@ export const AdminUsersPage = () => {
                           </div>
                           <div>
                             <div className="font-bold text-foreground flex items-center gap-1.5">
-                              {u.firstName} {u.lastName}
+                              <span className="truncate max-w-[160px]">{u.firstName} {u.lastName}</span>
                               {isSelf && (
-                                <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-brand-accent/20 text-slate-900 dark:text-brand-accent font-black">
+                                <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-brand-accent/20 text-slate-900 dark:text-brand-accent font-black shrink-0">
                                   You
                                 </Badge>
                               )}
                               {u.mustChangePassword && (
-                                <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/20">
+                                <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/20 shrink-0">
                                   Reset Req
                                 </span>
                               )}
                             </div>
-                            <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-                              <Mail className="w-3 h-3" /> {u.email}
+                            <div className="text-[11px] text-muted-foreground flex items-center gap-1 max-w-[220px] truncate" title={u.email}>
+                              <Mail className="w-3 h-3 shrink-0" />
+                              <span className="truncate">{u.email}</span>
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      <td className="py-3">{getRoleBadge(u.role)}</td>
+                      <td className="py-3 whitespace-nowrap">{getRoleBadge(u.role)}</td>
 
-                      <td className="py-3">
+                      <td className="py-3 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[10px] font-bold ${
                             u.enabled
@@ -492,57 +493,59 @@ export const AdminUsersPage = () => {
                       </td>
 
                       {/* Last Login Column */}
-                      <td className="py-3 font-mono text-[11px] text-muted-foreground">
+                      <td className="py-3 font-mono text-[11px] text-muted-foreground whitespace-nowrap">
                         {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : 'Never logged in'}
                       </td>
 
-                      <td className="py-3 font-mono text-[11px] text-muted-foreground uppercase">
+                      <td className="py-3 font-mono text-[11px] text-muted-foreground uppercase whitespace-nowrap">
                         {u.authProvider || 'LOCAL'}
                       </td>
 
-                      <td className="py-3 font-mono text-[11px] text-muted-foreground">
+                      <td className="py-3 font-mono text-[11px] text-muted-foreground whitespace-nowrap">
                         {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'Initial'}
                       </td>
 
-                      <td className="py-3 text-right space-x-2">
-                        {/* Change Role Button (Admin only) */}
-                        {isAdmin && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={!canChangeRole}
-                            className="h-7 text-[11px] font-bold rounded-lg cursor-pointer"
-                            onClick={() => {
-                              setRoleModalUser(u);
-                              setNewSelectedRole(u.role || 'ROLE_RECRUITER');
-                            }}
-                          >
-                            <Shield className="w-3 h-3 mr-1" /> Change Role
-                          </Button>
-                        )}
-
-                        {/* Deactivate / Activate Button */}
-                        <Button
-                          variant={u.enabled ? 'outline' : 'default'}
-                          size="sm"
-                          disabled={!canModifyStatus}
-                          className={`h-7 text-[11px] font-bold rounded-lg cursor-pointer ${
-                            u.enabled
-                              ? 'text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border-rose-500/20'
-                              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                          }`}
-                          onClick={() => setStatusModalUser(u)}
-                        >
-                          {u.enabled ? (
-                            <>
-                              <UserX className="w-3 h-3 mr-1" /> Deactivate
-                            </>
-                          ) : (
-                            <>
-                              <UserCheck className="w-3 h-3 mr-1" /> Activate
-                            </>
+                      <td className="py-3 text-right">
+                        <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+                          {/* Change Role Button (Admin only) */}
+                          {isAdmin && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={!canChangeRole}
+                              className="h-7 text-[11px] font-bold rounded-lg cursor-pointer shrink-0"
+                              onClick={() => {
+                                setRoleModalUser(u);
+                                setNewSelectedRole(u.role || 'ROLE_RECRUITER');
+                              }}
+                            >
+                              <Shield className="w-3 h-3 mr-1" /> Change Role
+                            </Button>
                           )}
-                        </Button>
+
+                          {/* Deactivate / Activate Button */}
+                          <Button
+                            variant={u.enabled ? 'outline' : 'default'}
+                            size="sm"
+                            disabled={!canModifyStatus}
+                            className={`h-7 text-[11px] font-bold rounded-lg cursor-pointer shrink-0 ${
+                              u.enabled
+                                ? 'text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border-rose-500/20'
+                                : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                            }`}
+                            onClick={() => setStatusModalUser(u)}
+                          >
+                            {u.enabled ? (
+                              <>
+                                <UserX className="w-3 h-3 mr-1" /> Deactivate
+                              </>
+                            ) : (
+                              <>
+                                <UserCheck className="w-3 h-3 mr-1" /> Activate
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   );

@@ -18,11 +18,15 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class AccountBackoffManager {
 
     private final RateLimitProperties properties;
-    private final Map<String, AccountState> accountStates = new ConcurrentHashMap<>();
+    private final Map<String, AccountState> accountIpStates = new ConcurrentHashMap<>();
+    private final Map<String, AccountState> globalAccountStates = new ConcurrentHashMap<>();
+
+    public AccountBackoffManager(RateLimitProperties properties) {
+        this.properties = properties;
+    }
 
     @Getter
     @AllArgsConstructor
@@ -52,93 +56,145 @@ public class AccountBackoffManager {
     }
 
     /**
-     * Checks if the given account is currently subject to an active exponential backoff cooldown.
+     * Checks if the given account and client IP are currently subject to an active exponential backoff cooldown.
      *
      * @param rawAccount user identifier (e.g. email)
-     * @return BackoffResult indicating whether the account is blocked and remaining cooldown seconds
+     * @param clientIp   client IP address
+     * @return BackoffResult indicating whether the request is blocked and remaining cooldown seconds
      */
-    public BackoffResult checkBackoff(String rawAccount) {
+    public BackoffResult checkBackoff(String rawAccount, String clientIp) {
         if (rawAccount == null || rawAccount.isBlank()) {
             return BackoffResult.allowed(0);
         }
 
         String account = normalize(rawAccount);
-        AccountState state = accountStates.get(account);
-        if (state == null) {
-            return BackoffResult.allowed(0);
+        long now = System.currentTimeMillis();
+
+        // 1. Check global per-account safety net (protects against distributed attacks across many IPs)
+        AccountState globalState = globalAccountStates.get(account);
+        if (globalState != null) {
+            synchronized (globalState) {
+                if (globalState.backoffUntilEpochMs > now) {
+                    long remainingMs = globalState.backoffUntilEpochMs - now;
+                    long remainingSec = Math.max(1L, (long) Math.ceil(remainingMs / 1000.0));
+                    return BackoffResult.blocked(remainingSec, globalState.consecutiveFailures);
+                }
+            }
         }
 
-        long now = System.currentTimeMillis();
-        synchronized (state) {
-            if (state.backoffUntilEpochMs > now) {
-                long remainingMs = state.backoffUntilEpochMs - now;
-                long remainingSec = Math.max(1L, (long) Math.ceil(remainingMs / 1000.0));
-                return BackoffResult.blocked(remainingSec, state.consecutiveFailures);
+        // 2. Check per-(account + client IP) backoff (prevents single IP from locking out legitimate user)
+        String effectiveIp = (clientIp != null && !clientIp.isBlank()) ? clientIp.trim() : "default";
+        String ipKey = account + ":" + effectiveIp;
+        AccountState ipState = accountIpStates.get(ipKey);
+        if (ipState != null) {
+            synchronized (ipState) {
+                if (ipState.backoffUntilEpochMs > now) {
+                    long remainingMs = ipState.backoffUntilEpochMs - now;
+                    long remainingSec = Math.max(1L, (long) Math.ceil(remainingMs / 1000.0));
+                    return BackoffResult.blocked(remainingSec, ipState.consecutiveFailures);
+                }
             }
-            return BackoffResult.allowed(state.consecutiveFailures);
         }
+
+        return BackoffResult.allowed(0);
+    }
+
+    public BackoffResult checkBackoff(String rawAccount) {
+        return checkBackoff(rawAccount, null);
     }
 
     /**
-     * Records an authentication failure for the given account, escalating the exponential backoff if applicable.
+     * Records an authentication failure for the given account and client IP.
+     * Escalates exponential backoff per IP, and activates global safety net if threshold is exceeded.
      *
      * @param rawAccount user identifier (e.g. email)
-     * @return backoff duration in seconds applied (0 if still within base attempts)
+     * @param clientIp   client IP address
+     * @return applied backoff duration in seconds (0 if within limits)
      */
-    public long recordFailure(String rawAccount) {
+    public long recordFailure(String rawAccount, String clientIp) {
         if (rawAccount == null || rawAccount.isBlank()) {
             return 0L;
         }
 
         String account = normalize(rawAccount);
-        AccountState state = accountStates.computeIfAbsent(account, k -> new AccountState());
-
         long now = System.currentTimeMillis();
         RateLimitProperties.AccountProperties config = properties.getAuth().getAccount();
         long windowMs = config.getWindowSeconds() * 1000L;
 
-        synchronized (state) {
-            // If the last failure was outside the sliding failure window, reset counter
-            if (state.lastFailureEpochMs > 0 && (now - state.lastFailureEpochMs) > windowMs) {
-                state.consecutiveFailures = 0;
+        // 1. Record in global safety net
+        long globalBackoff = 0L;
+        AccountState globalState = globalAccountStates.computeIfAbsent(account, k -> new AccountState());
+        synchronized (globalState) {
+            if (globalState.lastFailureEpochMs > 0 && (now - globalState.lastFailureEpochMs) > windowMs) {
+                globalState.consecutiveFailures = 0;
             }
+            globalState.consecutiveFailures++;
+            globalState.lastFailureEpochMs = now;
 
-            state.consecutiveFailures++;
-            state.lastFailureEpochMs = now;
-
-            if (state.consecutiveFailures > config.getBaseAttempts()) {
-                int escalationLevel = state.consecutiveFailures - config.getBaseAttempts() - 1;
+            if (globalState.consecutiveFailures > config.getGlobalMaxAttempts()) {
+                int escalationLevel = globalState.consecutiveFailures - config.getGlobalMaxAttempts() - 1;
                 double calculatedSeconds = config.getInitialBackoffSeconds() * Math.pow(config.getMultiplier(), escalationLevel);
-                long backoffSeconds = Math.min(config.getMaxBackoffSeconds(), Math.round(calculatedSeconds));
+                globalBackoff = Math.min(config.getMaxBackoffSeconds(), Math.round(calculatedSeconds));
+                globalState.backoffUntilEpochMs = now + (globalBackoff * 1000L);
 
-                state.backoffUntilEpochMs = now + (backoffSeconds * 1000L);
-
-                log.warn("Exponential backoff activated for account '{}': failure count={}, backoff={}s",
-                        account, state.consecutiveFailures, backoffSeconds);
-
-                return backoffSeconds;
+                log.warn("Global safety net exponential backoff activated for account '{}': failures={}, backoff={}s",
+                        account, globalState.consecutiveFailures, globalBackoff);
             }
-
-            return 0L;
         }
+
+        // 2. Record in per (account + client IP)
+        long ipBackoff = 0L;
+        String effectiveIp = (clientIp != null && !clientIp.isBlank()) ? clientIp.trim() : "default";
+        String ipKey = account + ":" + effectiveIp;
+        AccountState ipState = accountIpStates.computeIfAbsent(ipKey, k -> new AccountState());
+        synchronized (ipState) {
+            if (ipState.lastFailureEpochMs > 0 && (now - ipState.lastFailureEpochMs) > windowMs) {
+                ipState.consecutiveFailures = 0;
+            }
+            ipState.consecutiveFailures++;
+            ipState.lastFailureEpochMs = now;
+
+            if (ipState.consecutiveFailures > config.getBaseAttempts()) {
+                int escalationLevel = ipState.consecutiveFailures - config.getBaseAttempts() - 1;
+                double calculatedSeconds = config.getInitialBackoffSeconds() * Math.pow(config.getMultiplier(), escalationLevel);
+                ipBackoff = Math.min(config.getMaxBackoffSeconds(), Math.round(calculatedSeconds));
+                ipState.backoffUntilEpochMs = now + (ipBackoff * 1000L);
+
+                log.warn("Exponential backoff activated for account '{}' from IP {}: failures={}, backoff={}s",
+                        account, effectiveIp, ipState.consecutiveFailures, ipBackoff);
+            }
+        }
+
+        return Math.max(globalBackoff, ipBackoff);
+    }
+
+    public long recordFailure(String rawAccount) {
+        return recordFailure(rawAccount, null);
     }
 
     /**
      * Resets failure count and backoff state on successful authentication.
      *
      * @param rawAccount user identifier (e.g. email)
+     * @param clientIp   client IP address
      */
-    public void recordSuccess(String rawAccount) {
+    public void recordSuccess(String rawAccount, String clientIp) {
         if (rawAccount == null || rawAccount.isBlank()) {
             return;
         }
         String account = normalize(rawAccount);
-        AccountState state = accountStates.get(account);
-        if (state != null) {
-            state.recordSuccess();
-            accountStates.remove(account);
-            log.debug("Reset backoff and failure count for account '{}'", account);
+        globalAccountStates.remove(account);
+        if (clientIp != null && !clientIp.isBlank()) {
+            accountIpStates.remove(account + ":" + clientIp.trim());
+            accountIpStates.remove(account + ":default");
+        } else {
+            accountIpStates.keySet().removeIf(k -> k.startsWith(account + ":"));
         }
+        log.debug("Reset backoff and failure count for account '{}'", account);
+    }
+
+    public void recordSuccess(String rawAccount) {
+        recordSuccess(rawAccount, null);
     }
 
     /**
@@ -164,7 +220,13 @@ public class AccountBackoffManager {
     @Scheduled(fixedRate = 300000)
     public void cleanupExpiredStates() {
         long cutoff = System.currentTimeMillis() - 1800000L; // 30 minutes
-        accountStates.entrySet().removeIf(entry -> {
+        globalAccountStates.entrySet().removeIf(entry -> {
+            AccountState s = entry.getValue();
+            synchronized (s) {
+                return s.backoffUntilEpochMs < System.currentTimeMillis() && s.lastFailureEpochMs < cutoff;
+            }
+        });
+        accountIpStates.entrySet().removeIf(entry -> {
             AccountState s = entry.getValue();
             synchronized (s) {
                 return s.backoffUntilEpochMs < System.currentTimeMillis() && s.lastFailureEpochMs < cutoff;

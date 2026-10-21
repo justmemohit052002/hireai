@@ -161,8 +161,12 @@ export const AdminLlmUsagePage = () => {
 
         <Card glass className="p-5 rounded-2xl border border-white/20 dark:border-white/10 shadow-md space-y-2">
           <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Mean Response Latency</span>
-          <div className="text-3xl font-black text-foreground">{isEngineAvailable ? `${stats?.avgLatencySeconds || 0}s` : '-'}</div>
-          <p className="text-xs text-muted-foreground">{isEngineAvailable ? 'Across active providers' : 'Telemetry offline'}</p>
+          <div className="text-3xl font-black text-foreground">
+            {isEngineAvailable && (stats?.totalCalls ?? 0) > 0 && stats?.avgLatencySeconds != null ? `${stats.avgLatencySeconds}s` : '-'}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {isEngineAvailable && (stats?.totalCalls ?? 0) > 0 ? 'Across active providers' : 'No calls in this scope'}
+          </p>
         </Card>
 
         <Card glass className="p-5 rounded-2xl border border-white/20 dark:border-white/10 shadow-md space-y-2">
@@ -172,9 +176,14 @@ export const AdminLlmUsagePage = () => {
               <div className="text-2xl font-bold text-amber-500">Unavailable</div>
               <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">AI engine unreachable</p>
             </div>
+          ) : (stats?.totalCalls ?? 0) === 0 ? (
+            <div>
+              <div className="text-3xl font-black text-foreground">-</div>
+              <p className="text-xs text-muted-foreground">No calls in this scope</p>
+            </div>
           ) : (
             <div>
-              <div className="text-3xl font-black text-emerald-500">{stats?.successRate ?? 100}%</div>
+              <div className="text-3xl font-black text-emerald-500">{stats?.successRate ?? 0}%</div>
               <p className="text-xs text-muted-foreground">{stats?.failedCalls || 0} failed calls recorded</p>
             </div>
           )}
@@ -200,9 +209,21 @@ export const AdminLlmUsagePage = () => {
           )}
         </div>
 
-        {!isEngineAvailable || !quota ? (
+        {!isEngineAvailable ? (
           <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300">
             Quota counters and daily rate limit consumption are unavailable while the AI engine is unreachable.
+          </div>
+        ) : !quota || (!quota.configured && !quota.isConfigured) ? (
+          <div className="p-5 rounded-2xl bg-surface-2/60 border border-white/10 space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-foreground">Gemini API Quota</span>
+              <Badge variant="outline" className="text-[10px] bg-slate-500/10 text-muted-foreground border-border">
+                Not Configured
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Gemini API key is not configured in the AI Engine environment. All inference is processed locally through Ollama with zero external API costs and no rate limiting.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
@@ -259,22 +280,27 @@ export const AdminLlmUsagePage = () => {
             </div>
           ) : (
             <div className="space-y-4 pt-2">
-              {moduleBreakdown.map((item) => (
-                <div key={item.module} className="space-y-1.5 p-3 rounded-2xl bg-surface-2/60 border border-white/10">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold font-mono text-foreground">{item.module}</span>
-                    <span className="font-semibold text-muted-foreground">
-                      {item.callCount} calls ({item.percentage}%)
-                    </span>
+              {moduleBreakdown.map((item) => {
+                const modName = item.name || item.moduleName || item.module || item.id || 'Task';
+                const calls = item.calls ?? item.callCount ?? 0;
+                const avgLat = item.avgLatencySeconds != null ? `${item.avgLatencySeconds}s` : '-';
+                return (
+                  <div key={modName} className="space-y-1.5 p-3 rounded-2xl bg-surface-2/60 border border-white/10">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold font-mono text-foreground">{modName}</span>
+                      <span className="font-semibold text-muted-foreground">
+                        {calls} calls ({item.percentage ?? 0}%)
+                      </span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                      <div className="h-full bg-brand-blue rounded-full" style={{ width: `${item.percentage ?? 0}%` }} />
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
+                      <span>Avg Latency: <span className="font-mono text-foreground">{avgLat}</span></span>
+                    </div>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                    <div className="h-full bg-brand-blue rounded-full" style={{ width: `${item.percentage}%` }} />
-                  </div>
-                  <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
-                    <span>Avg Latency: <span className="font-mono text-foreground">{item.avgLatencySeconds}s</span></span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </Card>
@@ -297,23 +323,27 @@ export const AdminLlmUsagePage = () => {
             </div>
           ) : (
             <div className="space-y-4 pt-2">
-              {providerDistribution.map((p) => (
-                <div key={p.provider} className="p-4 rounded-2xl bg-surface-2/60 border border-white/10 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold uppercase text-foreground">{p.provider}</span>
-                    <span className="font-mono text-brand-blue font-bold">{p.percentage}%</span>
+              {providerDistribution.map((p) => {
+                const provName = p.name || p.provider || 'Provider';
+                const calls = p.calls ?? p.callCount ?? 0;
+                return (
+                  <div key={provName} className="p-4 rounded-2xl bg-surface-2/60 border border-white/10 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold uppercase text-foreground">{provName}</span>
+                      <span className="font-mono text-brand-blue font-bold">{p.percentage ?? 0}%</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-500 rounded-full"
+                        style={{ width: `${p.percentage ?? 0}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Total Calls handled: <span className="font-bold text-foreground">{calls}</span>
+                    </p>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full bg-emerald-500 rounded-full"
-                      style={{ width: `${p.percentage}%` }}
-                    />
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">
-                    Total Calls handled: <span className="font-bold text-foreground">{p.callCount}</span>
-                  </p>
-                </div>
-              ))}
+                );
+              })}
 
               <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/40 text-[11px] text-muted-foreground space-y-1">
                 <span className="font-semibold text-foreground flex items-center gap-1">

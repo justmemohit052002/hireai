@@ -31,7 +31,6 @@ import lombok.RequiredArgsConstructor;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -42,6 +41,19 @@ public class SecurityConfig {
 
     @Value("${app.cors.allowed-origins:http://localhost:5173}")
     private String allowedOrigins;
+
+    public SecurityConfig(
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
+            JwtAccessDeniedHandler jwtAccessDeniedHandler,
+            com.vionsys.hireai.security.ratelimit.RateLimitingFilter rateLimitingFilter,
+            MustChangePasswordFilter mustChangePasswordFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
+        this.jwtAccessDeniedHandler = jwtAccessDeniedHandler;
+        this.rateLimitingFilter = rateLimitingFilter;
+        this.mustChangePasswordFilter = mustChangePasswordFilter;
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {

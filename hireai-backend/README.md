@@ -609,11 +609,18 @@ The application strictly fails to start if any of the following secrets are miss
 |---|---|---|
 | `SPRING_DATASOURCE_PASSWORD` | `spring.datasource.password` | PostgreSQL database user password |
 | `JWT_SECRET` | `jwt.secret` | Base64-encoded 256-bit+ HMAC signing secret for JWT tokens |
-| `AI_ENGINE_INTERNAL_KEY` | `ai-engine.internal-key` | Shared secret key matching `INTERNAL_API_KEY` on FastAPI AI Engine |
+| `AI_ENGINE_INTERNAL_KEY` | `ai-engine.internal-key` | Shared secret key matching `INTERNAL_API_KEY` on FastAPI AI Engine (header `X-Internal-Key`) |
 
 ### Optional & Operational Environment Variables
 | Environment Variable | Property Key | Default | Description |
 |---|---|---|---|
+| `APP_UPLOAD_DIR` | `app.upload.dir` | Auto-detected project `uploads` | Stable absolute base directory for all stored resumes, attachments, and photos |
+| `HIREAI_MAIL_MODE` | `hireai.mail.mode` | `SMTP` (`LOG` in dev) | `SMTP` for live delivery; `LOG` for console-simulated dispatch |
+| `SPRING_MAIL_USERNAME` | `spring.mail.username` | `mohitpc2002@gmail.com` | SMTP account email address |
+| `SPRING_MAIL_PASSWORD` | `spring.mail.password` | (none) | 16-character Google App Password (never use personal password) |
+| `SPRING_MAIL_HOST` | `spring.mail.host` | `smtp.gmail.com` | SMTP server host |
+| `SPRING_MAIL_PORT` | `spring.mail.port` | `587` | SMTP server port |
+| `SPRING_PROFILES_ACTIVE` | `spring.profiles.active` | `default` | Set to `dev` for local development conveniences |
 | `SPRING_DATASOURCE_URL` | `spring.datasource.url` | `jdbc:postgresql://localhost:5432/hireai` | PostgreSQL database connection URL |
 | `SPRING_DATASOURCE_USERNAME` | `spring.datasource.username` | `postgres` | Database username |
 | `SPRING_JPA_HIBERNATE_DDL_AUTO` | `spring.jpa.hibernate.ddl-auto` | `validate` (`update` in dev) | Hibernate DDL strategy (`update` is strictly dev-only) |
@@ -622,6 +629,20 @@ The application strictly fails to start if any of the following secrets are miss
 | `ADMIN_SEED_PASSWORD` | `hireai.admin.seed.password` | (none) | Administrator password (minimum 12 characters required) |
 | `DEV_DEMO_PASSWORD` | `hireai.dev.demo-password` | (none) | Demo users password (active only under `dev` Spring profile) |
 | `AI_ENGINE_BASE_URL` | `ai-engine.base-url` | `http://localhost:8000` | FastAPI AI Engine microservice base URL |
+
+### Email Configuration & Gmail App Password
+When `HIREAI_MAIL_MODE=SMTP` is active, outbound delivery requires valid credentials:
+1. Enable 2-Step Verification on your Google account (`myaccount.google.com/security`).
+2. Navigate to **App passwords** (`myaccount.google.com/apppasswords`).
+3. Generate a new app password named `HireAI`.
+4. Copy the generated 16-character password into `SPRING_MAIL_PASSWORD` in your environment or IDE run configuration.
+5. In local development without outbound credentials, set `SPRING_PROFILES_ACTIVE=dev` or `HIREAI_MAIL_MODE=LOG` to simulate email dispatches to the application console without throwing delivery errors.
+
+### Upload Directory & File Location Stability
+All file uploads (resumes, chat attachments, and profile avatars) are anchored to a single source of truth (`app.upload.dir`).
+- The canonical folder is located at `<workspace-root>/uploads` (`resumes/`, `attachments/`, `profile-photos/`).
+- Even when running `mvn spring-boot:run` from the subfolder `hireai-backend`, the storage path resolver automatically locates the parent project `uploads` folder to avoid directory drift.
+- If you previously had uploaded files stored in `hireai-backend/uploads/resumes/` from earlier single-module runs, copy them to `<workspace-root>/uploads/resumes/` to ensure all database references resolve.
 
 ```bash
 mvn clean install

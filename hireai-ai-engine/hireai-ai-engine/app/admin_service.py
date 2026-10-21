@@ -5,12 +5,15 @@ and provider/key status indicators (read-only, sanitized).
 """
 
 import json
+import math
 import os
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional, Iterator
 from zoneinfo import ZoneInfo
+
+AI_ENGINE_START_TIME = time.time()
 
 from app.config import (
     LLM_PROVIDER,
@@ -347,6 +350,7 @@ def get_system_health() -> Dict[str, Any]:
     return {
         "service": "HireAI AI Engine",
         "overallStatus": engine_status,
+        "engineUptimeSeconds": int(max(0, time.time() - AI_ENGINE_START_TIME)),
         "checkedAt": datetime.now(timezone.utc).isoformat(),
         "modules": enriched_modules,
         "providers": providers,
@@ -357,15 +361,44 @@ def get_system_health() -> Dict[str, Any]:
     }
 
 
-def get_llm_statistics(range_param: str = "all") -> Dict[str, Any]:
+MODULE_FRIENDLY_NAMES: Dict[str, str] = {
+    "jd_generator": "Job Description Generator",
+    "resume_parser": "Resume Parser",
+    "match_engine": "Match Engine",
+    "chatbot": "Pre-Screening Chatbot",
+    "interview_ai": "Interview AI",
+    "decision_engine": "Decision Engine",
+    "document_analyzer": "Document Analyzer",
+    "jd_generate": "Job Description Generator",
+    "resume_parse": "Resume Parser",
+    "match_score": "Match Engine",
+    "chatbot_message": "Pre-Screening Chatbot",
+    "interview_questions": "Interview AI",
+    "interview_eval": "Interview AI",
+    "interview_evaluate": "Interview AI",
+    "decision_finalize": "Decision Engine",
+}
+
+
+def get_llm_statistics(range_param: str = "all", scope: Optional[str] = None) -> Dict[str, Any]:
     """
     Computes aggregated LLM usage, latency, and quota metrics with a 60s TTL cache.
-    `range_param` accepts 'today', 'week', or 'all' (default).
+    `range_param` or `scope` accepts 'today', '7d' (or 'week'), '30d', or 'all' (default).
     """
     global _stats_cache, _stats_cache_expiry
     now_ts = time.time()
-    cache_key = f"stats_{range_param.lower()}"
 
+    clean_range = str(scope or range_param or "all").strip().lower()
+    if clean_range in ("today", "1d"):
+        clean_range = "today"
+    elif clean_range in ("7d", "week", "7days"):
+        clean_range = "7d"
+    elif clean_range in ("30d", "month", "30days"):
+        clean_range = "30d"
+    else:
+        clean_range = "all"
+
+    cache_key = f"stats_{clean_range}"
     if cache_key in _stats_cache and now_ts < _stats_cache_expiry:
         return _stats_cache[cache_key]
 
@@ -381,17 +414,25 @@ def get_llm_statistics(range_param: str = "all") -> Dict[str, Any]:
     now_tz = datetime.now(admin_tz)
     today_date_str = now_tz.strftime("%Y-%m-%d")
     one_week_ago_tz = now_tz - timedelta(days=7)
+    thirty_days_ago_tz = now_tz - timedelta(days=30)
+
+    if clean_range == "today":
+        window_start = now_tz.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif clean_range == "7d":
+        window_start = one_week_ago_tz
+    elif clean_range == "30d":
+        window_start = thirty_days_ago_tz
+    else:
+        window_start = None
+    window_end = now_tz
 
     logs = log_source.read_all()
     total_calls = len(logs)
     today_calls = 0
     week_calls = 0
-    failed_calls = 0
     unknown_time_count = 0
-
     gemini_today_requests = 0
 
-    # Range-scoped collectors
     scope_provider_counts: Dict[str, int] = {}
     scope_provider_failures: Dict[str, int] = {}
     scope_provider_latencies: Dict[str, List[float]] = {}
@@ -400,47 +441,44 @@ def get_llm_statistics(range_param: str = "all") -> Dict[str, Any]:
     scope_module_failures: Dict[str, int] = {}
     scope_module_latencies: Dict[str, List[float]] = {}
 
-    all_latencies: List[float] = []
+    scope_latencies: List[float] = []
+    scope_failed = 0
 
     for entry in logs:
         ts_dt = _parse_iso_datetime(entry.get("timestamp"))
         prov = str(entry.get("provider", "unknown")).lower()
-        task = str(entry.get("task_type", "general"))
+        raw_task = str(entry.get("task_type", "general"))
+        task = TASK_TYPE_TO_MODULE.get(raw_task, raw_task)
         lat = float(entry.get("latency_seconds", 0.0))
         status = str(entry.get("status", "SUCCESS")).upper()
-
         is_failed = (status == "FAILED")
-        if is_failed:
-            failed_calls += 1
 
-        all_latencies.append(lat)
-
-        # Date categorization in configured timezone
-        in_today = False
-        in_week = False
-
+        # Global calendar counters
         if ts_dt is not None:
             entry_tz = ts_dt.astimezone(admin_tz)
             if entry_tz.strftime("%Y-%m-%d") == today_date_str:
                 today_calls += 1
-                in_today = True
                 if prov == "gemini":
                     gemini_today_requests += 1
             if entry_tz >= one_week_ago_tz:
                 week_calls += 1
-                in_week = True
         else:
-            # Missing or unparseable timestamp: do NOT count as today
             unknown_time_count += 1
 
-        # Check if entry falls in selected scope
+        # Check if entry falls in selected window
         in_scope = True
-        if range_param == "today":
-            in_scope = in_today
-        elif range_param == "week":
-            in_scope = in_week
+        if window_start is not None:
+            if ts_dt is not None:
+                entry_tz = ts_dt.astimezone(admin_tz)
+                in_scope = (entry_tz >= window_start and entry_tz <= window_end)
+            else:
+                in_scope = False
 
         if in_scope:
+            scope_latencies.append(lat)
+            if is_failed:
+                scope_failed += 1
+
             scope_provider_counts[prov] = scope_provider_counts.get(prov, 0) + 1
             if is_failed:
                 scope_provider_failures[prov] = scope_provider_failures.get(prov, 0) + 1
@@ -451,15 +489,32 @@ def get_llm_statistics(range_param: str = "all") -> Dict[str, Any]:
                 scope_module_failures[task] = scope_module_failures.get(task, 0) + 1
             scope_module_latencies.setdefault(task, []).append(lat)
 
-    avg_latency = round(sum(all_latencies) / len(all_latencies), 2) if all_latencies else 0.0
-    scope_total = sum(scope_module_counts.values())
+    scope_total = len(scope_latencies)
+
+    # Empty window handling: return null for stats when zero calls occurred
+    if scope_total == 0:
+        avg_latency = None
+        p50_latency = None
+        p95_latency = None
+        success_rate = None
+    else:
+        avg_latency = round(sum(scope_latencies) / scope_total, 2)
+        sorted_lats = sorted(scope_latencies)
+        p50_latency = round(sorted_lats[max(0, math.ceil(0.50 * scope_total) - 1)], 2)
+        p95_latency = round(sorted_lats[max(0, math.ceil(0.95 * scope_total) - 1)], 2)
+        success_rate = round(((scope_total - scope_failed) / scope_total * 100), 1)
 
     module_breakdown = []
     for mod, count in scope_module_counts.items():
         lats = scope_module_latencies.get(mod, [])
-        mod_avg_lat = round(sum(lats) / len(lats), 2) if lats else 0.0
+        mod_avg_lat = round(sum(lats) / len(lats), 2) if lats else None
+        friendly = MODULE_FRIENDLY_NAMES.get(mod, mod.replace("_", " ").title())
         module_breakdown.append({
+            "id": mod,
+            "name": friendly,
             "module": mod,
+            "moduleName": friendly,
+            "calls": count,
             "callCount": count,
             "failedCount": scope_module_failures.get(mod, 0),
             "avgLatencySeconds": mod_avg_lat,
@@ -469,32 +524,44 @@ def get_llm_statistics(range_param: str = "all") -> Dict[str, Any]:
     provider_breakdown = []
     for p_name, count in scope_provider_counts.items():
         p_lats = scope_provider_latencies.get(p_name, [])
-        p_avg_lat = round(sum(p_lats) / len(p_lats), 2) if p_lats else 0.0
+        p_avg_lat = round(sum(p_lats) / len(p_lats), 2) if p_lats else None
         provider_breakdown.append({
-            "provider": p_name,
+            "provider": p_name.upper(),
+            "name": p_name.upper(),
+            "calls": count,
             "callCount": count,
             "failedCount": scope_provider_failures.get(p_name, 0),
             "avgLatencySeconds": p_avg_lat,
             "percentage": round((count / scope_total * 100), 1) if scope_total > 0 else 0.0,
         })
 
-    success_rate = round(((total_calls - failed_calls) / total_calls * 100), 1) if total_calls > 0 else 100.0
+    gemini_configured = bool(GEMINI_API_KEY and len(str(GEMINI_API_KEY).strip()) > 5)
 
     result = {
-        "totalCalls": total_calls,
+        "range": clean_range,
+        "windowStart": window_start.isoformat() if window_start else None,
+        "windowEnd": window_end.isoformat(),
+        "generatedAt": datetime.now(timezone.utc).isoformat(),
+        "source": "llm_call_log.jsonl",
+        "totalCalls": scope_total,
+        "allTimeCalls": total_calls,
         "todayCalls": today_calls,
         "weekCalls": week_calls,
-        "failedCalls": failed_calls,
+        "failedCalls": scope_failed,
         "unknownTimeCount": unknown_time_count,
         "successRate": success_rate,
         "avgLatencySeconds": avg_latency,
+        "p50LatencySeconds": p50_latency,
+        "p95LatencySeconds": p95_latency,
         "quota": {
             "provider": "gemini",
             "tier": "Free Tier",
+            "isConfigured": gemini_configured,
+            "configured": gemini_configured,
             "dailyLimit": GEMINI_DAILY_LIMIT,
             "usedToday": gemini_today_requests,
             "remainingToday": max(0, GEMINI_DAILY_LIMIT - gemini_today_requests),
-            "percentageUsed": round((gemini_today_requests / GEMINI_DAILY_LIMIT * 100), 1),
+            "percentageUsed": round((gemini_today_requests / GEMINI_DAILY_LIMIT * 100), 1) if GEMINI_DAILY_LIMIT > 0 else 0.0,
         },
         "providerDistribution": provider_breakdown,
         "moduleBreakdown": module_breakdown,
@@ -520,6 +587,7 @@ def query_call_logs(
 ) -> Dict[str, Any]:
     """
     Search and filter audit call logs with pagination and correlation tracking.
+    Enforces privacy-safe previews (truncated to 200 characters) and dual-case field compatibility.
     """
     effective_task = module or task_type
     effective_correlation = correlation_id or candidate_ref
@@ -591,7 +659,32 @@ def query_call_logs(
                 if from_dt or to_dt:
                     continue
 
-        filtered.append(item)
+        # Enforce preview truncation (max 200 chars) and dual-case compatibility
+        p_prev = str(item.get("prompt_preview", ""))[:200]
+        r_prev = str(item.get("response_preview", ""))[:200]
+        t_type = item.get("task_type") or item.get("taskType", "general")
+        lat = item.get("latency_seconds") or item.get("latencySeconds", 0.0)
+        req_id = item.get("request_id") or item.get("requestId")
+        cand_id = item.get("candidate_ref") or item.get("candidateRef")
+        err_msg = item.get("error_message") or item.get("errorMessage")
+
+        normalized_item = dict(item)
+        normalized_item["prompt_preview"] = p_prev
+        normalized_item["promptPreview"] = p_prev
+        normalized_item["response_preview"] = r_prev
+        normalized_item["responsePreview"] = r_prev
+        normalized_item["task_type"] = t_type
+        normalized_item["taskType"] = t_type
+        normalized_item["latency_seconds"] = lat
+        normalized_item["latencySeconds"] = lat
+        normalized_item["request_id"] = req_id
+        normalized_item["requestId"] = req_id
+        normalized_item["candidate_ref"] = cand_id
+        normalized_item["candidateRef"] = cand_id
+        normalized_item["error_message"] = err_msg
+        normalized_item["errorMessage"] = err_msg
+
+        filtered.append(normalized_item)
 
     total_elements = len(filtered)
     start_idx = (effective_page - 1) * effective_size

@@ -318,21 +318,34 @@ public class AiEngineClient {
             int page, int size) {
         try {
             com.vionsys.hireai.admin.dto.AdminCallLogsResponse response = adminRestClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/api/v1/admin/logs")
-                            .queryParam("query", query != null && !query.isBlank() ? query : null)
-                            .queryParam("task_type", taskType != null && !taskType.isBlank() && !"ALL".equalsIgnoreCase(taskType) ? taskType : null)
-                            .queryParam("status", status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status) ? status : null)
-                            .queryParam("provider", provider != null && !provider.isBlank() && !"ALL".equalsIgnoreCase(provider) ? provider : null)
-                            .queryParam("from_date", from != null && !from.isBlank() ? from : null)
-                            .queryParam("to_date", to != null && !to.isBlank() ? to : null)
-                            .queryParam("correlation_id", correlationId != null && !correlationId.isBlank() ? correlationId : null)
-                            .queryParam("candidate_ref", candidateRef != null && !candidateRef.isBlank() ? candidateRef : null)
-                            .queryParam("page", page > 0 ? page : 1)
-                            .queryParam("size", size > 0 ? size : 20)
-                            .build())
+                    .uri(uriBuilder -> {
+                        uriBuilder.path("/api/v1/admin/logs");
+                        if (query != null && !query.isBlank()) uriBuilder.queryParam("query", query.trim());
+                        if (taskType != null && !taskType.isBlank() && !"ALL".equalsIgnoreCase(taskType)) uriBuilder.queryParam("task_type", taskType.trim());
+                        if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) uriBuilder.queryParam("status", status.trim());
+                        if (provider != null && !provider.isBlank() && !"ALL".equalsIgnoreCase(provider)) uriBuilder.queryParam("provider", provider.trim());
+                        if (from != null && !from.isBlank()) uriBuilder.queryParam("from_date", from.trim());
+                        if (to != null && !to.isBlank()) uriBuilder.queryParam("to_date", to.trim());
+                        if (correlationId != null && !correlationId.isBlank()) uriBuilder.queryParam("correlation_id", correlationId.trim());
+                        if (candidateRef != null && !candidateRef.isBlank()) uriBuilder.queryParam("candidate_ref", candidateRef.trim());
+                        uriBuilder.queryParam("page", page > 0 ? page : 1);
+                        uriBuilder.queryParam("size", size > 0 ? size : 20);
+                        return uriBuilder.build();
+                    })
                     .retrieve()
                     .body(com.vionsys.hireai.admin.dto.AdminCallLogsResponse.class);
+
+            if (response != null && response.getItems() != null) {
+                response.getItems().forEach(entry -> {
+                    if (entry.getPromptPreview() != null && entry.getPromptPreview().length() > 200) {
+                        entry.setPromptPreview(entry.getPromptPreview().substring(0, 200));
+                    }
+                    if (entry.getResponsePreview() != null && entry.getResponsePreview().length() > 200) {
+                        entry.setResponsePreview(entry.getResponsePreview().substring(0, 200));
+                    }
+                });
+            }
+
             return Optional.ofNullable(response);
         } catch (Exception ex) {
             log.warn("AI Engine logs query failed ({}).", ex.getMessage());
@@ -349,6 +362,16 @@ public class AiEngineClient {
                     .uri("/api/v1/admin/logs/{id}", id)
                     .retrieve()
                     .body(com.vionsys.hireai.admin.dto.AdminCallLogEntry.class);
+
+            if (response != null) {
+                if (response.getPromptPreview() != null && response.getPromptPreview().length() > 200) {
+                    response.setPromptPreview(response.getPromptPreview().substring(0, 200));
+                }
+                if (response.getResponsePreview() != null && response.getResponsePreview().length() > 200) {
+                    response.setResponsePreview(response.getResponsePreview().substring(0, 200));
+                }
+            }
+
             return Optional.ofNullable(response);
         } catch (Exception ex) {
             log.warn("AI Engine single log query failed for ID {} ({}).", id, ex.getMessage());

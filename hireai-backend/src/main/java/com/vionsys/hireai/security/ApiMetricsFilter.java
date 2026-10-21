@@ -41,7 +41,30 @@ public class ApiMetricsFilter extends OncePerRequestFilter {
 
     public static class DayStats {
         public final LongAdder requests = new LongAdder();
-        public final LongAdder errors = new LongAdder();
+        public final LongAdder errors4xx = new LongAdder();
+        public final LongAdder errors5xx = new LongAdder();
+        public final LongAdder latencyMs = new LongAdder();
+
+        public long getRequests() {
+            return requests.sum();
+        }
+
+        public long getErrors4xx() {
+            return errors4xx.sum();
+        }
+
+        public long getErrors5xx() {
+            return errors5xx.sum();
+        }
+
+        public long getTotalErrors() {
+            return errors4xx.sum() + errors5xx.sum();
+        }
+
+        public double getAvgLatencyMs() {
+            long r = requests.sum();
+            return r > 0 ? Math.round((double) latencyMs.sum() / r * 10.0) / 10.0 : 0.0;
+        }
     }
 
     @Override
@@ -59,7 +82,9 @@ public class ApiMetricsFilter extends OncePerRequestFilter {
         } finally {
             long duration = Math.max(0, System.currentTimeMillis() - startTime);
             int status = response.getStatus();
-            boolean isError = status >= 400;
+            boolean is4xx = status >= 400 && status < 500;
+            boolean is5xx = status >= 500;
+            boolean isError = is4xx || is5xx;
 
             totalRequests.increment();
             totalLatencyMs.add(duration);
@@ -77,8 +102,11 @@ public class ApiMetricsFilter extends OncePerRequestFilter {
             String todayKey = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
             DayStats dStats = dayStatsMap.computeIfAbsent(todayKey, k -> new DayStats());
             dStats.requests.increment();
-            if (isError) {
-                dStats.errors.increment();
+            dStats.latencyMs.add(duration);
+            if (is4xx) {
+                dStats.errors4xx.increment();
+            } else if (is5xx) {
+                dStats.errors5xx.increment();
             }
         }
     }

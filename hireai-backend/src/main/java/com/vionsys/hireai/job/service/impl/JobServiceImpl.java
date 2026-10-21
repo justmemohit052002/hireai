@@ -33,6 +33,7 @@ public class JobServiceImpl implements JobService {
     private final com.vionsys.hireai.application.repository.JobApplicationRepository jobApplicationRepository;
     private final com.vionsys.hireai.notification.service.NotificationService notificationService;
     private final com.vionsys.hireai.candidate.repository.CandidateRepository candidateRepository;
+    private final com.vionsys.hireai.email.EmailService emailService;
 
 
     // =========================================================
@@ -89,6 +90,17 @@ public class JobServiceImpl implements JobService {
                     });
         } catch (Exception ex) {
             // Notification failure shouldn't fail job creation
+        }
+
+        // Send email confirmation to recruiter
+        try {
+            String recruiterEmail = recruiterProfile.getUser() != null ? recruiterProfile.getUser().getEmail() : recruiterProfile.getCompanyEmail();
+            String recruiterName = recruiterProfile.getUser() != null ? recruiterProfile.getUser().getFirstName() : recruiterProfile.getCompanyName();
+            if (recruiterEmail != null && !recruiterEmail.isBlank()) {
+                emailService.sendJobPostedConfirmation(recruiterEmail, recruiterName, savedJob.getTitle(), savedJob.getId());
+            }
+        } catch (Exception ex) {
+            // Non-critical email failure shouldn't fail job creation
         }
 
         return JobMapper.toResponse(
