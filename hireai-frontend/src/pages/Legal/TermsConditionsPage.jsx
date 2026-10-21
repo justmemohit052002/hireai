@@ -3,7 +3,7 @@ import { Scale, CheckCircle2, AlertCircle, FileCheck, ShieldAlert } from 'lucide
 
 export const TermsConditionsPage = () => {
   return (
-    <div className="py-12 sm:py-20 max-w-4xl mx-auto px-4 sm:px-6">
+    <div className="pt-28 pb-12 sm:pt-36 sm:pb-20 max-w-4xl mx-auto px-4 sm:px-6">
       {/* Header */}
       <div className="border-b border-border/80 pb-8 mb-10">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-brand-blue/10 text-brand-blue text-xs font-mono font-bold uppercase mb-4">

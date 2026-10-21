@@ -1,0 +1,1117 @@
+/* =========================================================================
+   HERO SECTION STYLES (LandingHero.css)
+   - Strict viewport fitting (100dvh - --nav-h), zero vertical clipping.
+   - Elliptical logo trajectory (Center 50%, 34% | Radii 40%, 26%).
+   - Site color palette: Brand Red (#E31E24), Navy (#112358), Lemon (#F1FF62), Pink (#FFEDED).
+   ========================================================================= */
+
+:root {
+  /* --- FLOATING NAVBAR CLEARANCE (Navbar: 64px height + 16px top offset = 80px) --- */
+  --nav-h: 80px;
+
+  /* --- SITE BRAND COLORS (From Navbar & Design Tokens) --- */
+  --hero-primary: #0192C6;
+  /* Brand Dynamic Blue */
+  --hero-primary-hover: #004499;
+  /* Brand Navy on hover */
+  --hero-blue: #0192C6;
+  /* Vibrant Brand Blue */
+  --hero-blue-dark: #004499;
+  /* Fright Night Navy */
+  --hero-blue-light: #38BDF8;
+  /* Bright Blue Accent */
+  --hero-blue-soft: rgba(1, 146, 198, 0.1);
+  /* Soft blue wash for badges */
+  --hero-blue-border: rgba(1, 146, 198, 0.25);
+  /* Subtle blue border */
+  --hero-navy: #112358;
+  /* Brand Fibonacci Dark Navy (Navbar Text) */
+  --hero-navy-dark: #112358;
+  --hero-navy-light: #004499;
+  /* Fright Night Navy */
+  --hero-navy-soft: #D4EAFF;
+  /* Light navy-blue tint */
+  --hero-accent: #F1FF62;
+  /* Lemon-Pie Yellow (Navbar Get Started & PRO badge) */
+  --hero-accent-hover: #E6F545;
+  --hero-pink: #FFEDED;
+  /* Light Pink / Soft Red Wash */
+  --hero-pink-soft: #FFF1F2;
+
+  /* --- NEUTRAL PALETTE --- */
+  --hero-bg: #FFFFFF;
+  --hero-text: #112358;
+  --hero-text-muted: #4B5563;
+  --hero-card-bg: #FFFFFF;
+  --hero-card-border: rgba(17, 35, 88, 0.08);
+
+  /* --- ELEVATION & SHADOWS --- */
+  --hero-shadow-sm: 0 2px 8px rgba(17, 35, 88, 0.04);
+  --hero-shadow-card: 0 8px 24px -4px rgba(17, 35, 88, 0.08), 0 2px 6px -1px rgba(17, 35, 88, 0.03);
+  --hero-shadow-hover: 0 16px 30px -4px rgba(227, 30, 36, 0.2), 0 4px 10px -2px rgba(17, 35, 88, 0.05);
+  --hero-shadow-tooltip: 0 8px 18px -2px rgba(17, 35, 88, 0.16);
+
+  /* --- SIZING & GEOMETRY TOKENS --- */
+  --hero-max-width: 1280px;
+  --hero-radius-btn: 12px;
+  --hero-radius-card: 16px;
+  --hero-radius-badge: 8px;
+
+  /* --- TRANSITIONS --- */
+  --hero-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --hero-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Dark mode theme token overrides matching site variables */
+.dark,
+:root.dark,
+[data-theme='dark'] {
+  --hero-text: #F4F5FA;
+  --hero-text-muted: #D4EAFF;
+  --hero-blue: #38BDF8;
+  --hero-blue-soft: rgba(56, 189, 248, 0.12);
+  --hero-blue-border: rgba(56, 189, 248, 0.28);
+  --hero-card-bg: rgba(17, 35, 88, 0.88);
+  --hero-card-border: rgba(212, 234, 255, 0.16);
+  --hero-pink: rgba(227, 30, 36, 0.25);
+  --hero-shadow-card: 0 8px 24px -4px rgba(0, 0, 0, 0.4);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   HERO SECTION VIEWPORT BUDGET
+   - Flush with viewport top (starts at top of page under floating navbar)
+   - Padding-top matches navbar height (var(--nav-h))
+───────────────────────────────────────────────────────────────────────── */
+.hero-section {
+  position: relative;
+  height: 100dvh;
+  min-height: 520px;
+  max-height: 960px;
+  padding-top: var(--nav-h);
+  padding-bottom: clamp(8px, 1.5vh, 18px);
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: transparent;
+  color: var(--hero-text);
+}
+
+/* Main Two-Column Container */
+.hero-container {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  max-width: var(--hero-max-width);
+  margin: 0 auto;
+  padding: 0 clamp(1.25rem, 3vw, 2.5rem);
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  align-items: center;
+  gap: clamp(1.5rem, 3vw, 3.5rem);
+  box-sizing: border-box;
+  flex: 1;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ROOT CAUSE 5: Left column scalable to height as well as width
+   - Single consistent vertical gap (clamp 10px to 22px)
+   - Title scaled with min(3.8vw, 6.4vh) for short screens (584px)
+   - Trust proof auto-hidden below 700px height
+───────────────────────────────────────────────────────────────────────── */
+.hero-content {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  text-align: left;
+  max-width: 580px;
+  gap: clamp(10px, 2vh, 20px);
+  opacity: 0;
+  transform: translateY(20px);
+  animation: heroContentIn 0.8s var(--hero-ease-out) 0.05s forwards;
+}
+
+/* On standard and tall screens, anchor text comfortably near the top with clean breathing room below navbar */
+@media (min-width: 768px) and (min-height: 641px) {
+  .hero-content {
+    align-self: flex-start;
+    margin-top: clamp(12px, 3vh, 28px);
+  }
+}
+
+@media (min-width: 768px) and (max-height: 640px) {
+  .hero-content {
+    align-self: center;
+  }
+}
+
+/* Eyebrow Tag with yellow accent dot from navbar */
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: var(--hero-radius-badge);
+  background-color: var(--hero-blue-soft);
+  border: 1px solid var(--hero-blue-border);
+  font-size: clamp(0.72rem, 1.3vh, 0.82rem);
+  font-weight: 600;
+  color: var(--hero-blue);
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+.hero-eyebrow-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--hero-accent);
+  /* Exact yellow from navbar */
+  display: inline-block;
+  box-shadow: 0 0 0 3px rgba(241, 255, 98, 0.45);
+  animation: heroPulseDot 2s infinite ease-in-out;
+}
+
+/* 3-Line Headline with yellow marker underline */
+.hero-title {
+  font-size: clamp(1.9rem, min(3.8vw, 6.4vh), 3.4rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: var(--hero-text);
+  margin: 0;
+}
+
+.hero-title-highlight {
+  position: relative;
+  display: inline-block;
+  color: var(--hero-blue);
+}
+
+.hero-title-underline {
+  position: absolute;
+  left: 0;
+  bottom: 2px;
+  width: 100%;
+  height: clamp(6px, 1.2vh, 10px);
+  background-color: var(--hero-accent);
+  opacity: 0.7;
+  z-index: -1;
+  border-radius: 4px;
+}
+
+/* Subtitle */
+.hero-subtitle {
+  font-size: clamp(0.9rem, 1.5vh + 0.35rem, 1.1rem);
+  line-height: 1.5;
+  color: var(--hero-text-muted);
+  max-width: 46ch;
+  margin: 0;
+}
+
+/* Action Buttons */
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  width: 100%;
+}
+
+.hero-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: clamp(0.55rem, 1.6vh, 0.875rem) clamp(1.1rem, 2vw, 1.75rem);
+  font-size: clamp(0.9rem, 1.7vh, 1rem);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--hero-radius-btn);
+  transition: all 0.25s var(--hero-ease-out);
+  cursor: pointer;
+  border: 1px solid transparent;
+  user-select: none;
+}
+
+.hero-btn:focus-visible {
+  outline: 2px solid var(--hero-primary);
+  outline-offset: 3px;
+}
+
+/* Primary CTA: Brand Blue */
+.hero-btn-primary {
+  background-color: var(--hero-primary);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(1, 146, 198, 0.3);
+}
+
+.hero-btn-primary:hover {
+  background-color: var(--hero-primary-hover);
+  box-shadow: 0 6px 20px rgba(0, 68, 153, 0.4);
+  transform: translateY(-2px);
+}
+
+.hero-btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Secondary CTA: Clean Outline */
+.hero-btn-secondary {
+  background-color: var(--hero-card-bg);
+  color: var(--hero-text);
+  border: 1.5px solid var(--hero-card-border);
+  box-shadow: var(--hero-shadow-sm);
+}
+
+.hero-btn-secondary:hover {
+  background-color: rgba(1, 146, 198, 0.08);
+  border-color: var(--hero-navy-light);
+  color: var(--hero-navy-light);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(17, 35, 88, 0.08);
+}
+
+.hero-btn-secondary:active {
+  transform: translateY(0);
+}
+
+.hero-btn-icon {
+  transition: transform 0.2s ease;
+}
+
+.hero-btn:hover .hero-btn-icon {
+  transform: translateX(3px);
+}
+
+/* Trust Proof: Auto-hides on short viewports (< 700px height) */
+.hero-trust {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(17, 35, 88, 0.08);
+  margin: 0;
+  width: 100%;
+}
+
+@media (max-height: 700px) {
+  .hero-trust {
+    display: none !important;
+  }
+}
+
+.hero-trust-avatars {
+  display: flex;
+  align-items: center;
+}
+
+.hero-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid #FFFFFF;
+  font-size: 0.68rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -7px;
+  box-shadow: 0 1px 3px rgba(17, 35, 88, 0.12);
+}
+
+.hero-avatar:first-child {
+  margin-left: 0;
+}
+
+/* Restricted strictly to yellow, pink, and navy tints */
+.hero-avatar-1 {
+  background-color: var(--hero-accent);
+  color: var(--hero-navy);
+}
+
+.hero-avatar-2 {
+  background-color: var(--hero-pink);
+  color: var(--hero-primary);
+}
+
+.hero-avatar-3 {
+  background-color: var(--hero-navy-soft);
+  color: var(--hero-navy-light);
+}
+
+.hero-avatar-4 {
+  background-color: var(--hero-accent);
+  color: var(--hero-navy);
+}
+
+.hero-trust-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.hero-trust-stars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.hero-trust-stars svg {
+  width: 12px;
+  height: 12px;
+  fill: #F59E0B;
+}
+
+.hero-trust-label {
+  font-size: 0.8rem;
+  color: var(--hero-text-muted);
+  line-height: 1.3;
+}
+
+.hero-trust-label strong {
+  color: var(--hero-navy);
+  font-weight: 600;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ROOT CAUSE 2: Right column sized by HEIGHT, not width
+   - .hero-visual-column: height calc(100dvh - var(--nav-h) - bottom padding)
+   - .hero-visual-wrapper: height 100%, max-height 640px, aspect-ratio 1024 / 1318
+   - .hero-student-img: anchored bottom, height 86% (top 14% is icon headroom)
+───────────────────────────────────────────────────────────────────────── */
+.hero-visual-column {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  max-height: 100%;
+  align-self: stretch;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+}
+
+.hero-visual-wrapper {
+  position: relative;
+  height: 100%;
+  max-height: min(100%, 780px);
+  aspect-ratio: 1024 / 1318;
+  width: auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  margin-left: auto;
+}
+
+/* Student Image: Uses exactly 86% height; face stays upper-middle */
+.hero-student-img {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 86%;
+  object-fit: contain;
+  object-position: bottom center;
+  z-index: 2;
+  filter: drop-shadow(0 16px 24px rgba(17, 35, 88, 0.12));
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transform: translateY(24px);
+  animation: heroStudentIn 0.85s var(--hero-ease-out) 0.1s forwards;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ROOT CAUSE 3: ONE thin dashed elliptical SVG arc
+   - Follows exact ellipse: cx=50%, cy=34%, rx=40%, ry=26%
+───────────────────────────────────────────────────────────────────────── */
+.hero-ellipse-arc {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  /* Sits behind icons and student */
+}
+
+.hero-ellipse-path {
+  fill: none;
+  stroke: var(--hero-primary);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+  stroke-opacity: 0.25;
+  vector-effect: non-scaling-stroke;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ROOT CAUSE 3 & 7: 7 Symmetric Icons on the Upper Ellipse Arc
+   - Centering & Parallax handled via independent `translate` property
+   - Hover scaling handled via independent `scale` property
+   - Floating animation handled via `transform` on inner wrapper .hero-logo-float
+   - ZERO property collision between entrance, float, hover, and parallax
+───────────────────────────────────────────────────────────────────────── */
+.hero-logo-card {
+  position: absolute;
+  z-index: 3;
+  background: var(--hero-card-bg);
+  border: 1px solid var(--hero-card-border);
+  box-shadow: var(--hero-shadow-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  text-decoration: none;
+  /* Centering + Parallax via independent translate property */
+  translate: calc(-50% + var(--hero-px, 0px)) calc(-50% + var(--hero-py, 0px));
+  scale: 1;
+  transition: scale 0.22s var(--hero-ease-spring),
+    box-shadow 0.22s ease,
+    border-color 0.2s ease;
+  will-change: transform, translate;
+  opacity: 0;
+  animation: heroCardEntrance 0.5s var(--hero-ease-out) var(--entrance-delay) forwards;
+}
+
+.hero-logo-card:focus-visible {
+  outline: 2px solid var(--hero-primary);
+  outline-offset: 3px;
+  z-index: 5;
+}
+
+.hero-logo-card:hover {
+  scale: 1.1;
+  box-shadow: var(--hero-shadow-hover);
+  border-color: rgba(227, 30, 36, 0.35);
+  z-index: 6;
+}
+
+/* Sizing Tokens: Large, Medium, Small via clamp() */
+.hero-logo--lg {
+  width: clamp(44px, 7.2vh, 62px);
+  height: clamp(44px, 7.2vh, 62px);
+  border-radius: 16px;
+  padding: clamp(8px, 1.3vh, 12px);
+}
+
+.hero-logo--md {
+  width: clamp(38px, 6vh, 52px);
+  height: clamp(38px, 6vh, 52px);
+  border-radius: 14px;
+  padding: clamp(7px, 1.1vh, 10px);
+}
+
+.hero-logo--sm {
+  width: clamp(32px, 5vh, 42px);
+  height: clamp(32px, 5vh, 42px);
+  border-radius: 11px;
+  padding: clamp(6px, 0.9vh, 8px);
+}
+
+/* Floating animation isolated on inner element */
+.hero-logo-float {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform;
+}
+
+.hero-logo-icon {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Exact Ellipse Starting Positions (Angle: Left / Top, Size) */
+/* Logo 1 at 170°: left 10.6%, top 29.5%, medium */
+.hero-logo-1 {
+  left: 10.6%;
+  top: 29.5%;
+  --entrance-delay: 0.3s;
+}
+
+.hero-float-1 {
+  animation: heroFloat1 5.4s ease-in-out 0.1s infinite alternate;
+}
+
+/* Logo 2 at 142°: left 18.5%, top 18.0%, large */
+.hero-logo-2 {
+  left: 18.5%;
+  top: 18.0%;
+  --entrance-delay: 0.4s;
+}
+
+.hero-float-2 {
+  animation: heroFloat2 6.2s ease-in-out 0.5s infinite alternate;
+}
+
+/* Logo 3 at 114°: left 33.7%, top 10.2%, small */
+.hero-logo-3 {
+  left: 33.7%;
+  top: 10.2%;
+  --entrance-delay: 0.5s;
+}
+
+.hero-float-3 {
+  animation: heroFloat3 5.0s ease-in-out 0.3s infinite alternate;
+}
+
+/* Logo 4 at 90°: left 50.0%, top 8.0%, large */
+.hero-logo-4 {
+  left: 50.0%;
+  top: 8.0%;
+  --entrance-delay: 0.6s;
+}
+
+.hero-float-4 {
+  animation: heroFloat4 5.8s ease-in-out 0.7s infinite alternate;
+}
+
+/* Logo 5 at 66°: left 66.3%, top 10.2%, small */
+.hero-logo-5 {
+  left: 66.3%;
+  top: 10.2%;
+  --entrance-delay: 0.7s;
+}
+
+.hero-float-5 {
+  animation: heroFloat5 6.4s ease-in-out 0.2s infinite alternate;
+}
+
+/* Logo 6 at 38°: left 81.5%, top 18.0%, large */
+.hero-logo-6 {
+  left: 81.5%;
+  top: 18.0%;
+  --entrance-delay: 0.8s;
+}
+
+.hero-float-6 {
+  animation: heroFloat6 5.2s ease-in-out 0.6s infinite alternate;
+}
+
+/* Logo 7 at 10°: left 89.4%, top 29.5%, medium */
+.hero-logo-7 {
+  left: 89.4%;
+  top: 29.5%;
+  --entrance-delay: 0.9s;
+}
+
+.hero-float-7 {
+  animation: heroFloat7 6.0s ease-in-out 0.4s infinite alternate;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ROOT CAUSE 3: Safe Directed Tooltips
+   - Logos 1 & 2: tooltip--right
+   - Logos 3, 4, 5: tooltip--bottom
+   - Logos 6 & 7: tooltip--left
+───────────────────────────────────────────────────────────────────────── */
+.hero-tooltip {
+  position: absolute;
+  background: var(--hero-navy);
+  color: #FFFFFF;
+  padding: 0.35rem 0.65rem;
+  border-radius: 7px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--hero-shadow-tooltip);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, transform 0.2s var(--hero-ease-out), visibility 0.2s ease;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.hero-tooltip strong {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.hero-tooltip-tag {
+  color: var(--hero-accent);
+  /* Exact yellow accent */
+  font-weight: 600;
+}
+
+.hero-logo-card:hover .hero-tooltip,
+.hero-logo-card:focus-visible .hero-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.hero-tooltip--bottom {
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+}
+
+.hero-logo-card:hover .hero-tooltip--bottom,
+.hero-logo-card:focus-visible .hero-tooltip--bottom {
+  transform: translateX(-50%) translateY(0);
+}
+
+.hero-tooltip--left {
+  top: 50%;
+  right: calc(100% + 8px);
+  transform: translateY(-50%) translateX(4px);
+}
+
+.hero-logo-card:hover .hero-tooltip--left,
+.hero-logo-card:focus-visible .hero-tooltip--left {
+  transform: translateY(-50%) translateX(0);
+}
+
+.hero-tooltip--right {
+  top: 50%;
+  left: calc(100% + 8px);
+  transform: translateY(-50%) translateX(-4px);
+}
+
+.hero-logo-card:hover .hero-tooltip--right,
+.hero-logo-card:focus-visible .hero-tooltip--right {
+  transform: translateY(-50%) translateX(0);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ROOT CAUSE 4: Notification Cards Inside Wrapper & Screen-Height Gated
+   - Notice 1: left 2%, bottom 24% (never clipped)
+   - Notice 2: right 2%, bottom 36% (never clipped)
+   - Hidden when screen height < 640px
+───────────────────────────────────────────────────────────────────────── */
+.hero-notification-card {
+  position: absolute;
+  z-index: 3;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(17, 35, 88, 0.1);
+  border-radius: 12px;
+  padding: 0.55rem 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  box-shadow: 0 8px 20px -3px rgba(17, 35, 88, 0.1);
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+  animation: heroNoticeFade 8s ease-in-out infinite;
+}
+
+.hero-notice-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Palette-restricted notification icon backgrounds */
+.hero-notice-icon--pink {
+  background: var(--hero-blue-soft);
+  color: var(--hero-blue);
+}
+
+.hero-notice-icon--yellow {
+  background: rgba(241, 255, 98, 0.35);
+  color: var(--hero-navy);
+}
+
+.hero-notice-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.hero-notice-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-notice-title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--hero-text);
+  line-height: 1.2;
+}
+
+.hero-notice-desc {
+  font-size: 0.67rem;
+  color: var(--hero-text-muted);
+  line-height: 1.2;
+}
+
+.hero-notice-1 {
+  left: 2%;
+  bottom: 24%;
+  animation-delay: 0.5s;
+}
+
+.hero-notice-2 {
+  right: 2%;
+  bottom: 36%;
+  animation-delay: 4.5s;
+}
+
+@media (max-height: 639px) {
+  .hero-notification-card {
+    display: none !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   MOBILE HORIZONTAL SCROLL TICKER (< 768px only)
+───────────────────────────────────────────────────────────────────────── */
+.hero-mobile-ticker {
+  display: none;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 1rem 0 0.5rem;
+  border-top: 1px solid rgba(17, 35, 88, 0.08);
+  text-align: center;
+}
+
+.hero-mobile-ticker-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--hero-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.hero-mobile-ticker-track {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding: 0.25rem 1rem 0.5rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.hero-mobile-ticker-track::-webkit-scrollbar {
+  display: none;
+}
+
+.hero-mobile-ticker-card {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #FFFFFF;
+  border: 1px solid var(--hero-card-border);
+  border-radius: 10px;
+  padding: 0.45rem 0.75rem;
+  box-shadow: var(--hero-shadow-sm);
+  scroll-snap-align: start;
+}
+
+.hero-mobile-ticker-card svg {
+  width: 20px;
+  height: 20px;
+}
+
+.hero-mobile-ticker-card span {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--hero-navy);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ANIMATION KEYFRAMES (Safe, Transform & Opacity only)
+───────────────────────────────────────────────────────────────────────── */
+@keyframes heroContentIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroStudentIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroCardEntrance {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes heroPulseDot {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.25);
+    opacity: 0.8;
+  }
+}
+
+@keyframes heroNoticeFade {
+
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  15%,
+  85% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Independent floating loops (6px to 9px) */
+@keyframes heroFloat1 {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes heroFloat2 {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-9px);
+  }
+}
+
+@keyframes heroFloat3 {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes heroFloat4 {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes heroFloat5 {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes heroFloat6 {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-9px);
+  }
+}
+
+@keyframes heroFloat7 {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-7px);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ROOT CAUSE 8: RESPONSIVE BREAKPOINTS
+───────────────────────────────────────────────────────────────────────── */
+/* 1024px to 1279px: 5 icons (hide logos 3 and 5) */
+@media (max-width: 1279px) and (min-width: 1024px) {
+  .hero-logo-hide-1280 {
+    display: none !important;
+  }
+}
+
+/* 768px to 1023px (Tablet): 5 icons, no notification cards */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .hero-section {
+    padding-top: var(--nav-h);
+  }
+
+  .hero-container {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .hero-logo-hide-1280 {
+    display: none !important;
+  }
+
+  .hero-notification-card {
+    display: none !important;
+  }
+}
+
+/* Below 768px (Mobile): Stack layout, auto height, exactly 4 icons, scrolling strip */
+@media (max-width: 767px) {
+  :root {
+    --nav-h: 64px;
+  }
+
+  .hero-section {
+    height: auto;
+    min-height: auto;
+    max-height: none;
+    padding-top: calc(var(--nav-h) + 10px);
+    padding-bottom: 2rem;
+  }
+
+  .hero-container {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+    height: auto;
+  }
+
+  .hero-content {
+    max-width: 100%;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
+  }
+
+  .hero-subtitle {
+    margin: 0 auto;
+    max-width: 100%;
+  }
+
+  .hero-actions {
+    justify-content: center;
+  }
+
+  .hero-btn {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .hero-trust {
+    justify-content: center;
+  }
+
+  .hero-visual-column {
+    height: auto;
+    max-height: 48dvh;
+    align-self: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .hero-visual-wrapper {
+    height: 46dvh;
+    max-height: 380px;
+    margin: 0 auto;
+  }
+
+  /* Proportional mobile logo card sizing to prevent overlap on mobile */
+  .hero-logo--lg {
+    width: clamp(32px, 8vw, 40px);
+    height: clamp(32px, 8vw, 40px);
+    border-radius: 10px;
+    padding: 6px;
+  }
+
+  .hero-logo--md {
+    width: clamp(28px, 7vw, 34px);
+    height: clamp(28px, 7vw, 34px);
+    border-radius: 9px;
+    padding: 5px;
+  }
+
+  .hero-logo--sm {
+    width: clamp(24px, 6vw, 28px);
+    height: clamp(24px, 6vw, 28px);
+    border-radius: 8px;
+    padding: 4px;
+  }
+
+  /* Hide dashed arc & notification cards on mobile */
+  .hero-ellipse-arc {
+    display: none !important;
+  }
+
+  .hero-notification-card {
+    display: none !important;
+  }
+
+  /* Show exactly 4 icons: Logos 2, 4, 6, 7 (hide logos 1, 3, 5) */
+  .hero-logo-hide-mobile {
+    display: none !important;
+  }
+
+  /* Enable horizontal scrolling strip below */
+  .hero-mobile-ticker {
+    display: block;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ACCESSIBILITY: PREFERS-REDUCED-MOTION
+───────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .hero-content,
+  .hero-student-img,
+  .hero-logo-card {
+    opacity: 1 !important;
+  }
+
+  .hero-logo-float {
+    transform: none !important;
+  }
+
+  .hero-notification-card {
+    opacity: 0.95 !important;
+  }
+}
