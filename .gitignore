@@ -72,6 +72,11 @@ Desktop.ini
 *.swp
 *.swo
 *~
+chrome_temp*/
+**/chrome_temp*/
+test_shot*.png
+test_shot*.js
+capture_themes*.js
 
 ####################################################
 # Cache

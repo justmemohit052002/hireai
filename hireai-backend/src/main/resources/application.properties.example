@@ -91,6 +91,8 @@ hireai.dev.demo-password=your_dev_demo_password
 # ===============================
 # File Upload & Secure Storage
 # ===============================
+# Base upload directory (defaults to stable project 'uploads' directory; override via APP_UPLOAD_DIR)
+app.upload.dir=${APP_UPLOAD_DIR:}
 file.upload-dir=uploads/resumes
 file.attachment-dir=uploads/attachments
 photo.upload-dir=uploads/profile-photos
@@ -109,13 +111,21 @@ spring.mail.username=your_email@domain.com
 spring.mail.password=your_smtp_app_password
 spring.mail.properties.mail.smtp.auth=true
 spring.mail.properties.mail.smtp.starttls.enable=true
-spring.mail.properties.mail.smtp.connectiontimeout=5000
-spring.mail.properties.mail.smtp.timeout=5000
-spring.mail.properties.mail.smtp.writetimeout=5000
+spring.mail.properties.mail.smtp.connectiontimeout=10000
+spring.mail.properties.mail.smtp.timeout=15000
+spring.mail.properties.mail.smtp.writetimeout=15000
 
-hireai.mail.enabled=false
-hireai.mail.from=your_email@domain.com
+hireai.mail.enabled=true
+hireai.mail.mode=SMTP
+hireai.mail.from=notifications@vionsys.com
 hireai.mail.sender-name=HireAI Recruitment Platform
+hireai.mail.frontend-base-url=http://localhost:5173
+hireai.mail.connection-timeout-ms=10000
+hireai.mail.read-timeout-ms=15000
+hireai.mail.write-timeout-ms=15000
+hireai.mail.max-retries=3
+hireai.mail.retry-delay-ms=1000
+hireai.mail.fail-fast-on-missing-credentials=false
 
 # ===============================
 # Swagger / OpenAPI UI Configuration
@@ -131,9 +141,12 @@ springdoc.swagger-ui.try-it-out-enabled=true
 # Rate Limiting & Abuse Prevention
 # ===============================
 hireai.rate-limit.enabled=true
+hireai.rate-limit.trusted-proxies=${HIREAI_RATE_LIMIT_TRUSTED_PROXIES:}
+hireai.rate-limit.enable-vendor-headers=${HIREAI_RATE_LIMIT_ENABLE_VENDOR_HEADERS:false}
 hireai.rate-limit.auth.ip.capacity=15
 hireai.rate-limit.auth.ip.window-seconds=60
 hireai.rate-limit.auth.account.base-attempts=5
+hireai.rate-limit.auth.account.global-max-attempts=20
 hireai.rate-limit.auth.account.window-seconds=300
 hireai.rate-limit.auth.account.initial-backoff-seconds=15
 hireai.rate-limit.auth.account.multiplier=2.0

@@ -1,5 +1,6 @@
 package com.vionsys.hireai.admin.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -35,6 +36,12 @@ public class OverviewMetricsDto {
 
     // Averages
     private double avgApplicationsPerJob;
+    private double avgApplicationsPerOpenJob;
     private double avgDailySignups;
     private double avgDailyActiveUsers;
+
+    @JsonProperty("totalJobsPosted")
+    public long getTotalJobsPosted() {
+        return totalJobs;
+    }
 }

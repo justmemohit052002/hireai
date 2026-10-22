@@ -470,12 +470,12 @@ export const AdminCallLogsPage = () => {
               )}
             </div>
 
-            {selectedLog.error_message && (
+            {(selectedLog.error_message || selectedLog.errorMessage) && (
               <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 space-y-1">
                 <span className="text-[10px] uppercase font-black flex items-center gap-1.5">
                   <AlertTriangle className="w-3.5 h-3.5" /> Call Error Message
                 </span>
-                <p className="font-mono text-[11px]">{selectedLog.error_message}</p>
+                <p className="font-mono text-[11px]">{selectedLog.error_message || selectedLog.errorMessage}</p>
               </div>
             )}
 

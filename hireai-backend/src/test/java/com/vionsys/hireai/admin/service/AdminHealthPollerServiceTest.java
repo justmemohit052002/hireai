@@ -221,4 +221,13 @@ class AdminHealthPollerServiceTest {
         assertEquals("admin-health-poller-", scheduler.getThreadNamePrefix());
         assertEquals(2, scheduler.getScheduledThreadPoolExecutor().getCorePoolSize());
     }
+
+    @Test
+    @DisplayName("Health poller init executes initial poll on dedicated scheduler rather than commonPool")
+    void testInitUsesDedicatedScheduler() {
+        ThreadPoolTaskScheduler mockScheduler = org.mockito.Mockito.mock(ThreadPoolTaskScheduler.class);
+        AdminHealthPollerService service = new AdminHealthPollerService(aiEngineClient, userRepository, jdbcTemplate, mockScheduler);
+        service.init();
+        org.mockito.Mockito.verify(mockScheduler, org.mockito.Mockito.times(1)).submit(org.mockito.ArgumentMatchers.any(Runnable.class));
+    }
 }

@@ -11,7 +11,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PlatformMetricsResponse {
-    private String range; // today | 7d | 30d
+    private String range; // today | 7d | 30d | all
+    private String windowStart;
+    private String windowEnd;
+    private String generatedAt;
+    private String source;
+    private String environment;
     private String lastUpdatedAt;
     private boolean cached;
     private OverviewMetricsDto overview;

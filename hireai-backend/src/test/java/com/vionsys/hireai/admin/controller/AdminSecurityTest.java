@@ -22,10 +22,12 @@ import com.vionsys.hireai.admin.dto.UpdateUserRoleRequest;
 import com.vionsys.hireai.admin.dto.UpdateUserStatusRequest;
 import com.vionsys.hireai.admin.service.AdminService;
 import com.vionsys.hireai.common.enums.RoleType;
+import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Transactional
 class AdminSecurityTest {
 
     @Autowired

@@ -1,6 +1,7 @@
 package com.vionsys.hireai.admin.dto;
 
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,6 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AdminHealthResponse {
     private String overallStatus;
     private String service;
@@ -22,6 +24,8 @@ public class AdminHealthResponse {
     private String databaseStatus;
     private Long activeUsersCount;
     private Long totalUsersCount;
+    private Long engineUptimeSeconds;
+    private Long backendUptimeSeconds;
     private List<ModuleHealthDto> modules;
     private ProvidersConfigDto providers;
     private EnvironmentConfigDto environment;

@@ -5,8 +5,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.stereotype.Service;
 
 import com.vionsys.hireai.admin.dto.AdminHealthResponse;
@@ -29,11 +32,25 @@ public class AdminHealthPollerService {
     private final AiEngineClient aiEngineClient;
     private final UserRepository userRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final ThreadPoolTaskScheduler adminHealthTaskScheduler;
 
-    public AdminHealthPollerService(AiEngineClient aiEngineClient, UserRepository userRepository, JdbcTemplate jdbcTemplate) {
+    @Autowired
+    public AdminHealthPollerService(
+            AiEngineClient aiEngineClient,
+            UserRepository userRepository,
+            JdbcTemplate jdbcTemplate,
+            @Qualifier("adminHealthTaskScheduler") ThreadPoolTaskScheduler adminHealthTaskScheduler) {
         this.aiEngineClient = aiEngineClient;
         this.userRepository = userRepository;
         this.jdbcTemplate = jdbcTemplate;
+        this.adminHealthTaskScheduler = adminHealthTaskScheduler;
+    }
+
+    /**
+     * Convenience constructor for isolated unit tests.
+     */
+    public AdminHealthPollerService(AiEngineClient aiEngineClient, UserRepository userRepository, JdbcTemplate jdbcTemplate) {
+        this(aiEngineClient, userRepository, jdbcTemplate, null);
     }
 
     @org.springframework.beans.factory.annotation.Value("${admin.health.poll-rate-ms:45000}")
@@ -63,7 +80,11 @@ public class AdminHealthPollerService {
         latestSnapshot.set(createFallbackAiHealth("SERVICE_UNREACHABLE", "SERVICE_UNREACHABLE", "AI Engine initial health check pending"));
         log.info("Initialized AdminHealthPollerService with poll rate {}ms (failure threshold: {}). Performing background initial poll.",
                 pollRateMs, failureThreshold);
-        java.util.concurrent.CompletableFuture.runAsync(this::pollHealth);
+        if (adminHealthTaskScheduler != null) {
+            adminHealthTaskScheduler.submit(this::pollHealth);
+        } else {
+            java.util.concurrent.CompletableFuture.runAsync(this::pollHealth);
+        }
     }
 
     @Scheduled(fixedRateString = "${admin.health.poll-rate-ms:45000}")
@@ -113,9 +134,13 @@ public class AdminHealthPollerService {
                 boolean stateChanged = !targetStatus.equalsIgnoreCase(lastReportedStatus) || !healthResult.statusReasonCode().equals(lastReportedReason);
                 boolean periodicWarningDue = now.isAfter(lastWarnLoggedInstant.plus(java.time.Duration.ofMinutes(15)));
 
+                String statusDescriptor = (healthResult.statusReasonCode() == null || healthResult.statusReasonCode().equalsIgnoreCase(targetStatus))
+                        ? targetStatus
+                        : targetStatus + " (" + healthResult.statusReasonCode() + ")";
+
                 if (stateChanged || periodicWarningDue) {
-                    log.warn("AI Engine health check failed [{} - {}]: {}. Marking as {} (failure {} of threshold {}).",
-                            healthResult.statusReasonCode(), targetStatus, healthResult.statusMessage(), targetStatus, failures, failureThreshold);
+                    log.warn("AI Engine health check failed [{}]: {}. Marking as {} (failure {} of threshold {}).",
+                            statusDescriptor, healthResult.statusMessage(), targetStatus, failures, failureThreshold);
                     lastReportedStatus = targetStatus;
                     lastReportedReason = healthResult.statusReasonCode();
                     lastWarnLoggedInstant = now;

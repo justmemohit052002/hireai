@@ -262,6 +262,9 @@ public class AuthService {
 
     @Transactional
     public AuthResponse verifyEmailOtp(VerifyEmailOtpRequest request) {
+        if (request == null || request.getOtp() == null || request.getOtp().isBlank()) {
+            throw new InvalidOtpException("Verification code is required.");
+        }
         String email = request.getEmail().trim().toLowerCase();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("No account found with email: " + email));
@@ -296,20 +299,28 @@ public class AuthService {
         }
 
         if (otpEntity.getAttempts() >= 5) {
+            otpEntity.setUsed(true);
+            emailVerificationOtpRepository.save(otpEntity);
             throw new InvalidOtpException("Too many incorrect attempts. Please request a new verification code.");
         }
 
-        if (!otpEntity.getOtpCode().equals(request.getOtp().trim())) {
+        byte[] expectedBytes = otpEntity.getOtpCode().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] actualBytes = request.getOtp().trim().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        boolean codeMatches = java.security.MessageDigest.isEqual(expectedBytes, actualBytes);
+
+        if (!codeMatches) {
             otpEntity.setAttempts(otpEntity.getAttempts() + 1);
-            emailVerificationOtpRepository.save(otpEntity);
             int remaining = 5 - otpEntity.getAttempts();
             if (remaining <= 0) {
+                otpEntity.setUsed(true);
+                emailVerificationOtpRepository.save(otpEntity);
                 throw new InvalidOtpException("Too many incorrect attempts. Please request a new verification code.");
             }
+            emailVerificationOtpRepository.save(otpEntity);
             throw new InvalidOtpException("Invalid verification code. " + remaining + " attempt(s) remaining.");
         }
 
-        // OTP is correct!
+        // OTP is correct! Mark single-use
         otpEntity.setUsed(true);
         emailVerificationOtpRepository.save(otpEntity);
 
@@ -407,8 +418,14 @@ public class AuthService {
             AccountLockedException.class
     })
     public AuthResponse login(LoginRequest request) {
+        String clientIp = resolveCurrentClientIp();
+
         User user = userRepository.findByEmail(request.getEmail().trim().toLowerCase())
-                .orElseThrow(() -> new UserNotFoundException("User not found. Please sign up first."));
+                .orElseThrow(() -> {
+                    // Timing side-channel defense: execute dummy BCrypt hash verification to keep response timing consistent
+                    passwordEncoder.matches(request.getPassword(), "$2a$10$7EqJtq98hPqEX7fNZaFWoO.8H79N7m4q90YFv6K979K50W0f8fN.q");
+                    return new UserNotFoundException("User not found. Please sign up first.");
+                });
 
         if (Boolean.TRUE.equals(user.getDeleted())) {
             throw new org.springframework.security.authentication.DisabledException("This account has been deleted.");
@@ -423,8 +440,10 @@ public class AuthService {
         }
 
         // 1. Check account exponential backoff and lockout state
-        AccountBackoffManager.BackoffResult inMemoryBackoff = accountBackoffManager.checkBackoff(request.getEmail());
-        if (inMemoryBackoff.isBlocked()) {
+        AccountBackoffManager.BackoffResult inMemoryBackoff = (clientIp != null)
+                ? accountBackoffManager.checkBackoff(request.getEmail(), clientIp)
+                : accountBackoffManager.checkBackoff(request.getEmail());
+        if (inMemoryBackoff != null && inMemoryBackoff.isBlocked()) {
             throw new AccountLockedException(
                     "Too many failed login attempts for this account. Exponential backoff active. Please wait "
                     + inMemoryBackoff.getRemainingCooldownSeconds() + " seconds before retrying.",
@@ -457,7 +476,9 @@ public class AuthService {
                     )
             );
         } catch (BadCredentialsException ex) {
-            long backoffSeconds = accountBackoffManager.recordFailure(request.getEmail());
+            long backoffSeconds = (clientIp != null)
+                    ? accountBackoffManager.recordFailure(request.getEmail(), clientIp)
+                    : accountBackoffManager.recordFailure(request.getEmail());
             int attempts = (user.getFailedLoginAttempts() != null ? user.getFailedLoginAttempts() : 0) + 1;
             user.setFailedLoginAttempts(attempts);
             if (backoffSeconds > 0) {
@@ -470,7 +491,11 @@ public class AuthService {
         }
 
         // 3. Reset failed attempts counter and backoff on successful login
-        accountBackoffManager.recordSuccess(request.getEmail());
+        if (clientIp != null) {
+            accountBackoffManager.recordSuccess(request.getEmail(), clientIp);
+        } else {
+            accountBackoffManager.recordSuccess(request.getEmail());
+        }
         if ((user.getFailedLoginAttempts() != null && user.getFailedLoginAttempts() > 0) || user.getLockoutUntil() != null) {
             user.setFailedLoginAttempts(0);
             user.setLockoutUntil(null);
@@ -666,6 +691,12 @@ public class AuthService {
         // Send in-app security sign-in notification & profile completion prompt post-commit
         final User finalOAuthUser = user;
         executeAfterCommit(() -> {
+            try {
+                emailService.sendLoginAlertEmail(finalOAuthUser);
+            } catch (Exception ex) {
+                log.warn("Failed to dispatch OAuth login alert email: {}", ex.getMessage());
+            }
+
             try {
                 boolean isRecruiter = finalOAuthUser.getRole() != null && finalOAuthUser.getRole().getName() != null &&
                         finalOAuthUser.getRole().getName().name().contains("RECRUITER");
@@ -977,6 +1008,12 @@ public class AuthService {
         final User finalResetUser = user;
         executeAfterCommit(() -> {
             try {
+                emailService.sendPasswordChangedEmail(finalResetUser);
+            } catch (Exception ex) {
+                log.warn("Failed to dispatch password changed email: {}", ex.getMessage());
+            }
+
+            try {
                 boolean isRecruiter = finalResetUser.getRole() != null && finalResetUser.getRole().getName() != null &&
                         finalResetUser.getRole().getName().name().contains("RECRUITER");
                 notificationService.createAndSendNotification(
@@ -1043,6 +1080,18 @@ public class AuthService {
                 userRepository.save(user);
                 return url;
             }
+        }
+        return null;
+    }
+
+    private String resolveCurrentClientIp() {
+        try {
+            org.springframework.web.context.request.RequestAttributes attrs =
+                    org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+            if (attrs instanceof org.springframework.web.context.request.ServletRequestAttributes servletAttrs) {
+                return servletAttrs.getRequest().getRemoteAddr();
+            }
+        } catch (Exception ignored) {
         }
         return null;
     }

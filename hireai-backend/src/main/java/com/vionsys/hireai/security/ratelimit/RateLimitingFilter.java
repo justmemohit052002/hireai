@@ -31,13 +31,23 @@ import lombok.extern.slf4j.Slf4j;
  * 3. Lenient/higher capacity limits on authenticated user actions (per-user).
  */
 @Slf4j
-@RequiredArgsConstructor
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     private final RateLimitProperties properties;
     private final RateLimiter rateLimiter;
     private final AccountBackoffManager accountBackoffManager;
     private final ObjectMapper objectMapper;
+
+    public RateLimitingFilter(
+            RateLimitProperties properties,
+            RateLimiter rateLimiter,
+            AccountBackoffManager accountBackoffManager,
+            ObjectMapper objectMapper) {
+        this.properties = properties;
+        this.rateLimiter = rateLimiter;
+        this.accountBackoffManager = accountBackoffManager;
+        this.objectMapper = objectMapper != null ? objectMapper.copy().findAndRegisterModules() : new ObjectMapper().findAndRegisterModules();
+    }
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("\"email\"\\s*:\\s*\"([^\"]+)\"", Pattern.CASE_INSENSITIVE);
 
@@ -127,14 +137,14 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             }
 
             if (accountEmail != null && !accountEmail.isBlank()) {
-                AccountBackoffManager.BackoffResult backoff = accountBackoffManager.checkBackoff(accountEmail);
+                AccountBackoffManager.BackoffResult backoff = accountBackoffManager.checkBackoff(accountEmail, clientIp);
                 if (backoff.isBlocked()) {
                     log.warn("Authentication request blocked by exponential backoff for account '{}' from IP {}", accountEmail, clientIp);
                     writeRateLimitResponse(
                             response,
                             request,
                             backoff.getRemainingCooldownSeconds(),
-                            "Too many failed login attempts for this account. Exponential backoff active. Please wait "
+                            "Too many failed login attempts. Exponential backoff active. Please wait "
                                     + backoff.getRemainingCooldownSeconds() + " seconds before retrying."
                     );
                     return;
@@ -168,16 +178,12 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     }
 
     private boolean isAuthRoute(String path) {
-        return path != null && (
-                path.startsWith("/auth/login")
-                        || path.startsWith("/auth/register")
-                        || path.startsWith("/auth/forgot-password")
-                        || path.startsWith("/auth/reset-password")
-                        || path.startsWith("/auth/refresh")
-                        || path.startsWith("/auth/verify-email-otp")
-                        || path.startsWith("/auth/resend-email-otp")
-                        || path.startsWith("/auth/oauth")
-        );
+        if (path == null) {
+            return false;
+        }
+        return path.startsWith("/auth")
+                || path.startsWith("/api/v1/auth")
+                || path.startsWith("/api/auth");
     }
 
     private boolean isJsonRequest(HttpServletRequest request) {
@@ -204,23 +210,117 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         return null;
     }
 
-    private String resolveClientIp(HttpServletRequest request) {
-        String[] headerCandidates = {
-                "X-Forwarded-For",
-                "X-Real-IP",
-                "CF-Connecting-IP",
-                "Proxy-Client-IP",
-                "WL-Proxy-Client-IP"
-        };
+    public String resolveClientIp(HttpServletRequest request) {
+        String directPeer = request.getRemoteAddr();
+        if (directPeer == null || directPeer.isBlank()) {
+            return "unknown";
+        }
+        directPeer = normalizeIp(stripPort(directPeer.trim()));
 
-        for (String header : headerCandidates) {
-            String ipList = request.getHeader(header);
-            if (ipList != null && !ipList.isBlank() && !"unknown".equalsIgnoreCase(ipList)) {
-                return ipList.split(",")[0].trim();
+        java.util.List<String> trustedProxies = properties.getTrustedProxies();
+        if (trustedProxies == null || trustedProxies.isEmpty() || !isTrusted(directPeer, trustedProxies)) {
+            // Direct peer is not a trusted proxy: ignore all forwarded headers completely to prevent spoofing
+            return directPeer;
+        }
+
+        // Direct peer is in trusted proxy list.
+        // Vendor headers (e.g. CF-Connecting-IP, X-Real-IP) honored only if specifically enabled
+        if (properties.isEnableVendorHeaders()) {
+            String cfIp = request.getHeader("CF-Connecting-IP");
+            if (isValidIp(cfIp)) {
+                return normalizeIp(stripPort(cfIp.trim()));
+            }
+            String realIp = request.getHeader("X-Real-IP");
+            if (isValidIp(realIp)) {
+                return normalizeIp(stripPort(realIp.trim()));
             }
         }
 
-        return request.getRemoteAddr();
+        // Parse X-Forwarded-For: select the right-most untrusted entry
+        String forwardedHeader = request.getHeader("X-Forwarded-For");
+        if (forwardedHeader != null && !forwardedHeader.isBlank()) {
+            String[] entries = forwardedHeader.split(",");
+            for (int i = entries.length - 1; i >= 0; i--) {
+                String candidate = entries[i].trim();
+                candidate = stripPort(candidate);
+                if (isValidIp(candidate)) {
+                    String normalized = normalizeIp(candidate);
+                    if (!isTrusted(normalized, trustedProxies)) {
+                        return normalized;
+                    }
+                }
+            }
+        }
+
+        return directPeer;
+    }
+
+    private String stripPort(String ip) {
+        if (ip == null || ip.isBlank()) {
+            return ip;
+        }
+        ip = ip.trim();
+        if (ip.startsWith("[")) {
+            int closeBracket = ip.indexOf(']');
+            if (closeBracket != -1) {
+                return ip.substring(1, closeBracket);
+            }
+        }
+        int colonIdx = ip.indexOf(':');
+        if (colonIdx != -1 && colonIdx == ip.lastIndexOf(':')) {
+            return ip.substring(0, colonIdx);
+        }
+        return ip;
+    }
+
+    private String normalizeIp(String ip) {
+        if (ip == null) {
+            return "";
+        }
+        String trimmed = ip.trim();
+        if ("0:0:0:0:0:0:0:1".equals(trimmed)) {
+            return "::1";
+        }
+        return trimmed.toLowerCase();
+    }
+
+    private static final Pattern IPV4_PATTERN = Pattern.compile("^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.){3}(25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)$");
+
+    private boolean isValidIp(String ip) {
+        if (ip == null || ip.isBlank()) {
+            return false;
+        }
+        String clean = stripPort(ip);
+        if (IPV4_PATTERN.matcher(clean).matches()) {
+            return true;
+        }
+        if (clean.contains(":")) {
+            try {
+                java.net.InetAddress addr = java.net.InetAddress.getByName(clean);
+                return addr instanceof java.net.Inet6Address;
+            } catch (Exception ignored) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private boolean isTrusted(String ip, java.util.List<String> trustedList) {
+        String normalized = normalizeIp(ip);
+        for (String trusted : trustedList) {
+            if (trusted == null || trusted.isBlank()) {
+                continue;
+            }
+            String normTrusted = normalizeIp(trusted.trim());
+            if (normalized.equalsIgnoreCase(normTrusted)) {
+                return true;
+            }
+            if (("127.0.0.1".equals(normalized) || "::1".equals(normalized)) &&
+                    ("127.0.0.1".equals(normTrusted) || "::1".equals(normTrusted) || "localhost".equalsIgnoreCase(normTrusted))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void attachRateLimitHeaders(HttpServletResponse response, RateLimitResult result) {

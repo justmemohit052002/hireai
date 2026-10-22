@@ -147,3 +147,132 @@ def test_get_system_health_provider_degradation(monkeypatch):
     assert "Ollama unreachable" in str(modules_by_id["jd_generator"]["error"])
 
 
+def test_get_llm_statistics_empty_window(monkeypatch):
+    from app import admin_service
+    # Point log source to empty temporary file
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".jsonl") as f:
+        temp_path = f.name
+
+    try:
+        source = JsonlLogSource(temp_path)
+        monkeypatch.setattr(admin_service, "log_source", source)
+        monkeypatch.setattr(admin_service, "_stats_cache", {})
+        monkeypatch.setattr(admin_service, "_stats_cache_expiry", 0.0)
+
+        stats = get_llm_statistics(scope="today")
+        assert stats["totalCalls"] == 0
+        assert stats["todayCalls"] == 0
+        assert stats["avgLatencySeconds"] is None
+        assert stats["p50LatencySeconds"] is None
+        assert stats["p95LatencySeconds"] is None
+        assert stats["successRate"] is None
+        assert stats["range"] == "today"
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
+def test_get_llm_statistics_percentiles_and_window(monkeypatch):
+    from datetime import datetime, timezone
+    from app import admin_service
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    old_iso = "2020-01-01T00:00:00+00:00"
+
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".jsonl") as f:
+        # Write 10 calls with increasing latencies: 1.0, 2.0, ... 10.0
+        for i in range(1, 11):
+            f.write(json.dumps({
+                "id": f"call-{i}",
+                "timestamp": now_iso,
+                "task_type": "jd_generation",
+                "provider": "ollama",
+                "status": "SUCCESS" if i <= 9 else "FAILED",
+                "latency_seconds": float(i),
+                "prompt_preview": "Test prompt",
+                "response_preview": "Test response"
+            }) + "\n")
+        # Write 1 very old call that should not be in 'today' or '7d'
+        f.write(json.dumps({
+            "id": "old-call",
+            "timestamp": old_iso,
+            "task_type": "jd_generation",
+            "provider": "ollama",
+            "status": "SUCCESS",
+            "latency_seconds": 99.0
+        }) + "\n")
+        temp_path = f.name
+
+    try:
+        source = JsonlLogSource(temp_path)
+        monkeypatch.setattr(admin_service, "log_source", source)
+        monkeypatch.setattr(admin_service, "_stats_cache", {})
+        monkeypatch.setattr(admin_service, "_stats_cache_expiry", 0.0)
+
+        # Scoped to 'today': 10 calls, old-call excluded
+        stats = get_llm_statistics(scope="today")
+        assert stats["totalCalls"] == 10
+        # Avg of 1..10 = 55 / 10 = 5.5s
+        assert stats["avgLatencySeconds"] == 5.5
+        # p50 rank = ceil(10 * 0.50) = 5 -> value 5.0
+        assert stats["p50LatencySeconds"] == 5.0
+        # p95 rank = ceil(10 * 0.95) = 10 -> value 10.0
+        assert stats["p95LatencySeconds"] == 10.0
+        # 9 success out of 10 = 90.0%
+        assert stats["successRate"] == 90.0
+
+        # All-time scope: includes old-call (11 calls)
+        monkeypatch.setattr(admin_service, "_stats_cache", {})
+        monkeypatch.setattr(admin_service, "_stats_cache_expiry", 0.0)
+        stats_all = get_llm_statistics(scope="all")
+        assert stats_all["totalCalls"] == 11
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
+def test_query_call_logs_preview_truncation_and_dual_keys(monkeypatch):
+    from app import admin_service
+
+    long_prompt = "P" * 500
+    long_response = "R" * 500
+
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".jsonl") as f:
+        f.write(json.dumps({
+            "id": "log-long",
+            "timestamp": "2026-10-21T12:00:00Z",
+            "task_type": "interview_ai",
+            "provider": "ollama",
+            "status": "SUCCESS",
+            "latency_seconds": 1.5,
+            "prompt_preview": long_prompt,
+            "response_preview": long_response
+        }) + "\n")
+        temp_path = f.name
+
+    try:
+        source = JsonlLogSource(temp_path)
+        monkeypatch.setattr(admin_service, "log_source", source)
+
+        res = query_call_logs(page=1, size=10)
+        assert res["totalElements"] == 1
+        assert len(res["items"]) == 1
+
+        item = res["items"][0]
+        # Verify dual-case keys
+        assert item["task_type"] == "interview_ai"
+        assert item["taskType"] == "interview_ai"
+        assert item["latency_seconds"] == 1.5
+        assert item["latencySeconds"] == 1.5
+
+        # Verify preview truncation to 200 chars max
+        assert len(item["prompt_preview"]) <= 200
+        assert item["prompt_preview"] == item["promptPreview"]
+        assert len(item["response_preview"]) <= 200
+        assert item["response_preview"] == item["responsePreview"]
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+
+

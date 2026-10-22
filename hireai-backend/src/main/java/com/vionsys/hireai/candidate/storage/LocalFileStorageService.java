@@ -40,9 +40,21 @@ public class LocalFileStorageService implements FileStorageService {
     private final Path attachmentPath;
     private final FileSecurityValidator fileSecurityValidator;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public LocalFileStorageService(
-            @Value("${file.upload-dir:uploads/resumes}") String uploadDir,
-            @Value("${file.attachment-dir:uploads/attachments}") String attachmentDir,
+            StorageProperties storageProperties,
+            FileSecurityValidator fileSecurityValidator) {
+        this.fileSecurityValidator = fileSecurityValidator;
+        this.uploadPath = storageProperties.getResumeUploadPath();
+        this.attachmentPath = storageProperties.getAttachmentUploadPath();
+    }
+
+    /**
+     * Backward-compatible convenience constructor for testing.
+     */
+    public LocalFileStorageService(
+            String uploadDir,
+            String attachmentDir,
             FileSecurityValidator fileSecurityValidator) {
         this.fileSecurityValidator = fileSecurityValidator;
         this.uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
@@ -51,8 +63,6 @@ public class LocalFileStorageService implements FileStorageService {
         try {
             Files.createDirectories(this.uploadPath);
             Files.createDirectories(this.attachmentPath);
-            log.info("Initialized secure file storage directories. Resumes: {}, Attachments: {}",
-                    this.uploadPath, this.attachmentPath);
         } catch (IOException ex) {
             throw new FileStorageException("Could not initialize storage directory: " + ex.getMessage(), ex);
         }

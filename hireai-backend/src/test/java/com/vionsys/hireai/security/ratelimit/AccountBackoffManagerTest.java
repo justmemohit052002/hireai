@@ -107,4 +107,42 @@ class AccountBackoffManagerTest {
         assertTrue(backoffManager.checkBackoff(mixedEmail).isBlocked());
         assertTrue(backoffManager.checkBackoff(lowerEmail).isBlocked());
     }
+
+    @Test
+    @DisplayName("Attacker from one IP cannot lock out victim logging in from another IP")
+    void attackerFromOneIpCannotLockOutVictimFromAnotherIp() {
+        String victimEmail = "victim.executive@example.com";
+        String attackerIp = "198.51.100.99";
+        String legitimateUserIp = "203.0.113.42";
+
+        // Attacker fails 4 attempts (base attempts is 3)
+        for (int i = 0; i < 4; i++) {
+            backoffManager.recordFailure(victimEmail, attackerIp);
+        }
+
+        // Attacker IP is blocked
+        assertTrue(backoffManager.checkBackoff(victimEmail, attackerIp).isBlocked(),
+                "Attacker IP should be blocked by exponential backoff");
+
+        // Legitimate user from another IP is NOT blocked
+        assertFalse(backoffManager.checkBackoff(victimEmail, legitimateUserIp).isBlocked(),
+                "Legitimate user from separate IP must not be locked out by attacker IP");
+    }
+
+    @Test
+    @DisplayName("Distributed attack across many IPs triggers global account safety net threshold")
+    void distributedAttackAcrossManyIpsTriggersGlobalSafetyNet() {
+        String victimEmail = "ceo@example.com";
+        properties.getAuth().getAccount().setGlobalMaxAttempts(5);
+
+        // 6 different botnet IPs fail 1 attempt each (none exceeds per-IP base limit of 3)
+        for (int i = 1; i <= 6; i++) {
+            String botIp = "192.0.2." + i;
+            backoffManager.recordFailure(victimEmail, botIp);
+        }
+
+        // Global safety net must now be triggered for any IP attempting this account
+        assertTrue(backoffManager.checkBackoff(victimEmail, "192.0.2.1").isBlocked());
+        assertTrue(backoffManager.checkBackoff(victimEmail, "10.0.0.1").isBlocked());
+    }
 }

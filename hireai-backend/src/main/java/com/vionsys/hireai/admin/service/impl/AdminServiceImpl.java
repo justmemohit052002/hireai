@@ -62,6 +62,12 @@ public class AdminServiceImpl implements AdminService {
     private final com.vionsys.hireai.application.repository.JobApplicationRepository jobApplicationRepository;
     private final com.vionsys.hireai.security.ApiMetricsFilter apiMetricsFilter;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.vionsys.hireai.admin.service.AdminMetricsPersistenceService metricsPersistenceService;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private org.springframework.core.env.Environment environment;
+
     public AdminServiceImpl(
             UserRepository userRepository,
             RoleRepository roleRepository,
@@ -473,23 +479,7 @@ public class AdminServiceImpl implements AdminService {
 
         // Send notification email asynchronously if configured (never include password)
         try {
-            if (emailService.isSmtpConfigured()) {
-                emailService.sendHtmlEmail(
-                        cleanEmail,
-                        "Your HireAI Sub-Administrator Account Has Been Created",
-                        """
-                        <!DOCTYPE html>
-                        <html>
-                        <body style="font-family: sans-serif; padding: 20px;">
-                          <h2>Welcome to HireAI Administration</h2>
-                          <p>A sub-administrator account has been created for your email.</p>
-                          <p>You must change your password upon your first sign-in.</p>
-                          <p style="color: #64748b; font-size: 12px;">HireAI Platform Administration</p>
-                        </body>
-                        </html>
-                        """
-                );
-            }
+            emailService.sendSubAdminCreatedEmail(cleanEmail, actorEmail);
         } catch (Exception ex) {
             log.warn("Failed to dispatch sub-admin creation email: {}", ex.getMessage());
         }
@@ -582,8 +572,12 @@ public class AdminServiceImpl implements AdminService {
 
         long totalJobs = jobRepository.count();
         long openJobs = jobRepository.countByStatus(com.vionsys.hireai.job.enums.JobStatus.OPEN);
+        if (totalJobs < openJobs) {
+            totalJobs = openJobs;
+        }
         long totalApplications = jobApplicationRepository.count();
 
+        double avgAppsPerOpenJob = openJobs > 0 ? Math.round((double) totalApplications / openJobs * 10.0) / 10.0 : 0.0;
         double avgAppsPerJob = totalJobs > 0 ? Math.round((double) totalApplications / totalJobs * 10.0) / 10.0 : 0.0;
         double avgDailySignups = Math.round((double) signups30d / 30.0 * 10.0) / 10.0;
         double avgDailyActive = Math.round((double) active30d / 30.0 * 10.0) / 10.0;
@@ -606,53 +600,20 @@ public class AdminServiceImpl implements AdminService {
                 .openJobs(openJobs)
                 .totalApplications(totalApplications)
                 .avgApplicationsPerJob(avgAppsPerJob)
+                .avgApplicationsPerOpenJob(avgAppsPerOpenJob)
                 .avgDailySignups(avgDailySignups)
                 .avgDailyActiveUsers(avgDailyActive)
                 .build();
 
-        // 2. Time-series calculations
+        // 2. Time-series calculations from persistence service (merges persisted history + live today)
         int daysBack = cleanRange.equals("today") ? 1 : cleanRange.equals("7d") ? 7 : 30;
         java.time.LocalDate startDate = java.time.LocalDate.now().minusDays(daysBack - 1);
-        java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
 
-        List<User> recentCreatedUsers = userRepository.findUsersCreatedSince(startDate.atStartOfDay());
-        List<User> recentActiveUsers = userRepository.findUsersActiveSince(startDate.atStartOfDay());
-
-        java.util.Map<String, Long> signupsPerDay = new java.util.HashMap<>();
-        for (User u : recentCreatedUsers) {
-            if (u.getCreatedAt() != null) {
-                String dKey = u.getCreatedAt().toLocalDate().format(dtf);
-                signupsPerDay.merge(dKey, 1L, Long::sum);
-            }
-        }
-
-        java.util.Map<String, Long> activePerDay = new java.util.HashMap<>();
-        for (User u : recentActiveUsers) {
-            if (u.getLastLoginAt() != null) {
-                String dKey = u.getLastLoginAt().toLocalDate().format(dtf);
-                activePerDay.merge(dKey, 1L, Long::sum);
-            }
-        }
-
-        List<com.vionsys.hireai.admin.dto.DailyTimeSeriesDto> timeSeriesList = new java.util.ArrayList<>();
-        for (int i = 0; i < daysBack; i++) {
-            java.time.LocalDate day = startDate.plusDays(i);
-            String dayStr = day.format(dtf);
-            com.vionsys.hireai.security.ApiMetricsFilter.DayStats dStats = apiMetricsFilter.getDayStats(dayStr);
-            long reqCount = dStats != null ? dStats.requests.sum() : 0;
-            long errCount = dStats != null ? dStats.errors.sum() : 0;
-            double errRate = reqCount > 0 ? Math.round((double) errCount / reqCount * 1000.0) / 10.0 : 0.0;
-
-            timeSeriesList.add(com.vionsys.hireai.admin.dto.DailyTimeSeriesDto.builder()
-                    .date(dayStr)
-                    .signups(signupsPerDay.getOrDefault(dayStr, 0L))
-                    .activeUsers(activePerDay.getOrDefault(dayStr, 0L))
-                    .apiRequests(reqCount)
-                    .apiErrors(errCount)
-                    .errorRate(errRate)
-                    .aiCalls(0L)
-                    .aiCallsByModule(java.util.Map.of())
-                    .build());
+        List<com.vionsys.hireai.admin.dto.DailyTimeSeriesDto> timeSeriesList;
+        if (metricsPersistenceService != null) {
+            timeSeriesList = metricsPersistenceService.getTimeSeries(startDate, daysBack);
+        } else {
+            timeSeriesList = new java.util.ArrayList<>();
         }
 
         // 3. AI Performance from AI engine
@@ -660,7 +621,7 @@ public class AdminServiceImpl implements AdminService {
         java.util.Map<String, Long> providerSplit = new java.util.HashMap<>();
         if (llmStats.getProviderDistribution() != null) {
             for (ProviderStatDto ps : llmStats.getProviderDistribution()) {
-                long c = ps.getCalls() != null ? ps.getCalls() : 0L;
+                long c = ps.getCalls() != null ? ps.getCalls() : (ps.getCallCount() != null ? ps.getCallCount() : 0L);
                 providerSplit.put(ps.getProvider(), c);
             }
         }
@@ -668,18 +629,18 @@ public class AdminServiceImpl implements AdminService {
         List<com.vionsys.hireai.admin.dto.ModuleAverageDto> moduleAverages = new java.util.ArrayList<>();
         if (llmStats.getModuleBreakdown() != null) {
             for (ModuleStatDto ms : llmStats.getModuleBreakdown()) {
-                long callCount = ms.getCalls() != null ? ms.getCalls() : 0L;
+                long callCount = ms.getCalls() != null ? ms.getCalls() : (ms.getCallCount() != null ? ms.getCallCount() : 0L);
                 long failCount = ms.getFailedCount() != null ? ms.getFailedCount() : 0L;
-                double sRate = callCount > 0 ? Math.round((double)(callCount - failCount) / callCount * 1000.0) / 10.0 : 100.0;
-                double avgLat = ms.getAvgLatencySeconds() != null ? ms.getAvgLatencySeconds() : 0.0;
+                Double sRate = callCount > 0 ? Math.round((double)(callCount - failCount) / callCount * 1000.0) / 10.0 : null;
+                Double avgLat = ms.getAvgLatencySeconds();
                 moduleAverages.add(com.vionsys.hireai.admin.dto.ModuleAverageDto.builder()
-                        .moduleId(ms.getId() != null ? ms.getId() : ms.getName())
-                        .moduleName(ms.getName() != null ? ms.getName() : ms.getId())
+                        .moduleId(ms.getId() != null ? ms.getId() : ms.getModule())
+                        .moduleName(ms.getName() != null ? ms.getName() : ms.getModuleName())
                         .totalCalls(callCount)
                         .failureCount(failCount)
                         .avgLatencySeconds(avgLat)
                         .p50LatencySeconds(avgLat)
-                        .p95LatencySeconds(Math.round(avgLat * 1.5 * 10.0) / 10.0)
+                        .p95LatencySeconds(avgLat != null ? Math.round(avgLat * 1.5 * 10.0) / 10.0 : null)
                         .successRate(sRate)
                         .build());
             }
@@ -689,17 +650,30 @@ public class AdminServiceImpl implements AdminService {
         AdminCallLogsResponse failureLogs = getCallLogs(null, null, "FAILED", null, null, null, null, null, 1, 5);
         List<AdminCallLogEntry> recentFailures = failureLogs != null && failureLogs.getItems() != null ? failureLogs.getItems() : List.of();
 
-        double avgLat = llmStats.getAvgLatencySeconds() != null ? llmStats.getAvgLatencySeconds() : 0.0;
+        long scopedTotalCalls = llmStats.getTotalCalls() != null ? llmStats.getTotalCalls() : 0L;
+        Double scopedAvgLat = scopedTotalCalls > 0 ? llmStats.getAvgLatencySeconds() : null;
+        Double scopedP50 = scopedTotalCalls > 0 ? llmStats.getP50LatencySeconds() : null;
+        Double scopedP95 = scopedTotalCalls > 0 ? llmStats.getP95LatencySeconds() : null;
+        Double scopedSuccessRate = scopedTotalCalls > 0 ? llmStats.getSuccessRate() : null;
+        long scopedFailures = llmStats.getFailedCalls() != null ? llmStats.getFailedCalls() : 0L;
+        long scopedSuccesses = scopedTotalCalls > 0 ? Math.max(0, scopedTotalCalls - scopedFailures) : 0L;
+
         com.vionsys.hireai.admin.dto.AiPerformanceDto aiPerformance = com.vionsys.hireai.admin.dto.AiPerformanceDto.builder()
+                .range(cleanRange)
+                .windowStart(llmStats.getWindowStart())
+                .windowEnd(llmStats.getWindowEnd())
+                .generatedAt(llmStats.getGeneratedAt() != null ? llmStats.getGeneratedAt() : java.time.Instant.now().toString())
+                .source(llmStats.getSource() != null ? llmStats.getSource() : "llm_call_log.jsonl")
                 .callsToday(llmStats.getTodayCalls() != null ? llmStats.getTodayCalls() : 0L)
                 .callsThisWeek(llmStats.getWeekCalls() != null ? llmStats.getWeekCalls() : 0L)
-                .totalCalls(llmStats.getTotalCalls() != null ? llmStats.getTotalCalls() : 0L)
-                .successCount(Math.max(0, (llmStats.getTotalCalls() != null ? llmStats.getTotalCalls() : 0L) - (llmStats.getFailedCalls() != null ? llmStats.getFailedCalls() : 0L)))
-                .failureCount(llmStats.getFailedCalls() != null ? llmStats.getFailedCalls() : 0L)
-                .successRate(llmStats.getSuccessRate() != null ? llmStats.getSuccessRate() : 100.0)
-                .avgLatencySeconds(avgLat)
-                .p50LatencySeconds(avgLat)
-                .p95LatencySeconds(Math.round(avgLat * 1.5 * 10.0) / 10.0)
+                .totalCalls(scopedTotalCalls)
+                .allTimeCalls(llmStats.getAllTimeCalls() != null ? llmStats.getAllTimeCalls() : scopedTotalCalls)
+                .successCount(scopedSuccesses)
+                .failureCount(scopedFailures)
+                .successRate(scopedSuccessRate)
+                .avgLatencySeconds(scopedAvgLat)
+                .p50LatencySeconds(scopedP50)
+                .p95LatencySeconds(scopedP95)
                 .providerSplit(providerSplit)
                 .moduleAverages(moduleAverages)
                 .geminiQuota(llmStats.getQuota())
@@ -708,10 +682,14 @@ public class AdminServiceImpl implements AdminService {
 
         // 4. System Health
         AdminHealthResponse healthSnapshot = healthPollerService.getCachedHealthSnapshot();
-        long uptime = Math.max(0, java.time.Duration.between(healthPollerService.getBackendStartedInstant(), java.time.Instant.now()).toSeconds());
+        long jvmUptimeSeconds = java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime() / 1000;
+        Long engineUptime = healthSnapshot != null ? healthSnapshot.getEngineUptimeSeconds() : null;
+        String activeEnv = (environment != null && environment.getActiveProfiles().length > 0)
+                ? environment.getActiveProfiles()[0]
+                : "development";
 
         List<com.vionsys.hireai.admin.dto.ModuleHealthStateDto> moduleStates = new java.util.ArrayList<>();
-        if (healthSnapshot.getModules() != null) {
+        if (healthSnapshot != null && healthSnapshot.getModules() != null) {
             for (ModuleHealthDto m : healthSnapshot.getModules()) {
                 long durationSec = healthPollerService.getModuleStateDurationSeconds(m.getId());
                 moduleStates.add(com.vionsys.hireai.admin.dto.ModuleHealthStateDto.builder()
@@ -729,16 +707,21 @@ public class AdminServiceImpl implements AdminService {
         }
 
         com.vionsys.hireai.admin.dto.SystemHealthDetailsDto systemHealth = com.vionsys.hireai.admin.dto.SystemHealthDetailsDto.builder()
-                .backendUptimeSeconds(uptime)
-                .backendStartedAt(healthPollerService.getBackendStartedInstant().toString())
-                .databaseConnectivity(healthSnapshot.getDatabaseStatus() != null ? healthSnapshot.getDatabaseStatus() : "UP")
-                .aiEngineReachability(healthSnapshot.getOverallStatus())
-                .statusReasonCode(healthSnapshot.getStatusReasonCode())
-                .statusMessage(healthSnapshot.getStatusMessage())
-                .lastSuccessfulPoll(healthSnapshot.getLastSuccessfulPoll())
-                .consecutiveFailures(healthSnapshot.getConsecutiveFailures())
-                .emailSmtpConfigured(emailService.isSmtpConfigured())
-                .lastHealthPollAt(healthPollerService.getLastSuccessfulHealthPollInstant() != null ? healthPollerService.getLastSuccessfulHealthPollInstant().toString() : healthSnapshot.getLastCheckedAt())
+                .backendUptimeSeconds(jvmUptimeSeconds)
+                .engineUptimeSeconds(engineUptime)
+                .environment(activeEnv)
+                .backendStartedAt(healthPollerService != null && healthPollerService.getBackendStartedInstant() != null ? healthPollerService.getBackendStartedInstant().toString() : java.time.Instant.now().toString())
+                .databaseConnectivity(healthSnapshot != null && healthSnapshot.getDatabaseStatus() != null ? healthSnapshot.getDatabaseStatus() : "UP")
+                .aiEngineReachability(healthSnapshot != null ? healthSnapshot.getOverallStatus() : "UNKNOWN")
+                .statusReasonCode(healthSnapshot != null ? healthSnapshot.getStatusReasonCode() : null)
+                .statusMessage(healthSnapshot != null ? healthSnapshot.getStatusMessage() : null)
+                .lastSuccessfulPoll(healthSnapshot != null ? healthSnapshot.getLastSuccessfulPoll() : null)
+                .consecutiveFailures(healthSnapshot != null ? healthSnapshot.getConsecutiveFailures() : 0)
+                .emailSmtpConfigured(emailService != null && emailService.isSmtpConfigured())
+                .emailMode(emailService != null && emailService.getEmailMode() != null ? emailService.getEmailMode().name() : "UNKNOWN")
+                .emailLastSuccessfulSend(emailService != null && emailService.getLastSuccessfulSend() != null ? emailService.getLastSuccessfulSend().toString() : null)
+                .emailRecentFailureCount(emailService != null ? emailService.getRecentFailureCount() : 0)
+                .lastHealthPollAt(healthPollerService != null && healthPollerService.getLastSuccessfulHealthPollInstant() != null ? healthPollerService.getLastSuccessfulHealthPollInstant().toString() : (healthSnapshot != null ? healthSnapshot.getLastCheckedAt() : null))
                 .modules(moduleStates)
                 .build();
 
@@ -747,6 +730,11 @@ public class AdminServiceImpl implements AdminService {
 
         com.vionsys.hireai.admin.dto.PlatformMetricsResponse response = com.vionsys.hireai.admin.dto.PlatformMetricsResponse.builder()
                 .range(cleanRange)
+                .windowStart(llmStats.getWindowStart())
+                .windowEnd(llmStats.getWindowEnd())
+                .generatedAt(java.time.Instant.now().toString())
+                .source("admin_metrics_service")
+                .environment(activeEnv)
                 .lastUpdatedAt(java.time.Instant.now().toString())
                 .cached(false)
                 .overview(overview)

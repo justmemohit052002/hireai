@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SystemHealthDetailsDto {
     private long backendUptimeSeconds;
+    private Long engineUptimeSeconds;
+    private String environment;
     private String backendStartedAt;
     private String databaseConnectivity; // UP / DOWN
     private String aiEngineReachability; // HEALTHY / DEGRADED / OFFLINE
@@ -20,6 +22,9 @@ public class SystemHealthDetailsDto {
     private String lastSuccessfulPoll;
     private Integer consecutiveFailures;
     private boolean emailSmtpConfigured;
+    private String emailMode;
+    private String emailLastSuccessfulSend;
+    private Long emailRecentFailureCount;
     private String lastHealthPollAt;
     private List<ModuleHealthStateDto> modules;
 }

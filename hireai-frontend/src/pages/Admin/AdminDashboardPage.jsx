@@ -151,9 +151,14 @@ export const AdminDashboardPage = () => {
             <h1 className="text-2xl sm:text-3xl font-bold font-heading text-foreground">
               Admin Ops Center
             </h1>
-            <Badge variant="outline" className="text-xs bg-brand-blue/10 text-brand-blue border-brand-blue/20 font-bold">
-              Production Telemetry
+            <Badge variant="outline" className="text-xs bg-brand-blue/10 text-brand-blue border-brand-blue/20 font-bold uppercase">
+              {(platformMetrics?.environment || 'production')} Telemetry
             </Badge>
+            {platformMetrics?.generatedAt && (
+              <Badge variant="outline" className="text-[10px] bg-slate-500/10 text-muted-foreground border-border font-mono">
+                Updated {formatLastSeen(platformMetrics.generatedAt)}
+              </Badge>
+            )}
             {platformMetrics?.cached && (
               <Badge variant="outline" className="text-[10px] bg-slate-500/10 text-muted-foreground border-border font-mono">
                 Cached Snapshot
@@ -252,7 +257,7 @@ export const AdminDashboardPage = () => {
                 : 'Degraded State'}
             </div>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Uptime: <span className="font-bold text-foreground">{formatDuration(sysHealth.backendUptimeSeconds)}</span> : DB: <span className="font-bold text-emerald-500">{sysHealth.databaseConnectivity || 'UP'}</span>
+              Backend: <span className="font-bold text-foreground">{formatDuration(sysHealth.backendUptimeSeconds)}</span> : Engine: <span className="font-bold text-foreground">{sysHealth.engineUptimeSeconds ? formatDuration(sysHealth.engineUptimeSeconds) : (overallStatus === 'HEALTHY' ? 'UP' : 'DOWN')}</span> : DB: <span className="font-bold text-emerald-500">{sysHealth.databaseConnectivity || 'UP'}</span>
             </p>
           </div>
         </Card>
@@ -285,10 +290,10 @@ export const AdminDashboardPage = () => {
           </div>
           <div>
             <div className="text-2xl font-black text-foreground">
-              {overview.totalJobsPosted ?? 0} Jobs
+              {overview.totalJobs ?? overview.totalJobsPosted ?? 0} Jobs
             </div>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              <span className="font-bold text-emerald-600 dark:text-emerald-400">{overview.openJobs ?? 0} Open</span> : {overview.totalApplications ?? 0} Applications ({overview.avgApplicationsPerJob ?? 0}/job)
+              <span className="font-bold text-emerald-600 dark:text-emerald-400">{overview.openJobs ?? 0} Open</span> : {overview.totalApplications ?? 0} Applications ({overview.avgApplicationsPerOpenJob ?? overview.avgApplicationsPerJob ?? 0} per open job)
             </p>
           </div>
         </Card>
@@ -303,11 +308,22 @@ export const AdminDashboardPage = () => {
           </div>
           <div>
             <div className="text-2xl font-black text-foreground">
-              {aiPerf.callsToday ?? 0} Today
+              {aiPerf.totalCalls ?? 0} Calls ({selectedRange === 'today' ? 'Today' : selectedRange === '7d' ? 'Last 7d' : 'Last 30d'})
             </div>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Avg <span className="font-bold text-foreground">{avgLatency}s</span> (p95: {aiPerf.p95LatencySeconds ?? 0}s) : {aiPerf.successRate ?? 100}% Success
+              {(aiPerf.totalCalls ?? 0) > 0 ? (
+                <>
+                  Avg <span className="font-bold text-foreground">{aiPerf.avgLatencySeconds ?? 0}s</span> (p95: {aiPerf.p95LatencySeconds ?? 0}s) : {aiPerf.successRate ?? 0}% Success
+                </>
+              ) : (
+                <span className="text-muted-foreground italic">Avg - : No calls in this window</span>
+              )}
             </p>
+            {(aiPerf.totalCalls ?? 0) > 0 && (aiPerf.avgLatencySeconds ?? 0) > 30 && (
+              <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 font-medium">
+                High latency: local Ollama inference / model warmup
+              </p>
+            )}
           </div>
         </Card>
       </div>
@@ -334,10 +350,11 @@ export const AdminDashboardPage = () => {
             data={timeSeries}
             series={[
               { key: 'apiRequests', label: 'API Requests', color: '#004499' },
-              { key: 'apiErrors', label: 'API Errors', color: '#EF4444' },
+              { key: 'serverErrors', label: '5xx Server Errors', color: '#EF4444' },
+              { key: 'clientErrors', label: '4xx Client Errors', color: '#F59E0B' },
             ]}
             title="Backend Traffic & Error Volume"
-            subtitle={`API throughput tracked via in-memory metrics`}
+            subtitle="API throughput tracked via in-memory metrics and daily store"
             height={200}
           />
         </Card>
@@ -441,28 +458,42 @@ export const AdminDashboardPage = () => {
             </div>
 
             {/* Gemini Free Tier Daily Quota Meter */}
-            <div className="p-4 rounded-2xl bg-surface-2/70 border border-white/10 space-y-2.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-foreground">Gemini Free-Tier Quota</span>
-                <span className="font-mono text-[11px] text-muted-foreground">
-                  {quota.usedToday ?? 0} / {quota.dailyLimit ?? 250} Daily Req
-                </span>
-              </div>
-              
-              <div className="h-2.5 w-full rounded-full bg-muted/60 overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    (quota.percentageUsed ?? 0) > 80 ? 'bg-rose-500' : (quota.percentageUsed ?? 0) > 50 ? 'bg-amber-500' : 'bg-brand-blue'
-                  }`}
-                  style={{ width: `${Math.min(100, Math.max(2, quota.percentageUsed ?? 0))}%` }}
-                />
-              </div>
+            {quota && (quota.configured === true || quota.isConfigured === true || sysHealth?.providers?.gemini?.isConfigured) ? (
+              <div className="p-4 rounded-2xl bg-surface-2/70 border border-white/10 space-y-2.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-foreground">Gemini Free-Tier Quota</span>
+                  <span className="font-mono text-[11px] text-muted-foreground">
+                    {quota.usedToday ?? 0} / {quota.dailyLimit ?? 250} Daily Req
+                  </span>
+                </div>
+                
+                <div className="h-2.5 w-full rounded-full bg-muted/60 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      (quota.percentageUsed ?? 0) > 80 ? 'bg-rose-500' : (quota.percentageUsed ?? 0) > 50 ? 'bg-amber-500' : 'bg-brand-blue'
+                    }`}
+                    style={{ width: `${Math.min(100, Math.max(2, quota.percentageUsed ?? 0))}%` }}
+                  />
+                </div>
 
-              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                <span>{(quota.remainingToday ?? Math.max(0, 250 - (quota.usedToday ?? 0)))} requests remaining</span>
-                <span>{quota.percentageUsed ?? 0}% used</span>
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                  <span>{(quota.remainingToday ?? Math.max(0, 250 - (quota.usedToday ?? 0)))} requests remaining</span>
+                  <span>{quota.percentageUsed ?? 0}% used</span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-4 rounded-2xl bg-surface-2/70 border border-white/10 space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-foreground">Gemini Cloud Quota</span>
+                  <Badge variant="outline" className="text-[10px] bg-slate-500/10 text-muted-foreground border-border">
+                    Not Configured
+                  </Badge>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Gemini API key is not set. Inference is routed exclusively to local Ollama.
+                </p>
+              </div>
+            )}
 
             {/* System Health Indicators */}
             <div className="space-y-2 pt-2 border-t border-border/40">
@@ -494,11 +525,11 @@ export const AdminDashboardPage = () => {
                 </span>
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
                   {appPerf.endpointGroups.map((eg) => (
-                    <div key={eg.group} className="flex items-center justify-between text-[11px] p-2 rounded-lg bg-surface-2/60">
-                      <span className="font-semibold text-foreground uppercase text-[10px]">{eg.group}</span>
+                    <div key={eg.group || eg.groupName} className="flex items-center justify-between text-[11px] p-2 rounded-lg bg-surface-2/60">
+                      <span className="font-semibold text-foreground uppercase text-[10px]">{eg.group || eg.groupName}</span>
                       <div className="flex items-center gap-2 font-mono text-[10px] text-muted-foreground">
-                        <span>{eg.avgLatencyMs}ms avg</span>
-                        <span>({eg.totalRequests} req)</span>
+                        <span>{eg.avgLatencyMs ?? eg.avgResponseTimeMs ?? 0}ms avg</span>
+                        <span>({eg.totalRequests ?? eg.requestCount ?? 0} req)</span>
                       </div>
                     </div>
                   ))}

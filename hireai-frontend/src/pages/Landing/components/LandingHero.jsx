@@ -1,234 +1,643 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  UserCheck, 
-  UserPlus, 
-  Briefcase, 
-  Sparkles, 
-  BadgeCheck, 
-  Clock, 
-  ArrowRight,
-  Search,
-  CheckCircle2,
-  Building2,
-  Code2
-} from 'lucide-react';
-import { Button } from '@/components/ui/Button';
 import { ROUTES } from '@/constants';
+// CHANGE IMAGE PATH HERE (or swap out with any student visual asset)
+import heroStudentImg from '@/assets/images/girl.png';
+import './LandingHero.css';
 
+/**
+ * Production-Ready Hero Section Component
+ * Fully responsive, keyboard accessible, viewport-budgeted, hardware-accelerated animations
+ */
 export const LandingHero = () => {
-  return (
-    <section className="relative pt-6 pb-12 sm:pt-10 sm:pb-16 lg:pt-12 lg:pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      {/* Background Subtle Ambient Aura (Clean, non-distracting) */}
-      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-96 bg-gradient-to-b from-brand-blue/10 via-transparent to-transparent blur-3xl -z-10" />
+  // Vanilla JavaScript Mouse Parallax clamped to 12px on fine pointer devices
+  useEffect(() => {
+    const heroEl = document.getElementById('hero');
+    const visualWrapper = document.getElementById('hero-visual-wrapper');
+    if (!heroEl || !visualWrapper) return;
 
-      <div className="grid lg:grid-cols-12 gap-10 lg:gap-8 items-center">
-        {/* Left Column: Core Value Proposition & CTAs (6 cols on lg) */}
-        <div className="lg:col-span-6 space-y-6 text-left">
-          {/* Subtle Category Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface border border-border shadow-xs text-xs font-semibold text-foreground">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-brand-blue font-bold">HireAI 2.0</span>
-            <span className="text-border">|</span>
-            <span className="text-muted-foreground flex items-center gap-1">
-              <UserCheck className="w-3.5 h-3.5 text-brand-blue" />
-              Automated Technical Recruitment Platform
-            </span>
+    // Check accessibility & device pointer type
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const isFinePointer = window.matchMedia('(pointer: fine)');
+
+    // Bail out immediately on touch devices or if user prefers reduced motion
+    if (prefersReducedMotion.matches || !isFinePointer.matches) {
+      return;
+    }
+
+    const logoCards = visualWrapper.querySelectorAll('.hero-logo-card[data-parallax]');
+    if (!logoCards || logoCards.length === 0) return;
+
+    const items = [];
+    for (let i = 0; i < logoCards.length; i++) {
+      const card = logoCards[i];
+      const depth = parseFloat(card.getAttribute('data-parallax')) || 1.0;
+      items.push({
+        el: card,
+        depth: depth,
+        currentX: 0,
+        currentY: 0,
+        targetX: 0,
+        targetY: 0
+      });
+    }
+
+    let isHovering = false;
+    let rafId = null;
+    const MAX_OFFSET = 12;    // Clamped movement limit in px as requested
+    const LERP_FACTOR = 0.08; // Smooth spring dampening
+
+    const updateParallax = () => {
+      let hasSignificantDelta = false;
+
+      for (let j = 0; j < items.length; j++) {
+        const item = items[j];
+
+        item.currentX += (item.targetX - item.currentX) * LERP_FACTOR;
+        item.currentY += (item.targetY - item.currentY) * LERP_FACTOR;
+
+        const dx = item.targetX - item.currentX;
+        const dy = item.targetY - item.currentY;
+        if (Math.abs(dx) > 0.05 || Math.abs(dy) > 0.05) {
+          hasSignificantDelta = true;
+        }
+
+        // Apply via independent CSS translate variables (does not override floating keyframe loop)
+        item.el.style.setProperty('--hero-px', `${item.currentX.toFixed(2)}px`);
+        item.el.style.setProperty('--hero-py', `${item.currentY.toFixed(2)}px`);
+      }
+
+      if (isHovering || hasSignificantDelta) {
+        rafId = requestAnimationFrame(updateParallax);
+      } else {
+        rafId = null;
+      }
+    };
+
+    const onMouseMove = (e) => {
+      const rect = heroEl.getBoundingClientRect();
+      let relX = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
+      let relY = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
+
+      relX = Math.max(-1, Math.min(1, relX));
+      relY = Math.max(-1, Math.min(1, relY));
+
+      for (let k = 0; k < items.length; k++) {
+        const item = items[k];
+        const targetX = relX * MAX_OFFSET * item.depth;
+        const targetY = relY * MAX_OFFSET * item.depth;
+
+        item.targetX = Math.max(-MAX_OFFSET, Math.min(MAX_OFFSET, targetX));
+        item.targetY = Math.max(-MAX_OFFSET, Math.min(MAX_OFFSET, targetY));
+      }
+
+      if (!isHovering) {
+        isHovering = true;
+        if (!rafId) {
+          rafId = requestAnimationFrame(updateParallax);
+        }
+      }
+    };
+
+    const onMouseLeave = () => {
+      isHovering = false;
+      for (let m = 0; m < items.length; m++) {
+        items[m].targetX = 0;
+        items[m].targetY = 0;
+      }
+      if (!rafId) {
+        rafId = requestAnimationFrame(updateParallax);
+      }
+    };
+
+    heroEl.addEventListener('mousemove', onMouseMove, { passive: true });
+    heroEl.addEventListener('mouseleave', onMouseLeave, { passive: true });
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      heroEl.removeEventListener('mousemove', onMouseMove);
+      heroEl.removeEventListener('mouseleave', onMouseLeave);
+      for (let n = 0; n < items.length; n++) {
+        items[n].el.style.removeProperty('--hero-px');
+        items[n].el.style.removeProperty('--hero-py');
+      }
+    };
+  }, []);
+
+  return (
+    <section className="hero-section" id="hero" aria-label="Hero Introduction">
+      <div className="hero-container">
+        {/* ─────────────────────────────────────────────────────────────
+             ROOT CAUSE 5: LEFT COLUMN: Headings, 3-Line Title, CTAs & Proof
+        ───────────────────────────────────────────────────────────── */}
+        <div className="hero-content">
+          {/* Eyebrow Tag with yellow accent dot matching navbar */}
+          <div className="hero-eyebrow">
+            <span className="hero-eyebrow-dot" aria-hidden="true" />
+            {/* EDIT EYEBROW TEXT HERE */}
+            <span>Next-Gen Technical Career Platform</span>
           </div>
 
-          {/* Clean, Human, Purpose-Driven Heading */}
-          <h1 className="text-3xl sm:text-5xl lg:text-5.5xl font-extrabold font-heading text-foreground tracking-tight leading-[1.12]">
-            Hire Exceptional Engineers.{' '}
-            <span className="text-brand-blue">
-              In Days, Not Months.
+          {/* Main Headline (Strictly 3 Lines as requested) */}
+          {/* EDIT HEADLINE TEXT HERE */}
+          <h1 className="hero-title">
+            Launch Your Dream
+            <br />
+            Career With
+            <br />
+            <span className="hero-title-highlight">
+              Proven Tech Skills
+              <span className="hero-title-underline" aria-hidden="true" />
             </span>
           </h1>
 
-          {/* Crisp, Direct Subtitle */}
-          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed font-sans max-w-xl">
-            HireAI eliminates recruiter guesswork with automated resume parsing, transparent 0-100% deterministic ATS scoring, and real-time candidate skill verification.
+          {/* Supporting Text */}
+          {/* EDIT SUPPORTING TEXT HERE */}
+          <p className="hero-subtitle">
+            Connect directly with top tier tech companies. Showcase verified projects, bypass
+            traditional recruiter filters, and land high-growth software engineering roles faster.
           </p>
 
-          {/* Action CTAs */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2">
-            <Link to={ROUTES.SIGNUP} className="w-full sm:w-auto">
-              <Button
-                size="lg"
-                variant="gradient"
-                className="w-full sm:w-auto font-bold px-7 py-3.5 rounded-xl text-base shadow-md hover:shadow-lg transition flex items-center justify-center gap-2"
+          {/* Action Buttons: Red Primary & Navy Outline Secondary */}
+          <div className="hero-actions">
+            {/* Primary CTA: Change link & label as needed */}
+            <Link to={ROUTES.SIGNUP} className="hero-btn hero-btn-primary" id="hero-btn-primary">
+              <span>Get Started</span>
+              <svg
+                className="hero-btn-icon"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
               >
-                <UserPlus className="w-4 h-4" />
-                <span>Start Hiring Candidates</span>
-                <ArrowRight className="w-4 h-4" />
-              </Button>
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
             </Link>
 
-            <Link to={ROUTES.CANDIDATE_JOBS} className="w-full sm:w-auto">
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full sm:w-auto border-border hover:bg-muted/50 font-semibold px-6 py-3.5 rounded-xl text-base transition flex items-center justify-center gap-2"
+            {/* Secondary CTA: White with Navy Border */}
+            <Link
+              to={ROUTES.CANDIDATE_JOBS}
+              className="hero-btn hero-btn-secondary"
+              id="hero-btn-secondary"
+            >
+              <svg
+                className="hero-btn-icon"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
               >
-                <Briefcase className="w-4 h-4 text-brand-blue" />
-                <span>Browse Technical Roles</span>
-              </Button>
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+              </svg>
+              <span>Explore Companies</span>
             </Link>
           </div>
 
-          {/* Architecture Pillars Micro-Grid */}
-          <div className="pt-6 border-t border-border/80 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-            <div>
-              <div className="text-sm sm:text-base font-bold font-heading text-foreground">
-                Deterministic
-              </div>
-              <div className="text-xs text-muted-foreground font-medium mt-0.5">
-                ATS Scoring Matrix
-              </div>
+          {/* Trust Line: Yellow, Pink & Navy avatars; auto-hidden on short screens (<700px) */}
+          <div className="hero-trust">
+            <div className="hero-trust-avatars" aria-hidden="true">
+              <div className="hero-avatar hero-avatar-1">AR</div>
+              <div className="hero-avatar hero-avatar-2">SK</div>
+              <div className="hero-avatar hero-avatar-3">MN</div>
+              <div className="hero-avatar hero-avatar-4">+</div>
             </div>
-
-            <div>
-              <div className="text-sm sm:text-base font-bold font-heading text-foreground">
-                Sub-Second
+            <div className="hero-trust-text">
+              <div className="hero-trust-stars" aria-hidden="true">
+                <svg viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                <svg viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                <svg viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                <svg viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                <svg viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
               </div>
-              <div className="text-xs text-muted-foreground font-medium mt-0.5">
-                PDF & DOCX Parsing
-              </div>
-            </div>
-
-            <div>
-              <div className="text-sm sm:text-base font-bold font-heading text-foreground">
-                Real-Time
-              </div>
-              <div className="text-xs text-muted-foreground font-medium mt-0.5">
-                Pipeline Progression
-              </div>
+              <p className="hero-trust-label">
+                <strong>Join 10,000+ learners</strong> hired at leading tech teams
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Authentic Interactive SaaS Product Preview (6 cols on lg) */}
-        <div className="lg:col-span-6 relative">
-          {/* Main App Preview Window */}
-          <div className="rounded-2xl bg-surface border border-border shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl">
-            {/* Window macOS Top Bar */}
-            <div className="px-4 py-3 bg-muted/40 border-b border-border flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-red-400/80 inline-block" />
-                <span className="w-3 h-3 rounded-full bg-amber-400/80 inline-block" />
-                <span className="w-3 h-3 rounded-full bg-emerald-400/80 inline-block" />
-                <span className="ml-2 text-xs font-mono font-medium text-muted-foreground">
-                  hireai.app / recruiter-pipeline
-                </span>
+        {/* ─────────────────────────────────────────────────────────────
+             ROOT CAUSE 2 & 3: RIGHT COLUMN: Grounded Visual & Symmetric Ellipse Arc
+        ───────────────────────────────────────────────────────────── */}
+        <div className="hero-visual-column">
+          <div className="hero-visual-wrapper" id="hero-visual-wrapper">
+            {/* Single thin dashed elliptical SVG arc: cx=50%, cy=34%, rx=40%, ry=26% */}
+            <svg
+              className="hero-ellipse-arc"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <path d="M 10 34 A 40 26 0 0 1 90 34" className="hero-ellipse-path" />
+            </svg>
+
+            {/* Student Image: Uses exactly 86% height; top 14% is headroom for upper icons */}
+            <img
+              src={heroStudentImg}
+              alt="Student using a laptop to explore job opportunities"
+              className="hero-student-img"
+              width={1024}
+              height={1318}
+              loading="eager"
+              fetchPriority="high"
+            />
+
+            {/* ─────────────────────────────────────────────────────────
+                 7 SYMMETRIC COMPANY LOGOS ON THE UPPER ELLIPTICAL ARC
+                 Positions:
+                 Logo 1 (170°): left 10.6%, top 29.5%, medium (hide-mobile)
+                 Logo 2 (142°): left 18.5%, top 18.0%, large
+                 Logo 3 (114°): left 33.7%, top 10.2%, small (hide-1280, hide-mobile)
+                 Logo 4 (90°):  left 50.0%, top 8.0%,  large
+                 Logo 5 (66°):  left 66.3%, top 10.2%, small (hide-1280, hide-mobile)
+                 Logo 6 (38°):  left 81.5%, top 18.0%, large
+                 Logo 7 (10°):  left 89.4%, top 29.5%, medium
+            ───────────────────────────────────────────────────────── */}
+
+            {/* LOGO 1: Medium at 170° (Left: 10.6%, Top: 29.5%) */}
+            <a
+              href="#company-1"
+              className="hero-logo-card hero-logo--md hero-logo-1 hero-logo-hide-mobile"
+              data-parallax="0.8"
+              aria-label="Company 1: 140 open engineering roles"
+            >
+              <div className="hero-logo-float hero-float-1">
+                <svg
+                  className="hero-logo-icon"
+                  viewBox="0 0 32 32"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <rect width="32" height="32" rx="7" fill="#FFEDED" />
+                  <path
+                    d="M16 7L24 11.5V20.5L16 25L8 20.5V11.5L16 7Z"
+                    stroke="#E31E24"
+                    strokeWidth="2.2"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx="16" cy="16" r="3" fill="#E31E24" />
+                </svg>
               </div>
-              <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping inline-block" />
-                LIVE ATS
+              <span className="hero-tooltip hero-tooltip--right" role="tooltip">
+                <strong>140 openings</strong> &bull;{' '}
+                <span className="hero-tooltip-tag">Apply now</span>
               </span>
+            </a>
+
+            {/* LOGO 2: Large at 142° (Left: 18.5%, Top: 18.0%) */}
+            <a
+              href="#company-2"
+              className="hero-logo-card hero-logo--lg hero-logo-2"
+              data-parallax="1.2"
+              aria-label="Company 2: 95 open engineering roles"
+            >
+              <div className="hero-logo-float hero-float-2">
+                <svg
+                  className="hero-logo-icon"
+                  viewBox="0 0 32 32"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <rect width="32" height="32" rx="8" fill="#FEFDE8" />
+                  <path
+                    d="M9 19C7.34 19 6 17.66 6 16C6 14.47 7.14 13.2 8.62 13.03C9.28 10.15 11.88 8 15 8C18.66 8 21.66 10.74 21.97 14.34C23.69 14.63 25 16.15 25 18C25 20.21 23.21 22 21 22H10"
+                    stroke="#112358"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <span className="hero-tooltip hero-tooltip--right" role="tooltip">
+                <strong>95 openings</strong> &bull;{' '}
+                <span className="hero-tooltip-tag">Apply now</span>
+              </span>
+            </a>
+
+            {/* LOGO 3: Small at 114° (Left: 33.7%, Top: 10.2%) */}
+            <a
+              href="#company-3"
+              className="hero-logo-card hero-logo--sm hero-logo-3 hero-logo-hide-1280 hero-logo-hide-mobile"
+              data-parallax="0.5"
+              aria-label="Company 3: 210 open engineering roles"
+            >
+              <div className="hero-logo-float hero-float-3">
+                <svg
+                  className="hero-logo-icon"
+                  viewBox="0 0 32 32"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <rect width="32" height="32" rx="6" fill="#EDF4FF" />
+                  <path
+                    d="M11 12C8.79 12 7 13.79 7 16C7 18.21 8.79 20 11 20C13.5 20 15 17 17 15C19 13 20.5 12 22 12C24.21 12 26 13.79 26 16C26 18.21 24.21 20 22 20C19.5 20 18 17 16 15"
+                    stroke="#112358"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+              <span className="hero-tooltip hero-tooltip--bottom" role="tooltip">
+                <strong>210 openings</strong> &bull;{' '}
+                <span className="hero-tooltip-tag">Apply now</span>
+              </span>
+            </a>
+
+            {/* LOGO 4: Large at 90° (Left: 50.0%, Top: 8.0%) */}
+            <a
+              href="#company-4"
+              className="hero-logo-card hero-logo--lg hero-logo-4"
+              data-parallax="1.2"
+              aria-label="Company 4: 175 open engineering roles"
+            >
+              <div className="hero-logo-float hero-float-4">
+                <svg
+                  className="hero-logo-icon"
+                  viewBox="0 0 32 32"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <rect width="32" height="32" rx="8" fill="#FFEDED" />
+                  <path
+                    d="M16 6L25 11V21L16 26L7 21V11L16 6Z"
+                    stroke="#E31E24"
+                    strokeWidth="2.2"
+                    strokeLinejoin="round"
+                  />
+                  <path d="M16 16L25 11M16 16L7 11M16 16V26" stroke="#E31E24" strokeWidth="2.2" />
+                </svg>
+              </div>
+              <span className="hero-tooltip hero-tooltip--bottom" role="tooltip">
+                <strong>175 openings</strong> &bull;{' '}
+                <span className="hero-tooltip-tag">Apply now</span>
+              </span>
+            </a>
+
+            {/* LOGO 5: Small at 66° (Left: 66.3%, Top: 10.2%) */}
+            <a
+              href="#company-5"
+              className="hero-logo-card hero-logo--sm hero-logo-5 hero-logo-hide-1280 hero-logo-hide-mobile"
+              data-parallax="0.5"
+              aria-label="Company 5: 62 open engineering roles"
+            >
+              <div className="hero-logo-float hero-float-5">
+                <svg
+                  className="hero-logo-icon"
+                  viewBox="0 0 32 32"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <rect width="32" height="32" rx="6" fill="#FEFDE8" />
+                  <polygon
+                    points="16,6 19.5,13 26,16 19.5,19 16,26 12.5,19 6,16 12.5,13"
+                    fill="#112358"
+                  />
+                </svg>
+              </div>
+              <span className="hero-tooltip hero-tooltip--bottom" role="tooltip">
+                <strong>62 openings</strong> &bull;{' '}
+                <span className="hero-tooltip-tag">Apply now</span>
+              </span>
+            </a>
+
+            {/* LOGO 6: Large at 38° (Left: 81.5%, Top: 18.0%) */}
+            <a
+              href="#company-6"
+              className="hero-logo-card hero-logo--lg hero-logo-6"
+              data-parallax="1.2"
+              aria-label="Company 6: 80 open engineering roles"
+            >
+              <div className="hero-logo-float hero-float-6">
+                <svg
+                  className="hero-logo-icon"
+                  viewBox="0 0 32 32"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <rect width="32" height="32" rx="8" fill="#EDF4FF" />
+                  <path
+                    d="M16 6L24 10V16C24 21 20.5 24.5 16 26C11.5 24.5 8 21 8 16V10L16 6Z"
+                    stroke="#112358"
+                    strokeWidth="2.2"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M13 16L15.5 18.5L20 13.5"
+                    stroke="#112358"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <span className="hero-tooltip hero-tooltip--left" role="tooltip">
+                <strong>80 openings</strong> &bull;{' '}
+                <span className="hero-tooltip-tag">Apply now</span>
+              </span>
+            </a>
+
+            {/* LOGO 7: Medium at 10° (Left: 89.4%, Top: 29.5%) */}
+            <a
+              href="#company-7"
+              className="hero-logo-card hero-logo--md hero-logo-7"
+              data-parallax="0.8"
+              aria-label="Company 7: 48 open engineering roles"
+            >
+              <div className="hero-logo-float hero-float-7">
+                <svg
+                  className="hero-logo-icon"
+                  viewBox="0 0 32 32"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <rect width="32" height="32" rx="7" fill="#FFEDED" />
+                  <path
+                    d="M6 16H10L13 9L18 23L21 16H26"
+                    stroke="#E31E24"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
+              <span className="hero-tooltip hero-tooltip--left" role="tooltip">
+                <strong>48 openings</strong> &bull;{' '}
+                <span className="hero-tooltip-tag">Apply now</span>
+              </span>
+            </a>
+
+            {/* ─────────────────────────────────────────────────────────
+                 ROOT CAUSE 4: NOTIFICATION CARDS INSIDE WRAPPER
+                 Notice 1: left 2%, bottom 24%
+                 Notice 2: right 2%, bottom 36%
+                 Hidden when screen height < 640px
+            ───────────────────────────────────────────────────────── */}
+            <div className="hero-notification-card hero-notice-1" aria-hidden="true">
+              <div className="hero-notice-icon hero-notice-icon--pink">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </div>
+              <div className="hero-notice-content">
+                <span className="hero-notice-title">Profile Viewed</span>
+                <span className="hero-notice-desc">Recruiter from Stripe &bull; 2m ago</span>
+              </div>
             </div>
 
-            {/* In-App Live Pipeline Content */}
-            <div className="p-4 sm:p-5 space-y-3.5 bg-background/50">
-              {/* Filter / Search Bar */}
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-surface border border-border text-xs text-muted-foreground">
-                <Search className="w-3.5 h-3.5 text-brand-blue" />
-                <span className="truncate">Filtered by: <strong className="text-foreground">React, Java, Spring Boot, AWS</strong></span>
-                <span className="ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted">14 Matches</span>
+            <div className="hero-notification-card hero-notice-2" aria-hidden="true">
+              <div className="hero-notice-icon hero-notice-icon--yellow">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
               </div>
-
-              {/* Candidate Card 1: Top Candidate Match */}
-              <div className="p-4 rounded-xl bg-surface border border-brand-blue/30 shadow-xs space-y-3 relative group">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-navy to-brand-blue text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
-                      MS
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-bold text-sm text-foreground">Mohit Singh Chouhan</h4>
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                          <BadgeCheck className="w-3 h-3" /> Verified
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Senior Full-Stack Engineer | Ex-Vionsys
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="sm:text-right shrink-0">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-brand-blue/15 text-brand-blue font-mono font-bold text-xs">
-                      <CheckCircle2 className="w-3 h-3" /> 96% Match
-                    </span>
-                  </div>
-                </div>
-
-                {/* Skills Row */}
-                <div className="flex flex-wrap gap-1.5">
-                  {['React', 'Java', 'Spring Boot', 'PostgreSQL', 'Docker'].map((sk) => (
-                    <span
-                      key={sk}
-                      className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-muted/60 text-foreground border border-border/50"
-                    >
-                      {sk}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Recruiter Action */}
-                <div className="pt-2 border-t border-border/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
-                  <span className="text-muted-foreground flex items-center gap-1 text-[11px]">
-                    <Clock className="w-3 h-3 text-muted-foreground/70" /> Applied Sep 28 | Under Review
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="px-2.5 py-1 rounded-lg bg-brand-navy text-white text-[11px] font-semibold flex items-center gap-1">
-                      <UserCheck className="w-3 h-3" /> Shortlist
-                    </span>
-                  </div>
-                </div>
+              <div className="hero-notice-content">
+                <span className="hero-notice-title">Offer Received</span>
+                <span className="hero-notice-desc">Frontend Engineer &bull; $125k</span>
               </div>
-
-              {/* Candidate Card 2: Micro Card Preview */}
-              <div className="p-3.5 rounded-xl bg-surface border border-border/70 flex items-center justify-between gap-3 text-xs opacity-90">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-muted text-muted-foreground font-bold flex items-center justify-center text-xs shrink-0">
-                    AR
-                  </div>
-                  <div>
-                    <div className="font-bold text-foreground">Ananya Roy</div>
-                    <div className="text-[11px] text-muted-foreground">Distributed Systems • 6 yrs exp</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-xs text-brand-blue">94% ATS</span>
-                  <span className="px-2 py-0.5 rounded-md bg-muted text-muted-foreground text-[10px]">
-                    Screened
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Status Ticker */}
-            <div className="px-4 py-2.5 bg-muted/30 border-t border-border flex items-center justify-between text-[11px] font-mono text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <Code2 className="w-3.5 h-3.5 text-brand-blue" />
-                Automatic Skill Graph Extraction
-              </span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                ● 1.2s Response Time
-              </span>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Floating Live Hiring Pill (Desktop only, clean positioning) */}
-          <div className="hidden sm:flex absolute -bottom-4 -left-4 bg-surface border border-border shadow-lg rounded-xl p-3 items-center gap-3 backdrop-blur-md">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-foreground">Offer Accepted in 4 Days</div>
-              <div className="text-[10px] text-muted-foreground">Average candidate time-to-hire</div>
-            </div>
+      {/* ─────────────────────────────────────────────────────────────────
+           MOBILE TICKER STRIP (< 768px only)
+           Displays partner companies in a smooth horizontal scroll track
+      ───────────────────────────────────────────────────────────────── */}
+      <div className="hero-mobile-ticker" aria-label="Partner Companies">
+        <div className="hero-mobile-ticker-title">Our Learners Work At</div>
+        <div
+          className="hero-mobile-ticker-track"
+          tabIndex={0}
+          role="region"
+          aria-label="Partner companies list"
+        >
+          <div className="hero-mobile-ticker-card">
+            <svg viewBox="0 0 32 32" fill="none">
+              <rect width="32" height="32" rx="7" fill="#FFEDED" />
+              <path
+                d="M16 7L24 11.5V20.5L16 25L8 20.5V11.5L16 7Z"
+                stroke="#E31E24"
+                strokeWidth="2.2"
+              />
+              <circle cx="16" cy="16" r="3" fill="#E31E24" />
+            </svg>
+            <span>Company 1</span>
+          </div>
+          <div className="hero-mobile-ticker-card">
+            <svg viewBox="0 0 32 32" fill="none">
+              <rect width="32" height="32" rx="7" fill="#FEFDE8" />
+              <path
+                d="M9 19C7.34 19 6 17.66 6 16C6 14.47 7.14 13.2 8.62 13.03C9.28 10.15 11.88 8 15 8C18.66 8 21.66 10.74 21.97 14.34C23.69 14.63 25 16.15 25 18C25 20.21 23.21 22 21 22H10"
+                stroke="#112358"
+                strokeWidth="2.2"
+              />
+            </svg>
+            <span>Company 2</span>
+          </div>
+          <div className="hero-mobile-ticker-card">
+            <svg viewBox="0 0 32 32" fill="none">
+              <rect width="32" height="32" rx="7" fill="#EDF4FF" />
+              <path
+                d="M11 12C8.79 12 7 13.79 7 16C7 18.21 8.79 20 11 20C13.5 20 15 17 17 15C19 13 20.5 12 22 12C24.21 12 26 13.79 26 16C26 18.21 24.21 20 22 20C19.5 20 18 17 16 15"
+                stroke="#112358"
+                strokeWidth="2.2"
+              />
+            </svg>
+            <span>Company 3</span>
+          </div>
+          <div className="hero-mobile-ticker-card">
+            <svg viewBox="0 0 32 32" fill="none">
+              <rect width="32" height="32" rx="7" fill="#FFEDED" />
+              <path
+                d="M16 6L25 11V21L16 26L7 21V11L16 6Z"
+                stroke="#E31E24"
+                strokeWidth="2.2"
+              />
+              <path d="M16 16L25 11M16 16L7 11M16 16V26" stroke="#E31E24" strokeWidth="2.2" />
+            </svg>
+            <span>Company 4</span>
+          </div>
+          <div className="hero-mobile-ticker-card">
+            <svg viewBox="0 0 32 32" fill="none">
+              <rect width="32" height="32" rx="7" fill="#FEFDE8" />
+              <polygon
+                points="16,6 19.5,13 26,16 19.5,19 16,26 12.5,19 6,16 12.5,13"
+                fill="#112358"
+              />
+            </svg>
+            <span>Company 5</span>
+          </div>
+          <div className="hero-mobile-ticker-card">
+            <svg viewBox="0 0 32 32" fill="none">
+              <rect width="32" height="32" rx="7" fill="#EDF4FF" />
+              <path
+                d="M16 6L24 10V16C24 21 20.5 24.5 16 26C11.5 24.5 8 21 8 16V10L16 6Z"
+                stroke="#112358"
+                strokeWidth="2.2"
+              />
+              <path
+                d="M13 16L15.5 18.5L20 13.5"
+                stroke="#112358"
+                strokeWidth="2.2"
+              />
+            </svg>
+            <span>Company 6</span>
+          </div>
+          <div className="hero-mobile-ticker-card">
+            <svg viewBox="0 0 32 32" fill="none">
+              <rect width="32" height="32" rx="7" fill="#FFEDED" />
+              <path
+                d="M6 16H10L13 9L18 23L21 16H26"
+                stroke="#E31E24"
+                strokeWidth="2.2"
+              />
+            </svg>
+            <span>Company 7</span>
           </div>
         </div>
       </div>

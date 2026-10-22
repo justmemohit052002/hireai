@@ -40,15 +40,25 @@ public class ProfilePhotoStorageService {
     private final Path photoUploadPath;
     private final FileSecurityValidator fileSecurityValidator;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public ProfilePhotoStorageService(
-            @Value("${photo.upload-dir:uploads/profile-photos}") String photoUploadDir,
+            StorageProperties storageProperties,
+            FileSecurityValidator fileSecurityValidator) {
+        this.fileSecurityValidator = fileSecurityValidator;
+        this.photoUploadPath = storageProperties.getPhotoUploadPath();
+    }
+
+    /**
+     * Backward-compatible convenience constructor for testing.
+     */
+    public ProfilePhotoStorageService(
+            String photoUploadDir,
             FileSecurityValidator fileSecurityValidator) {
         this.fileSecurityValidator = fileSecurityValidator;
         this.photoUploadPath = Paths.get(photoUploadDir).toAbsolutePath().normalize();
 
         try {
             Files.createDirectories(this.photoUploadPath);
-            log.info("Initialized secure profile photo storage directory at: {}", this.photoUploadPath);
         } catch (IOException ex) {
             throw new FileStorageException("Could not initialize photo upload directory: " + this.photoUploadPath, ex);
         }

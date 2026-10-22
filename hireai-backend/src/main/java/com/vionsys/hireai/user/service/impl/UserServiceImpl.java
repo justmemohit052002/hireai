@@ -184,19 +184,28 @@ public class UserServiceImpl implements UserService {
         refreshTokenRepository.revokeAllUserTokens(user);
 
         // Dispatch security notification to the user
-        try {
-            boolean isRecruiter = user.getRole() != null && user.getRole().getName() != null &&
-                    user.getRole().getName().name().contains("RECRUITER");
-            notificationService.createAndSendNotification(
-                    user,
-                    "Security Alert: Password Changed",
-                    "Your HireAI account password was recently updated. If you did not make this change, please contact support immediately.",
-                    NotificationType.SYSTEM,
-                    isRecruiter ? "/recruiter/settings" : "/candidate/settings"
-            );
-        } catch (Exception ex) {
-            log.warn("Failed to dispatch password change notification: {}", ex.getMessage());
-        }
+        final User finalUser = user;
+        executeAfterCommit(() -> {
+            try {
+                emailService.sendPasswordChangedEmail(finalUser);
+            } catch (Exception ex) {
+                log.warn("Failed to dispatch password changed email: {}", ex.getMessage());
+            }
+
+            try {
+                boolean isRecruiter = finalUser.getRole() != null && finalUser.getRole().getName() != null &&
+                        finalUser.getRole().getName().name().contains("RECRUITER");
+                notificationService.createAndSendNotification(
+                        finalUser,
+                        "Security Alert: Password Changed",
+                        "Your HireAI account password was recently updated. If you did not make this change, please contact support immediately.",
+                        NotificationType.SYSTEM,
+                        isRecruiter ? "/recruiter/settings" : "/candidate/settings"
+                );
+            } catch (Exception ex) {
+                log.warn("Failed to dispatch password change notification: {}", ex.getMessage());
+            }
+        });
     }
 
     @Transactional
@@ -249,6 +258,10 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("Account already has a password set. Use Change Password instead.");
         }
 
+        if (request == null || request.getOtp() == null || request.getOtp().isBlank()) {
+            throw new InvalidOtpException("Verification code is required.");
+        }
+
         if (request.getNewPassword() == null || request.getConfirmPassword() == null ||
                 !request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new IllegalArgumentException("New password and confirm password do not match");
@@ -271,16 +284,24 @@ public class UserServiceImpl implements UserService {
         }
 
         if (otpEntity.getAttempts() >= 5) {
+            otpEntity.setUsed(true);
+            emailVerificationOtpRepository.save(otpEntity);
             throw new InvalidOtpException("Too many incorrect attempts. Please request a new verification code.");
         }
 
-        if (!otpEntity.getOtpCode().equals(request.getOtp().trim())) {
+        byte[] expectedBytes = otpEntity.getOtpCode().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] actualBytes = request.getOtp().trim().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        boolean codeMatches = java.security.MessageDigest.isEqual(expectedBytes, actualBytes);
+
+        if (!codeMatches) {
             otpEntity.setAttempts(otpEntity.getAttempts() + 1);
-            emailVerificationOtpRepository.save(otpEntity);
             int remaining = 5 - otpEntity.getAttempts();
             if (remaining <= 0) {
+                otpEntity.setUsed(true);
+                emailVerificationOtpRepository.save(otpEntity);
                 throw new InvalidOtpException("Too many incorrect attempts. Please request a new verification code.");
             }
+            emailVerificationOtpRepository.save(otpEntity);
             throw new InvalidOtpException("Invalid verification code. " + remaining + " attempt(s) remaining.");
         }
 
@@ -498,7 +519,7 @@ public class UserServiceImpl implements UserService {
             }
         } else {
             if (request.getOtp() == null || request.getOtp().isBlank()) {
-                throw new IllegalArgumentException("Verification code is required to delete your account.");
+                throw new InvalidOtpException("Verification code is required to delete your account.");
             }
 
             EmailVerificationOtp otpEntity = emailVerificationOtpRepository
@@ -510,16 +531,24 @@ public class UserServiceImpl implements UserService {
             }
 
             if (otpEntity.getAttempts() >= 5) {
+                otpEntity.setUsed(true);
+                emailVerificationOtpRepository.save(otpEntity);
                 throw new InvalidOtpException("Too many incorrect attempts. Please request a new verification code.");
             }
 
-            if (!otpEntity.getOtpCode().equals(request.getOtp().trim())) {
+            byte[] expectedBytes = otpEntity.getOtpCode().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            byte[] actualBytes = request.getOtp().trim().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            boolean codeMatches = java.security.MessageDigest.isEqual(expectedBytes, actualBytes);
+
+            if (!codeMatches) {
                 otpEntity.setAttempts(otpEntity.getAttempts() + 1);
-                emailVerificationOtpRepository.save(otpEntity);
                 int remaining = 5 - otpEntity.getAttempts();
                 if (remaining <= 0) {
+                    otpEntity.setUsed(true);
+                    emailVerificationOtpRepository.save(otpEntity);
                     throw new InvalidOtpException("Too many incorrect attempts. Please request a new verification code.");
                 }
+                emailVerificationOtpRepository.save(otpEntity);
                 throw new InvalidOtpException("Invalid verification code. " + remaining + " attempt(s) remaining.");
             }
 
@@ -649,8 +678,14 @@ public class UserServiceImpl implements UserService {
         log.info("Successfully deleted and anonymized user account: ID={}, OriginalEmail={}",
                 user.getId(), EmailService.maskEmail(originalEmail));
 
-        // 11. Post-commit file cleanups
+        // 11. Post-commit file cleanups & notification
         executeAfterCommit(() -> {
+            try {
+                emailService.sendAccountDeletedEmail(originalEmail, user.getFirstName());
+            } catch (Exception ex) {
+                log.warn("Failed to dispatch account deleted confirmation email: {}", ex.getMessage());
+            }
+
             for (String photoPath : photosToDelete) {
                 try {
                     photoStorageService.deletePhoto(photoPath);

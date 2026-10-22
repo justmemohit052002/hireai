@@ -18,6 +18,18 @@ public class RateLimitProperties {
     private boolean enabled = true;
 
     /**
+     * List of trusted upstream reverse proxy IPs/CIDRs (e.g. 127.0.0.1, 10.0.0.1, ::1).
+     * Default empty = trust none; remote client IP is taken strictly from request.getRemoteAddr().
+     */
+    private java.util.List<String> trustedProxies = new java.util.ArrayList<>();
+
+    /**
+     * Whether to inspect vendor headers (CF-Connecting-IP, X-Real-IP) from trusted proxies.
+     * Default false = inspect standard X-Forwarded-For only.
+     */
+    private boolean enableVendorHeaders = false;
+
+    /**
      * Rate limiting policies for authentication routes (login, register, forgot-password, reset-password).
      */
     private AuthProperties auth = new AuthProperties();
@@ -64,9 +76,15 @@ public class RateLimitProperties {
     @Setter
     public static class AccountProperties {
         /**
-         * Number of failed attempts allowed before exponential backoff is triggered.
+         * Number of failed attempts allowed before exponential backoff is triggered for (account + client IP).
          */
         private int baseAttempts = 5;
+
+        /**
+         * Global failed attempts threshold for an account across all IPs before triggering safety-net lockout.
+         * Default: 20 attempts.
+         */
+        private int globalMaxAttempts = 20;
 
         /**
          * Sliding window duration in seconds for tracking attempts.
