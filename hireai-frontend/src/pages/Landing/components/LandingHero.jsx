@@ -10,7 +10,7 @@ import './LandingHero.css';
  * Fully responsive, keyboard accessible, viewport-budgeted, hardware-accelerated animations
  */
 export const LandingHero = () => {
-  // Vanilla JavaScript Mouse Parallax clamped to 12px on fine pointer devices
+  // High-Performance Vanilla JavaScript Mouse Parallax clamped to 12px on fine pointer devices
   useEffect(() => {
     const heroEl = document.getElementById('hero');
     const visualWrapper = document.getElementById('hero-visual-wrapper');
@@ -38,14 +38,21 @@ export const LandingHero = () => {
         currentX: 0,
         currentY: 0,
         targetX: 0,
-        targetY: 0
+        targetY: 0,
+        lastX: 0,
+        lastY: 0
       });
     }
 
     let isHovering = false;
     let rafId = null;
-    const MAX_OFFSET = 12;    // Clamped movement limit in px as requested
-    const LERP_FACTOR = 0.08; // Smooth spring dampening
+    let cachedRect = null;
+    const MAX_OFFSET = 12;     // Clamped movement limit in px
+    const LERP_FACTOR = 0.075; // Silky-smooth spring dampening
+
+    const updateRect = () => {
+      cachedRect = heroEl.getBoundingClientRect();
+    };
 
     const updateParallax = () => {
       let hasSignificantDelta = false;
@@ -58,26 +65,44 @@ export const LandingHero = () => {
 
         const dx = item.targetX - item.currentX;
         const dy = item.targetY - item.currentY;
-        if (Math.abs(dx) > 0.05 || Math.abs(dy) > 0.05) {
+        if (Math.abs(dx) > 0.02 || Math.abs(dy) > 0.02) {
           hasSignificantDelta = true;
         }
 
-        // Apply via independent CSS translate variables (does not override floating keyframe loop)
-        item.el.style.setProperty('--hero-px', `${item.currentX.toFixed(2)}px`);
-        item.el.style.setProperty('--hero-py', `${item.currentY.toFixed(2)}px`);
+        // Only commit style mutation if value delta exceeds subpixel threshold
+        if (Math.abs(item.currentX - item.lastX) > 0.01 || Math.abs(item.currentY - item.lastY) > 0.01) {
+          item.lastX = item.currentX;
+          item.lastY = item.currentY;
+          item.el.style.setProperty('--hero-px', `${item.currentX.toFixed(2)}px`);
+          item.el.style.setProperty('--hero-py', `${item.currentY.toFixed(2)}px`);
+        }
       }
 
       if (isHovering || hasSignificantDelta) {
         rafId = requestAnimationFrame(updateParallax);
       } else {
+        // Fully settled - clean snap to 0 to avoid idle work
+        for (let k = 0; k < items.length; k++) {
+          const item = items[k];
+          item.currentX = 0;
+          item.currentY = 0;
+          item.lastX = 0;
+          item.lastY = 0;
+          item.el.style.setProperty('--hero-px', '0px');
+          item.el.style.setProperty('--hero-py', '0px');
+        }
         rafId = null;
       }
     };
 
+    const onMouseEnter = () => {
+      updateRect();
+    };
+
     const onMouseMove = (e) => {
-      const rect = heroEl.getBoundingClientRect();
-      let relX = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
-      let relY = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
+      if (!cachedRect) updateRect();
+      let relX = (e.clientX - cachedRect.left - cachedRect.width / 2) / (cachedRect.width / 2);
+      let relY = (e.clientY - cachedRect.top - cachedRect.height / 2) / (cachedRect.height / 2);
 
       relX = Math.max(-1, Math.min(1, relX));
       relY = Math.max(-1, Math.min(1, relY));
@@ -110,13 +135,19 @@ export const LandingHero = () => {
       }
     };
 
+    heroEl.addEventListener('mouseenter', onMouseEnter, { passive: true });
     heroEl.addEventListener('mousemove', onMouseMove, { passive: true });
     heroEl.addEventListener('mouseleave', onMouseLeave, { passive: true });
+    window.addEventListener('resize', updateRect, { passive: true });
+    window.addEventListener('scroll', updateRect, { passive: true });
 
     return () => {
       if (rafId) cancelAnimationFrame(rafId);
+      heroEl.removeEventListener('mouseenter', onMouseEnter);
       heroEl.removeEventListener('mousemove', onMouseMove);
       heroEl.removeEventListener('mouseleave', onMouseLeave);
+      window.removeEventListener('resize', updateRect);
+      window.removeEventListener('scroll', updateRect);
       for (let n = 0; n < items.length; n++) {
         items[n].el.style.removeProperty('--hero-px');
         items[n].el.style.removeProperty('--hero-py');

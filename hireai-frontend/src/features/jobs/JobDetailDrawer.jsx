@@ -29,62 +29,97 @@ export const JobDetailDrawer = ({
   const companyInitial = companyName ? companyName[0].toUpperCase() : 'H';
   const salaryText = formatSalary(job.salary);
 
-  return (
-    <Drawer
-      isOpen={isOpen}
-      onClose={onClose}
-      position="bottom"
-      title={job.title}
-      description={`${companyName} • ${job.location || 'Remote'}`}
-    >
-      {/* Header Info & Badges */}
-      <div className="space-y-4 pb-5 border-b border-border/50">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-brand-navy/10 border border-brand-blue/30 flex items-center justify-center font-bold text-2xl text-brand-blue shrink-0 shadow-sm">
-              {companyInitial}
-            </div>
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold font-heading text-foreground">{job.title}</h2>
-              <p className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-1.5 mt-0.5">
-                <Building2 className="w-4 h-4 text-primary" />
-                <span>{companyName}</span>
-                {job.department && <span>• {job.department}</span>}
-              </p>
-            </div>
+  const headerNode = (
+    <div className="space-y-3.5 pr-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-2xl bg-brand-navy/10 dark:bg-brand-blue/15 border border-brand-blue/30 flex items-center justify-center font-bold text-xl sm:text-2xl text-brand-blue shrink-0 shadow-xs">
+            {companyInitial}
           </div>
-
-          <div className="flex flex-col items-start sm:items-end gap-1 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5 font-mono font-bold text-foreground text-sm bg-surface-2/80 px-3 py-1.5 rounded-xl border border-border/60">
-              <DollarSign className="w-4 h-4 text-primary" />
-              <span>{salaryText}</span>
-            </div>
-            {job.applicationDeadline && (
-              <span className="text-[11px] text-amber-500 font-semibold mt-0.5">
-                Apply before: {job.applicationDeadline}
-              </span>
-            )}
+          <div className="min-w-0">
+            <h2 className="text-xl sm:text-2xl font-bold font-heading text-foreground truncate">{job.title}</h2>
+            <p className="text-xs sm:text-sm font-medium text-muted-foreground flex items-center gap-1.5 mt-0.5">
+              <Building2 className="w-4 h-4 text-brand-blue shrink-0" />
+              <span className="font-semibold text-foreground">{companyName}</span>
+              {job.department && <span>• {job.department}</span>}
+            </p>
           </div>
         </div>
 
-        {/* Quick Badges */}
-        <div className="flex flex-wrap gap-2 pt-1">
-          <Badge variant="default">{getJobTypeLabel(job.type) || job.jobType || 'Full-time'}</Badge>
-          <Badge variant="secondary" className="capitalize">{job.workplaceType || 'Hybrid'}</Badge>
-          <Badge variant="secondary">{getExperienceLevelLabel(job.level) || job.experienceLevel || 'Mid Level'}</Badge>
-          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-surface-2 border border-border/50 text-xs text-muted-foreground">
-            <MapPin className="w-3.5 h-3.5 text-primary" />
-            <span>{job.location || 'Remote'}</span>
+        <div className="flex flex-col items-start sm:items-end gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 font-mono font-bold text-foreground text-sm bg-surface-2 px-3 py-1.5 rounded-xl border border-border">
+            <DollarSign className="w-4 h-4 text-emerald-500" />
+            <span>{salaryText}</span>
           </div>
-          {job.postedAt && (
-            <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-surface-2 border border-border/50 text-xs text-muted-foreground">
-              <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-              <span>{formatRelativeTime(job.postedAt)}</span>
-            </div>
+          {job.applicationDeadline && (
+            <span className="text-[11px] text-amber-500 font-semibold">
+              Apply before: {job.applicationDeadline}
+            </span>
           )}
         </div>
       </div>
 
+      {/* Quick Badges */}
+      <div className="flex flex-wrap items-center gap-2 pt-0.5">
+        <Badge variant="default">{getJobTypeLabel(job.type) || job.jobType || 'Full-time'}</Badge>
+        <Badge variant="secondary" className="capitalize">{job.workplaceType || 'Hybrid'}</Badge>
+        <Badge variant="secondary">{getExperienceLevelLabel(job.level) || job.experienceLevel || 'Mid Level'}</Badge>
+        <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-2 border border-border text-xs text-muted-foreground">
+          <MapPin className="w-3.5 h-3.5 text-brand-blue" />
+          <span>{job.location || 'Remote'}</span>
+        </div>
+        {job.postedAt && (
+          <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-2 border border-border text-xs text-muted-foreground">
+            <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+            <span>{formatRelativeTime(job.postedAt)}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const footerNode = (
+    <div className="w-full flex items-center justify-end gap-3">
+      <Button
+        type="button"
+        variant="outline"
+        size="default"
+        onClick={onClose}
+        className="px-5 font-medium"
+      >
+        Close
+      </Button>
+      {isPaused ? (
+        <Button disabled variant="outline" size="default" className="cursor-not-allowed opacity-60">
+          Applications Paused
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          onClick={() => {
+            onClose();
+            onApply(job);
+          }}
+          size="default"
+          variant="default"
+          className="font-bold shadow-md px-6 inline-flex items-center gap-2"
+        >
+          <Send className="w-4 h-4" />
+          <span>Apply For This Position</span>
+        </Button>
+      )}
+    </div>
+  );
+
+  return (
+    <Drawer
+      isOpen={isOpen}
+      onClose={onClose}
+      position="center"
+      width="2xl"
+      header={headerNode}
+      footer={footerNode}
+    >
       {/* Skills Required */}
       {job.skills && job.skills.length > 0 && (
         <div className="space-y-2.5">
@@ -116,8 +151,8 @@ export const JobDetailDrawer = ({
           <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Key Responsibilities</h3>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {job.responsibilities.map((item, idx) => (
-              <li key={idx} className="flex items-start gap-2.5 text-xs text-muted-foreground bg-surface-2/40 p-2.5 rounded-xl border border-border/40">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <li key={idx} className="flex items-start gap-2.5 text-xs text-muted-foreground bg-surface-2/50 p-2.5 rounded-xl border border-border/50">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                 <span>{item}</span>
               </li>
             ))}
@@ -131,8 +166,8 @@ export const JobDetailDrawer = ({
           <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Requirements & Qualifications</h3>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {job.requirements.map((item, idx) => (
-              <li key={idx} className="flex items-start gap-2.5 text-xs text-muted-foreground bg-surface-2/40 p-2.5 rounded-xl border border-border/40">
-                <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              <li key={idx} className="flex items-start gap-2.5 text-xs text-muted-foreground bg-surface-2/50 p-2.5 rounded-xl border border-border/50">
+                <CheckCircle2 className="w-4 h-4 text-brand-blue shrink-0 mt-0.5" />
                 <span>{item}</span>
               </li>
             ))}
@@ -153,31 +188,6 @@ export const JobDetailDrawer = ({
           </div>
         </div>
       )}
-
-      {/* Sticky Bottom Apply Action Bar */}
-      <div className="pt-4 border-t border-border/50 sticky bottom-0 bg-background/95 backdrop-blur-md flex items-center justify-end gap-3">
-        <Button variant="ghost" size="md" onClick={onClose}>
-          Close
-        </Button>
-        {isPaused ? (
-          <Button disabled variant="outline" size="md" className="cursor-not-allowed">
-            Applications Paused
-          </Button>
-        ) : (
-          <Button
-            onClick={() => {
-              onClose();
-              onApply(job);
-            }}
-            size="md"
-            variant="gradient"
-            className="font-bold shadow-xl px-6"
-          >
-            <Send className="w-4 h-4 mr-2" />
-            Apply For This Position
-          </Button>
-        )}
-      </div>
     </Drawer>
   );
 };

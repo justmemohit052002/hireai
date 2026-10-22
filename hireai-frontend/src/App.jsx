@@ -7,6 +7,7 @@ import { ChatProvider } from '@/context/ChatContext';
 import { NotificationProvider } from '@/context/NotificationContext';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { AppRoutes } from '@/routes';
+import { Agentation } from 'agentation';
 
 // Setup TanStack Query client for API data fetching & caching
 const queryClient = new QueryClient({
@@ -28,6 +29,7 @@ export function App() {
               <ChatProvider>
                 <NotificationProvider>
                   <AppRoutes />
+                  {import.meta.env.DEV && <Agentation />}
                 </NotificationProvider>
               </ChatProvider>
             </JobsProvider>

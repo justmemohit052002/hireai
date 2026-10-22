@@ -38,7 +38,7 @@
     --color-fibonacci-blue: #112358;
 
     /* Light Theme (3rd Image Gradient: Lemon Pie -> White Solid -> Light Blue) */
-    --gradient-bg-light: linear-gradient(180deg, #eff79e 0%, #F4F5FA 25%, #D4EAFF 100%);
+    --gradient-bg-light: linear-gradient(180deg, #eff79e 15%, #F4F5FA 30%, #D4EAFF 100%);
 
     --color-bg: #F4F5FA;
     /* Crisp, neutral base background */
@@ -74,8 +74,8 @@
   }
 
   .dark {
-    /* Dark Theme (2nd Image Gradient: Deep Navy -> Dynamic Blue -> Green-Yellow) */
-    --gradient-bg-dark: linear-gradient(180deg, #112358 0%, #004499 40%, #0192C6 75%, #edf780 100%);
+    /* Dark Theme (Deep Navy -> Dynamic Blue -> Deep Midnight) */
+    --gradient-bg-dark: linear-gradient(180deg, #112358 0%, #004499 40%, #0192C6 75%, #0B173B 100%);
 
     --color-bg: #0B173B;
     /* Elevated deep shade derived from Fibonacci Blue */
@@ -207,6 +207,7 @@
     background-color: #F1FF62;
     color: #112358;
   }
+
   ::-moz-selection {
     background-color: #F1FF62;
     color: #112358;
@@ -405,6 +406,7 @@
     0% {
       transform: translateX(0%);
     }
+
     100% {
       transform: translateX(-50%);
     }
@@ -414,16 +416,20 @@
     0% {
       transform: translateX(-50%);
     }
+
     100% {
       transform: translateX(0%);
     }
   }
 
   @keyframes pulse-glow {
-    0%, 100% {
+
+    0%,
+    100% {
       opacity: 0.6;
       transform: scale(1);
     }
+
     50% {
       opacity: 1;
       transform: scale(1.05);
@@ -431,9 +437,12 @@
   }
 
   @keyframes float-slow {
-    0%, 100% {
+
+    0%,
+    100% {
       transform: translateY(0px);
     }
+
     50% {
       transform: translateY(-8px);
     }
@@ -444,6 +453,7 @@
       opacity: 0;
       transform: translateY(24px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -483,12 +493,31 @@
   }
 
   @keyframes bellWiggle {
-    0%, 100% { transform: rotate(0); }
-    15% { transform: rotate(14deg); }
-    30% { transform: rotate(-14deg); }
-    45% { transform: rotate(10deg); }
-    60% { transform: rotate(-8deg); }
-    75% { transform: rotate(4deg); }
+
+    0%,
+    100% {
+      transform: rotate(0);
+    }
+
+    15% {
+      transform: rotate(14deg);
+    }
+
+    30% {
+      transform: rotate(-14deg);
+    }
+
+    45% {
+      transform: rotate(10deg);
+    }
+
+    60% {
+      transform: rotate(-8deg);
+    }
+
+    75% {
+      transform: rotate(4deg);
+    }
   }
 
   .animate-wiggle {
