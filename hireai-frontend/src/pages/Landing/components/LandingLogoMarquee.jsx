@@ -35,14 +35,8 @@ export const LandingLogoMarquee = () => {
           </p>
         </div>
 
-        {/* Marquee Ticker Track with Gradient Fade Edges */}
+        {/* Marquee Ticker Track */}
         <div className="relative w-full overflow-hidden py-2">
-          {/* Left Edge Gradient Fade */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 w-20 sm:w-32 bg-gradient-to-r from-background via-background/90 to-transparent z-10" />
-
-          {/* Right Edge Gradient Fade */}
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-20 sm:w-32 bg-gradient-to-l from-background via-background/90 to-transparent z-10" />
-
           {/* Marquee Strip */}
           <div className="flex animate-marquee gap-6 sm:gap-8 items-center will-change-transform">
             {marqueeItems.map((item, index) => (

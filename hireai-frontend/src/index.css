@@ -38,7 +38,7 @@
     --color-fibonacci-blue: #112358;
 
     /* Light Theme (3rd Image Gradient: Lemon Pie -> White Solid -> Light Blue) */
-    --gradient-bg-light: linear-gradient(180deg, #eff79e 15%, #F4F5FA 30%, #D4EAFF 100%);
+    --gradient-bg-light: linear-gradient(180deg, #eff79e 15%, #F4F5FA 55%, #b8d9f8 100%);
 
     --color-bg: #F4F5FA;
     /* Crisp, neutral base background */
