@@ -236,34 +236,23 @@ export const LandingHero = () => {
             </Link>
           </div>
 
-          {/* Trust Line: Yellow, Pink & Navy avatars; auto-hidden on short screens (<700px) */}
+          {/* Genuine Capability Trust Line: auto-hidden on short screens (<700px) */}
           <div className="hero-trust">
             <div className="hero-trust-avatars" aria-hidden="true">
-              <div className="hero-avatar hero-avatar-1">AR</div>
-              <div className="hero-avatar hero-avatar-2">SK</div>
-              <div className="hero-avatar hero-avatar-3">MN</div>
-              <div className="hero-avatar hero-avatar-4">+</div>
+              <div className="hero-avatar hero-avatar-1">ATS</div>
+              <div className="hero-avatar hero-avatar-2">94%</div>
+              <div className="hero-avatar hero-avatar-3">RBAC</div>
             </div>
             <div className="hero-trust-text">
-              <div className="hero-trust-stars" aria-hidden="true">
-                <svg viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  <path d="m9 12 2 2 4-4" />
                 </svg>
-                <svg viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-                <svg viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-                <svg viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-                <svg viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
+                <span>Automated Technical Screening</span>
               </div>
               <p className="hero-trust-label">
-                <strong>Join 10,000+ learners</strong> hired at leading tech teams
+                <strong>Deterministic parsing</strong> &bull; Objective skill matrix &amp; verified pipeline
               </p>
             </div>
           </div>
@@ -547,8 +536,8 @@ export const LandingHero = () => {
                 </svg>
               </div>
               <div className="hero-notice-content">
-                <span className="hero-notice-title">Profile Viewed</span>
-                <span className="hero-notice-desc">Recruiter from Stripe &bull; 2m ago</span>
+                <span className="hero-notice-title">ATS Match Scored</span>
+                <span className="hero-notice-desc">Technical Stack &bull; 94% Match</span>
               </div>
             </div>
 
@@ -567,8 +556,8 @@ export const LandingHero = () => {
                 </svg>
               </div>
               <div className="hero-notice-content">
-                <span className="hero-notice-title">Offer Received</span>
-                <span className="hero-notice-desc">Frontend Engineer &bull; $125k</span>
+                <span className="hero-notice-title">Pipeline Transition</span>
+                <span className="hero-notice-desc">Shortlisted &bull; Technical Review</span>
               </div>
             </div>
           </div>

@@ -51,16 +51,17 @@ export const LandingWorks = () => {
       </div>
 
       {/* 4-Step Progressive Timeline Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
         {steps.map((step, index) => {
           const StepIcon = step.icon;
           return (
             <div
               key={step.num}
-              className="p-6 rounded-2xl bg-surface border border-border shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between space-y-5 text-left relative group"
+              tabIndex={0}
+              className="outline-step-card p-6 rounded-2xl bg-surface flex flex-col justify-between space-y-5 text-left group focus:outline-none"
             >
               <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-xl bg-muted/70 text-brand-navy dark:text-brand-blue-light flex items-center justify-center shrink-0">
+                <div className="step-icon-box w-10 h-10 rounded-xl bg-muted/70 text-brand-navy dark:text-brand-blue-light flex items-center justify-center shrink-0">
                   <StepIcon className="w-5 h-5 stroke-[2.2]" />
                 </div>
                 <span className="font-mono text-xs font-bold text-muted-foreground/70">
@@ -77,7 +78,7 @@ export const LandingWorks = () => {
                 </p>
               </div>
 
-              <div className="pt-3 border-t border-border/60 text-xs font-semibold text-brand-blue flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="pt-3 border-t border-border/60 text-xs font-semibold text-brand-blue flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
                 <span>Learn more</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </div>

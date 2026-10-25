@@ -36,12 +36,19 @@ public class JwtService {
 
         claims.put("userId", customUserDetails.getId().toString());
 
-        claims.put(
-                "role",
-                customUserDetails.getAuthorities()
-                        .iterator()
-                        .next()
-                        .getAuthority());
+        String activeRoleName = customUserDetails.getActiveRole() != null
+                ? customUserDetails.getActiveRole().name()
+                : (customUserDetails.getAuthorities().isEmpty()
+                        ? ""
+                        : customUserDetails.getAuthorities().iterator().next().getAuthority());
+
+        claims.put("activeRole", activeRoleName);
+        claims.put("role", activeRoleName);
+
+        java.util.List<String> rolesList = customUserDetails.getRoles() != null && !customUserDetails.getRoles().isEmpty()
+                ? customUserDetails.getRoles().stream().map(Enum::name).toList()
+                : java.util.List.of(activeRoleName);
+        claims.put("roles", rolesList);
 
         return buildToken(
                 claims,
@@ -53,9 +60,10 @@ public class JwtService {
      * Generate Refresh Token
      */
     public String generateRefreshToken(UserDetails userDetails) {
-
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("jti", UUID.randomUUID().toString());
         return buildToken(
-                new HashMap<>(),
+                claims,
                 userDetails,
                 jwtProperties.getRefreshTokenExpiration());
     }
@@ -96,11 +104,30 @@ public class JwtService {
     }
 
     /**
-     * Extract Role
+     * Extract Role (activeRole with fallback to role)
      */
     public String extractRole(String token) {
         return extractAllClaims(token)
                 .get("role", String.class);
+    }
+
+    /**
+     * Extract Active Role
+     */
+    public String extractActiveRole(String token) {
+        String activeRole = extractAllClaims(token).get("activeRole", String.class);
+        if (activeRole == null || activeRole.isBlank()) {
+            return extractRole(token);
+        }
+        return activeRole;
+    }
+
+    /**
+     * Extract Roles List
+     */
+    @SuppressWarnings("unchecked")
+    public java.util.List<String> extractRoles(String token) {
+        return extractAllClaims(token).get("roles", java.util.List.class);
     }
 
     /**
@@ -150,11 +177,12 @@ public class JwtService {
             return false;
         }
 
-        String tokenRole = extractRole(token);
-        if (tokenRole != null && !tokenRole.isBlank()) {
-            boolean roleMatches = userDetails.getAuthorities() != null && userDetails.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals(tokenRole));
-            if (!roleMatches) {
+        String tokenActiveRole = extractActiveRole(token);
+        if (tokenActiveRole != null && !tokenActiveRole.isBlank() && userDetails instanceof CustomUserDetails cud) {
+            boolean roleValid = (cud.getActiveRole() != null && cud.getActiveRole().name().equals(tokenActiveRole))
+                    || (cud.getRoles() != null && cud.getRoles().stream().anyMatch(r -> r.name().equals(tokenActiveRole)))
+                    || (cud.getAuthorities() != null && cud.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals(tokenActiveRole)));
+            if (!roleValid) {
                 return false;
             }
         }

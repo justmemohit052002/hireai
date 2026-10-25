@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { 
   Cpu, 
   UserCheck, 
@@ -11,7 +11,57 @@ import {
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/constants';
 
+/**
+ * Lightweight custom hook for scroll-reveal animation.
+ * Uses IntersectionObserver to trigger once per page load without causing React re-renders.
+ */
+const useReveal = (options = {}) => {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+
+    // Progressive enhancement: only hide cards when JavaScript is active
+    element.classList.add('reveal-ready');
+
+    // If already revealed (e.g. fast remount in StrictMode), avoid re-observing
+    if (element.classList.contains('is-visible')) {
+      return;
+    }
+
+    if (!('IntersectionObserver' in window)) {
+      element.classList.add('is-visible');
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry && entry.isIntersecting) {
+          element.classList.add('is-visible');
+          observer.unobserve(element);
+          observer.disconnect();
+        }
+      },
+      {
+        threshold: options.threshold ?? 0.15,
+        rootMargin: options.rootMargin ?? '0px 0px -40px 0px',
+      }
+    );
+
+    observer.observe(element);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [options.threshold, options.rootMargin]);
+
+  return ref;
+};
+
 export const LandingFeatures = () => {
+  const gridRef = useReveal({ threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
   const features = [
     {
       title: 'Deterministic ATS Match Scoring',
@@ -73,13 +123,17 @@ export const LandingFeatures = () => {
       </div>
 
       {/* Feature Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {features.map((item) => {
+      <div 
+        ref={gridRef}
+        className="features-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+      >
+        {features.map((item, index) => {
           const Icon = item.icon;
           return (
             <div
               key={item.title}
-              className="p-6 rounded-2xl bg-surface border border-border shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between space-y-4 text-left group"
+              style={{ '--i': index }}
+              className="feature-reveal-card p-6 rounded-2xl bg-surface border border-border shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between space-y-4 text-left group"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">

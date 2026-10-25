@@ -115,6 +115,7 @@ export const JobDetailDrawer = ({
     <Drawer
       isOpen={isOpen}
       onClose={onClose}
+      title={job.title}
       position="center"
       width="2xl"
       header={headerNode}

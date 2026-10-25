@@ -27,6 +27,8 @@ public class CustomUserDetails implements UserDetails {
     private final boolean enabled;
     private final boolean accountNonLocked;
     private final boolean mustChangePassword;
+    private final com.vionsys.hireai.common.enums.RoleType activeRole;
+    private final Set<com.vionsys.hireai.common.enums.RoleType> roles;
     private final Collection<? extends GrantedAuthority> authorities;
 
     public CustomUserDetails(
@@ -36,19 +38,46 @@ public class CustomUserDetails implements UserDetails {
             boolean enabled,
             boolean accountNonLocked,
             Collection<? extends GrantedAuthority> authorities) {
-        this(id, email, password, enabled, accountNonLocked, false, authorities);
+        this(id, email, password, enabled, accountNonLocked, false, null, null, authorities);
     }
 
     public static CustomUserDetails fromUser(User user) {
+        return fromUser(user, null);
+    }
+
+    public static CustomUserDetails fromUser(User user, com.vionsys.hireai.common.enums.RoleType activeRoleOverride) {
+        com.vionsys.hireai.common.enums.RoleType effectiveActiveRole = activeRoleOverride;
+        if (effectiveActiveRole == null && user.getRole() != null) {
+            effectiveActiveRole = user.getRole().getName();
+        }
+
+        Set<com.vionsys.hireai.common.enums.RoleType> userRoleTypes = new java.util.HashSet<>();
+        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+            user.getRoles().forEach(r -> {
+                if (r != null && r.getName() != null) {
+                    userRoleTypes.add(r.getName());
+                }
+            });
+        }
+        if (user.getRole() != null && user.getRole().getName() != null) {
+            userRoleTypes.add(user.getRole().getName());
+        }
+        if (effectiveActiveRole != null) {
+            userRoleTypes.add(effectiveActiveRole);
+        }
+
         List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
 
-        if (user.getRole() != null && user.getRole().getName() != null) {
+        // AUTHORITIES ARE BUILT FROM activeRole ONLY!
+        if (effectiveActiveRole != null) {
             // 1. Role authority (e.g. ROLE_RECRUITER)
-            grantedAuthorities.add(new SimpleGrantedAuthority(user.getRole().getName().name()));
+            grantedAuthorities.add(new SimpleGrantedAuthority(effectiveActiveRole.name()));
 
             // 2. Granular permission authorities (e.g. job:create, application:read)
-            Set<String> permissions = PermissionType.getPermissionsForRole(user.getRole().getName());
-            permissions.forEach(perm -> grantedAuthorities.add(new SimpleGrantedAuthority(perm)));
+            Set<String> permissions = PermissionType.getPermissionsForRole(effectiveActiveRole);
+            if (permissions != null) {
+                permissions.forEach(perm -> grantedAuthorities.add(new SimpleGrantedAuthority(perm)));
+            }
         }
 
         boolean isNonLocked = Boolean.TRUE.equals(user.getAccountNonLocked())
@@ -61,6 +90,8 @@ public class CustomUserDetails implements UserDetails {
                 Boolean.TRUE.equals(user.getEnabled()) && !Boolean.TRUE.equals(user.getDeleted()),
                 isNonLocked,
                 Boolean.TRUE.equals(user.getMustChangePassword()),
+                effectiveActiveRole,
+                userRoleTypes,
                 grantedAuthorities
         );
     }

@@ -28,6 +28,10 @@ public class AuthResponse {
 
     private String role;
 
+    private String activeRole;
+
+    private java.util.List<String> roles;
+
     private String accessToken;
 
     private String refreshToken;

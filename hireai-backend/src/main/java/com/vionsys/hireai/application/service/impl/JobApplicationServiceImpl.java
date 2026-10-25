@@ -34,6 +34,8 @@ import com.vionsys.hireai.application.config.AtsProperties;
 import com.vionsys.hireai.candidate.enums.CandidateStatus;
 import com.vionsys.hireai.candidate.service.ResumeService;
 import com.vionsys.hireai.candidate.util.CandidateIdGenerator;
+import com.vionsys.hireai.recruiter.entity.RecruiterProfile;
+import com.vionsys.hireai.recruiter.repository.RecruiterProfileRepository;
 import com.vionsys.hireai.user.entity.User;
 import com.vionsys.hireai.user.repository.UserRepository;
 
@@ -55,6 +57,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     private final ResumeService resumeService;
     private final com.vionsys.hireai.email.EmailService emailService;
     private final com.vionsys.hireai.notification.service.NotificationService notificationService;
+    private final RecruiterProfileRepository recruiterProfileRepository;
 
     public JobApplicationServiceImpl(
             JobApplicationRepository jobApplicationRepository,
@@ -66,7 +69,8 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             AtsProperties atsProperties,
             ResumeService resumeService,
             com.vionsys.hireai.email.EmailService emailService,
-            com.vionsys.hireai.notification.service.NotificationService notificationService
+            com.vionsys.hireai.notification.service.NotificationService notificationService,
+            RecruiterProfileRepository recruiterProfileRepository
     ) {
         this.jobApplicationRepository = jobApplicationRepository;
         this.jobRepository = jobRepository;
@@ -78,6 +82,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         this.resumeService = resumeService;
         this.emailService = emailService;
         this.notificationService = notificationService;
+        this.recruiterProfileRepository = recruiterProfileRepository;
     }
 
     @Override
@@ -88,6 +93,16 @@ public class JobApplicationServiceImpl implements JobApplicationService {
     @Override
     public JobApplicationResponse applyToJob(UUID candidateUserId, UUID jobId, JobApplicationRequest request, MultipartFile resumeFile) {
 
+        // Enforce that only activeRole CANDIDATE can apply for jobs
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getAuthorities() != null && !auth.getAuthorities().isEmpty()) {
+            boolean isCandidate = auth.getAuthorities().stream()
+                    .anyMatch(a -> "ROLE_CANDIDATE".equals(a.getAuthority()));
+            if (!isCandidate) {
+                throw new AccessDeniedException("Only users with an active CANDIDATE role can apply for jobs.");
+            }
+        }
+
         Candidate candidate = candidateRepository.findByUserId(candidateUserId)
                 .orElseGet(() -> createDefaultCandidateForUser(candidateUserId));
 
@@ -95,7 +110,27 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 .orElseThrow(() -> new JobNotFoundException("Job not found"));
 
         if (job.getStatus() != JobStatus.OPEN) {
-            throw new IllegalArgumentException("This job posting is currently closed and not accepting new applications.");
+            throw new IllegalArgumentException("This job posting is currently closed or paused and not accepting new applications.");
+        }
+
+        // Self-apply protection: Block if job was posted by the user or the user's company
+        if (job.getRecruiterProfile() != null) {
+            if (job.getRecruiterProfile().getUser() != null &&
+                    job.getRecruiterProfile().getUser().getId().equals(candidateUserId)) {
+                throw new AccessDeniedException("You cannot apply to a job posted by you or your company.");
+            }
+            String jobCompany = job.getRecruiterProfile().getCompanyName();
+            if (jobCompany != null && !jobCompany.isBlank()) {
+                java.util.Optional<RecruiterProfile> candidateRecruiterProfile =
+                        recruiterProfileRepository.findByUserId(candidateUserId);
+                if (candidateRecruiterProfile.isPresent()) {
+                    String candidateCompany = candidateRecruiterProfile.get().getCompanyName();
+                    if (candidateCompany != null && !candidateCompany.isBlank() &&
+                            jobCompany.trim().equalsIgnoreCase(candidateCompany.trim())) {
+                        throw new AccessDeniedException("You cannot apply to a job posted by you or your company.");
+                    }
+                }
+            }
         }
 
         if (jobApplicationRepository.existsByJobIdAndCandidateId(jobId, candidate.getId())) {
