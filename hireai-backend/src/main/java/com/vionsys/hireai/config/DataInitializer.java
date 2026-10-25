@@ -68,6 +68,20 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS job_preferred_skills (job_id UUID NOT NULL, skill VARCHAR(255) NOT NULL, CONSTRAINT fk_job_preferred_skills_job FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE)");
             jdbcTemplate.execute("ALTER TABLE jobs DROP CONSTRAINT IF EXISTS jobs_experience_level_check");
             jdbcTemplate.execute("ALTER TABLE jobs ADD CONSTRAINT jobs_experience_level_check CHECK (experience_level IN ('FRESHER', 'JUNIOR', 'MID_LEVEL', 'SENIOR', 'LEAD', 'EXECUTIVE'))");
+            // Multi-role migration: Ensure user_roles join table exists and backfill from users.role_id
+            jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS user_roles (" +
+                    "user_id UUID NOT NULL, " +
+                    "role_id BIGINT NOT NULL, " +
+                    "PRIMARY KEY (user_id, role_id), " +
+                    "CONSTRAINT fk_user_roles_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, " +
+                    "CONSTRAINT fk_user_roles_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE" +
+                    ")");
+            jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON user_roles(user_id)");
+            jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_user_roles_role_id ON user_roles(role_id)");
+            jdbcTemplate.execute("INSERT INTO user_roles (user_id, role_id) " +
+                    "SELECT id, role_id FROM users " +
+                    "WHERE role_id IS NOT NULL " +
+                    "ON CONFLICT (user_id, role_id) DO NOTHING");
         } catch (Exception ex) {
             log.debug("[DataInitializer] Schema alignment notice: {}", ex.getMessage());
         }

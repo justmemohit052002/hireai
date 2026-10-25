@@ -17,12 +17,14 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import com.vionsys.hireai.auth.dto.AuthResponse;
 import com.vionsys.hireai.auth.dto.ForgotPasswordRequest;
 import com.vionsys.hireai.auth.dto.ForgotPasswordResponse;
+import com.vionsys.hireai.auth.dto.AddRoleRequest;
 import com.vionsys.hireai.auth.dto.LoginRequest;
 import com.vionsys.hireai.auth.dto.LogoutResponse;
 import com.vionsys.hireai.auth.dto.RecruiterRegisterRequest;
 import com.vionsys.hireai.auth.dto.RefreshTokenRequest;
 import com.vionsys.hireai.auth.dto.RegisterRequest;
 import com.vionsys.hireai.auth.dto.ResetPasswordRequest;
+import com.vionsys.hireai.auth.dto.SwitchRoleRequest;
 import com.vionsys.hireai.auth.dto.VerifyTokenResponse;
 import com.vionsys.hireai.auth.entity.PasswordResetToken;
 import com.vionsys.hireai.auth.entity.RefreshToken;
@@ -170,6 +172,8 @@ public class AuthService {
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .role(user.getRole().getName().name())
+                .activeRole(user.getRole().getName().name())
+                .roles(user.getRoleNames())
                 .hasPassword(true)
                 .authProvider("LOCAL")
                 .requiresVerification(true)
@@ -252,6 +256,8 @@ public class AuthService {
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .role(user.getRole().getName().name())
+                .activeRole(user.getRole().getName().name())
+                .roles(user.getRoleNames())
                 .hasPassword(true)
                 .authProvider("LOCAL")
                 .requiresVerification(true)
@@ -279,6 +285,8 @@ public class AuthService {
                     .lastName(user.getLastName())
                     .email(user.getEmail())
                     .role(user.getRole().getName().name())
+                    .activeRole(user.getRole().getName().name())
+                    .roles(user.getRoleNames())
                     .accessToken(accessToken)
                     .refreshToken(refreshToken)
                     .avatarUrl(resolveUserAvatar(user))
@@ -358,6 +366,8 @@ public class AuthService {
                 .lastName(user.getLastName())
                 .email(user.getEmail())
                 .role(user.getRole().getName().name())
+                .activeRole(user.getRole().getName().name())
+                .roles(user.getRoleNames())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .avatarUrl(resolveUserAvatar(user))
@@ -502,29 +512,31 @@ public class AuthService {
             userRepository.save(user);
         }
 
-        // 4. If caller explicitly requested a specific role (e.g. user toggled RECRUITER tab on login screen)
-        // Note: Never downgrade or alter ROLE_ADMIN or ROLE_SUB_ADMIN
-        if (user.getRole().getName() != RoleType.ROLE_ADMIN && user.getRole().getName() != RoleType.ROLE_SUB_ADMIN && request.getRole() != null && !request.getRole().isBlank()) {
-            String requestedRole = request.getRole().trim().toUpperCase();
-            if (requestedRole.contains("RECRUITER")) {
-                if (user.getRole().getName() != RoleType.ROLE_RECRUITER) {
-                    Role recruiterRole = roleRepository.findByName(RoleType.ROLE_RECRUITER)
-                            .orElseThrow(() -> new RoleNotFoundException("Role not found"));
-                    user.setRole(recruiterRole);
-                    user = userRepository.save(user);
-                    log.info("Updated user {} active role to ROLE_RECRUITER", user.getEmail());
-                }
-                ensureRecruiterProfile(user, null);
-            } else if (requestedRole.contains("CANDIDATE")) {
-                if (user.getRole().getName() != RoleType.ROLE_CANDIDATE) {
-                    Role candidateRole = roleRepository.findByName(RoleType.ROLE_CANDIDATE)
-                            .orElseThrow(() -> new RoleNotFoundException("Role not found"));
-                    user.setRole(candidateRole);
-                    user = userRepository.save(user);
-                    log.info("Updated user {} active role to ROLE_CANDIDATE", user.getEmail());
-                }
-                ensureCandidateProfile(user);
-            }
+        // 4. Resolve activeRole strictly from the database (ignore any client-sent role in request)
+        if (user.getRoles().isEmpty() && user.getRole() != null) {
+            user.addRole(user.getRole());
+            user = userRepository.save(user);
+        }
+
+        RoleType activeRoleType;
+        if (user.getRole() != null && user.hasRole(user.getRole().getName())) {
+            activeRoleType = user.getRole().getName();
+        } else if (user.getRoles().size() == 1) {
+            activeRoleType = user.getRoles().iterator().next().getName();
+        } else if (user.hasRole(RoleType.ROLE_RECRUITER)) {
+            activeRoleType = RoleType.ROLE_RECRUITER;
+        } else if (user.hasRole(RoleType.ROLE_CANDIDATE)) {
+            activeRoleType = RoleType.ROLE_CANDIDATE;
+        } else if (!user.getRoles().isEmpty()) {
+            activeRoleType = user.getRoles().iterator().next().getName();
+        } else {
+            activeRoleType = RoleType.ROLE_CANDIDATE;
+        }
+
+        if (user.getRole() == null || user.getRole().getName() != activeRoleType) {
+            Role resolvedRole = roleRepository.findByName(activeRoleType)
+                    .orElseThrow(() -> new RoleNotFoundException("Role not found: " + activeRoleType));
+            user.setRole(resolvedRole);
         }
 
         // Record last login activity
@@ -533,6 +545,7 @@ public class AuthService {
 
         // 5. Send security login notification email & in-app alerts post-commit
         final User finalLoginUser = user;
+        final RoleType finalActiveRoleType = activeRoleType;
         executeAfterCommit(() -> {
             try {
                 emailService.sendLoginAlertEmail(finalLoginUser);
@@ -541,8 +554,7 @@ public class AuthService {
             }
 
             try {
-                boolean isRecruiter = finalLoginUser.getRole() != null && finalLoginUser.getRole().getName() != null &&
-                        finalLoginUser.getRole().getName().name().contains("RECRUITER");
+                boolean isRecruiter = finalActiveRoleType == RoleType.ROLE_RECRUITER;
                 String settingsRoute = isRecruiter ? "/recruiter/settings" : "/candidate/settings";
 
                 notificationService.createAndSendNotification(
@@ -570,7 +582,7 @@ public class AuthService {
             }
         });
 
-        CustomUserDetails userDetails = CustomUserDetails.fromUser(user);
+        CustomUserDetails userDetails = CustomUserDetails.fromUser(user, activeRoleType);
         String accessToken = jwtService.generateAccessToken(userDetails);
         String refreshToken = createAndSaveRefreshToken(user);
 
@@ -579,7 +591,9 @@ public class AuthService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .email(user.getEmail())
-                .role(user.getRole().getName().name())
+                .role(activeRoleType.name())
+                .activeRole(activeRoleType.name())
+                .roles(user.getRoleNames())
                 .avatarUrl(resolveUserAvatar(user))
                 .hasPassword(user.hasPassword())
                 .authProvider(user.getAuthProvider())
@@ -732,8 +746,8 @@ public class AuthService {
         user.setLastLoginAt(LocalDateTime.now());
         user = userRepository.save(user);
 
-        // Generate JWT session tokens
-        CustomUserDetails userDetails = CustomUserDetails.fromUser(user);
+        RoleType oauthActive = user.getRole() != null ? user.getRole().getName() : RoleType.ROLE_CANDIDATE;
+        CustomUserDetails userDetails = CustomUserDetails.fromUser(user, oauthActive);
         String accessToken = jwtService.generateAccessToken(userDetails);
         String refreshToken = createAndSaveRefreshToken(user);
 
@@ -742,7 +756,9 @@ public class AuthService {
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .email(user.getEmail())
-                .role(user.getRole().getName().name())
+                .role(oauthActive.name())
+                .activeRole(oauthActive.name())
+                .roles(user.getRoleNames())
                 .avatarUrl(resolveUserAvatar(user))
                 .hasPassword(user.hasPassword())
                 .authProvider(user.getAuthProvider())
@@ -862,12 +878,15 @@ public class AuthService {
         tokenEntity.setReplacedByToken(newRefreshToken);
         refreshTokenRepository.save(tokenEntity);
 
+        RoleType refreshActive = user.getRole() != null ? user.getRole().getName() : RoleType.ROLE_CANDIDATE;
         return AuthResponse.builder()
                 .userId(user.getId())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .email(user.getEmail())
-                .role(user.getRole().getName().name())
+                .role(refreshActive.name())
+                .activeRole(refreshActive.name())
+                .roles(user.getRoleNames())
                 .avatarUrl(resolveUserAvatar(user))
                 .hasPassword(user.hasPassword())
                 .authProvider(user.getAuthProvider())
@@ -1094,5 +1113,134 @@ public class AuthService {
         } catch (Exception ignored) {
         }
         return null;
+    }
+
+    @Transactional
+    public AuthResponse switchRole(UUID userId, SwitchRoleRequest request) {
+        if (request == null || request.getRole() == null || request.getRole().isBlank()) {
+            throw new IllegalArgumentException("Role is required.");
+        }
+
+        String inputRole = request.getRole().trim().toUpperCase();
+        if (!inputRole.startsWith("ROLE_")) {
+            inputRole = "ROLE_" + inputRole;
+        }
+
+        RoleType targetRoleType;
+        try {
+            targetRoleType = RoleType.valueOf(inputRole);
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Invalid role specified: " + request.getRole());
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        if (!user.hasRole(targetRoleType)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "You do not possess the requested role: " + request.getRole());
+        }
+
+        Role targetRole = roleRepository.findByName(targetRoleType)
+                .orElseThrow(() -> new RoleNotFoundException("Role not found: " + targetRoleType));
+
+        user.setRole(targetRole);
+        user = userRepository.save(user);
+
+        if (targetRoleType == RoleType.ROLE_RECRUITER) {
+            ensureRecruiterProfile(user, null);
+        } else if (targetRoleType == RoleType.ROLE_CANDIDATE) {
+            ensureCandidateProfile(user);
+        }
+
+        CustomUserDetails userDetails = CustomUserDetails.fromUser(user, targetRoleType);
+        String newAccessToken = jwtService.generateAccessToken(userDetails);
+        String newRefreshToken = createAndSaveRefreshToken(user);
+
+        return AuthResponse.builder()
+                .userId(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(targetRoleType.name())
+                .activeRole(targetRoleType.name())
+                .roles(user.getRoleNames())
+                .avatarUrl(resolveUserAvatar(user))
+                .hasPassword(user.hasPassword())
+                .authProvider(user.getAuthProvider())
+                .mustChangePassword(Boolean.TRUE.equals(user.getMustChangePassword()))
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .message("Active role switched successfully to " + targetRoleType.name())
+                .build();
+    }
+
+    @Transactional
+    public AuthResponse addRole(UUID userId, AddRoleRequest request) {
+        if (request == null || request.getRole() == null || request.getRole().isBlank()) {
+            throw new IllegalArgumentException("Role is required.");
+        }
+
+        String inputRole = request.getRole().trim().toUpperCase();
+        if (!inputRole.startsWith("ROLE_")) {
+            inputRole = "ROLE_" + inputRole;
+        }
+
+        RoleType targetRoleType;
+        try {
+            targetRoleType = RoleType.valueOf(inputRole);
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Invalid role specified: " + request.getRole());
+        }
+
+        if (targetRoleType != RoleType.ROLE_CANDIDATE && targetRoleType != RoleType.ROLE_RECRUITER) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Cannot self-assign administrative role: " + request.getRole());
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        if (user.hasRole(targetRoleType)) {
+            throw new IllegalArgumentException("User already has role: " + targetRoleType.name());
+        }
+
+        Role targetRole = roleRepository.findByName(targetRoleType)
+                .orElseThrow(() -> new RoleNotFoundException("Role not found: " + targetRoleType));
+
+        user.addRole(targetRole);
+        user = userRepository.save(user);
+
+        if (targetRoleType == RoleType.ROLE_CANDIDATE) {
+            ensureCandidateProfile(user);
+        } else if (targetRoleType == RoleType.ROLE_RECRUITER) {
+            ensureRecruiterProfile(user, request.getCompanyName());
+        }
+
+        // Must not auto-switch the active role unless requested
+        RoleType currentActive = (user.getRole() != null && user.hasRole(user.getRole().getName()))
+                ? user.getRole().getName()
+                : targetRoleType;
+
+        CustomUserDetails userDetails = CustomUserDetails.fromUser(user, currentActive);
+        String accessToken = jwtService.generateAccessToken(userDetails);
+        String refreshToken = createAndSaveRefreshToken(user);
+
+        return AuthResponse.builder()
+                .userId(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(currentActive.name())
+                .activeRole(currentActive.name())
+                .roles(user.getRoleNames())
+                .avatarUrl(resolveUserAvatar(user))
+                .hasPassword(user.hasPassword())
+                .authProvider(user.getAuthProvider())
+                .mustChangePassword(Boolean.TRUE.equals(user.getMustChangePassword()))
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .message("Role " + targetRoleType.name() + " added successfully.")
+                .build();
     }
 }

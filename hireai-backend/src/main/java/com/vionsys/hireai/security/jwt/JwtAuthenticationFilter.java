@@ -4,12 +4,14 @@ import java.io.IOException;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.vionsys.hireai.security.CustomUserDetailsService;
+import com.vionsys.hireai.common.enums.RoleType;
+import com.vionsys.hireai.security.CustomUserDetails;
+import com.vionsys.hireai.user.entity.User;
+import com.vionsys.hireai.user.repository.UserRepository;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -22,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final CustomUserDetailsService customUserDetailsService;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(
@@ -51,24 +53,45 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (email != null &&
                     SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                UserDetails userDetails =
-                        customUserDetailsService.loadUserByUsername(email);
+                String activeRoleStr = jwtService.extractActiveRole(jwt);
+                RoleType parsedRole = null;
+                if (activeRoleStr != null && !activeRoleStr.isBlank()) {
+                    try {
+                        parsedRole = RoleType.valueOf(activeRoleStr);
+                    } catch (Exception ignored) {}
+                }
+                final RoleType tokenActiveRole = parsedRole;
 
-                if (jwtService.isTokenValid(jwt, userDetails)) {
+                User user = userRepository.findByEmail(email).orElse(null);
 
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(
-                                    userDetails,
-                                    null,
-                                    userDetails.getAuthorities());
+                if (user != null && !Boolean.TRUE.equals(user.getDeleted())) {
+                    // Verify that tokenActiveRole is owned by the user in the database
+                    boolean ownsRole = (tokenActiveRole == null) || user.hasRole(tokenActiveRole);
 
-                    authentication.setDetails(
-                            new WebAuthenticationDetailsSource()
-                                    .buildDetails(request));
+                    if (ownsRole) {
+                        CustomUserDetails userDetails = CustomUserDetails.fromUser(user, tokenActiveRole);
 
-                    SecurityContextHolder
-                            .getContext()
-                            .setAuthentication(authentication);
+                        if (jwtService.isTokenValid(jwt, userDetails)) {
+                            UsernamePasswordAuthenticationToken authentication =
+                                    new UsernamePasswordAuthenticationToken(
+                                            userDetails,
+                                            null,
+                                            userDetails.getAuthorities());
+
+                            authentication.setDetails(
+                                    new WebAuthenticationDetailsSource()
+                                            .buildDetails(request));
+
+                            SecurityContextHolder
+                                    .getContext()
+                                    .setAuthentication(authentication);
+                        } else {
+                            SecurityContextHolder.clearContext();
+                        }
+                    } else {
+                        // User does not own activeRole in database -> reject token
+                        SecurityContextHolder.clearContext();
+                    }
                 } else {
                     SecurityContextHolder.clearContext();
                 }
@@ -80,4 +103,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-} 
+}

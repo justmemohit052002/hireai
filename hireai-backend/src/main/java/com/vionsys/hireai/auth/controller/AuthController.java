@@ -10,19 +10,24 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.vionsys.hireai.auth.dto.AddRoleRequest;
 import com.vionsys.hireai.auth.dto.AuthResponse;
 import com.vionsys.hireai.auth.dto.ForgotPasswordRequest;
 import com.vionsys.hireai.auth.dto.ForgotPasswordResponse;
 import com.vionsys.hireai.auth.dto.LoginRequest;
 import com.vionsys.hireai.auth.dto.OAuthRequest;
 import com.vionsys.hireai.auth.dto.RecruiterRegisterRequest;
+import com.vionsys.hireai.auth.dto.RefreshTokenRequest;
 import com.vionsys.hireai.auth.dto.RegisterRequest;
 import com.vionsys.hireai.auth.dto.ResendOtpRequest;
 import com.vionsys.hireai.auth.dto.ResetPasswordRequest;
+import com.vionsys.hireai.auth.dto.SwitchRoleRequest;
 import com.vionsys.hireai.auth.dto.VerifyEmailOtpRequest;
 import com.vionsys.hireai.auth.dto.VerifyTokenResponse;
 import com.vionsys.hireai.auth.service.AuthService;
 import com.vionsys.hireai.common.dto.ApiResponse;
+import com.vionsys.hireai.security.annotation.CurrentUser;
+import com.vionsys.hireai.security.CustomUserDetails;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -116,7 +121,7 @@ public class AuthController {
     @Operation(summary = "Refresh Access Token", description = "Rotates refresh token and issues a new access token pair (Refresh Token Rotation with reuse detection)")
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refreshToken(
-            @Valid @RequestBody com.vionsys.hireai.auth.dto.RefreshTokenRequest request) {
+            @Valid @RequestBody RefreshTokenRequest request) {
 
         AuthResponse response = authService.refreshToken(request);
 
@@ -126,7 +131,7 @@ public class AuthController {
     @Operation(summary = "User Logout", description = "Revokes the active refresh token and invalidates the session")
     @PostMapping("/logout")
     public ResponseEntity<com.vionsys.hireai.auth.dto.LogoutResponse> logout(
-            @RequestBody(required = false) com.vionsys.hireai.auth.dto.RefreshTokenRequest request) {
+            @RequestBody(required = false) RefreshTokenRequest request) {
 
         com.vionsys.hireai.auth.dto.LogoutResponse response = authService.logout(request);
 
@@ -163,4 +168,24 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(null, "Password has been reset successfully. You can now log in with your new password."));
     }
 
-}
+    @Operation(summary = "Switch Active Role", description = "Switches the user's active role among their owned roles and returns a fresh JWT token with the new activeRole")
+    @PostMapping("/switch-role")
+    public ResponseEntity<AuthResponse> switchRole(
+            @CurrentUser CustomUserDetails currentUser,
+            @Valid @RequestBody SwitchRoleRequest request) {
+
+        AuthResponse response = authService.switchRole(currentUser.getId(), request);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Add Role", description = "Adds another role (e.g. CANDIDATE or RECRUITER) to the user's account and provisions the corresponding profile")
+    @PostMapping("/add-role")
+    public ResponseEntity<AuthResponse> addRole(
+            @CurrentUser CustomUserDetails currentUser,
+            @Valid @RequestBody AddRoleRequest request) {
+
+        AuthResponse response = authService.addRole(currentUser.getId(), request);
+        return ResponseEntity.ok(response);
+    }
+
+}

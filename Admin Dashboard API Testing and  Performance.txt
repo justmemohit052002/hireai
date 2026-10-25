@@ -1,0 +1,1242 @@
+Admin Health Check
+
+Get --   http://localhost:8080/admin/health
+
+ System & AI Engine Health
+Purpose: Checks the operational status of all 6 AI engine modules (Job Description Generator, Resume Parser, Vector Match Engine, Pre-Screening Chatbot, Interview AI, Decision Engine) along with PostgreSQL database connectivity and background poller status.
+Method: GET
+URL: http://localhost:8080/admin/health
+Headers:
+Authorization: Bearer <accessToken>
+Expected Status: 200 OK
+Key Response Fields:
+overallStatus: HEALTHY, DEGRADED, or DOWN.
+modules[]: Array displaying provider (e.g., ollama), model (e.g., llama3.2:3b), and status for each of the 6 AI modules.
+databaseStatus: UP or DOWN.
+activeUsersCount: Count of enabled users
+
+
+{
+    "success": true,
+    "message": "System health retrieved successfully",
+    "data": {
+        "overallStatus": "HEALTHY",
+        "service": "HireAI AI Engine",
+        "checkedAt": "2026-10-21T20:17:27.093996+00:00",
+        "lastCheckedAt": "2026-10-21T20:17:25.005499Z",
+        "isStale": false,
+        "backendStatus": "UP",
+        "databaseStatus": "UP",
+        "activeUsersCount": 57,
+        "totalUsersCount": 83,
+        "modules": [
+            {
+                "id": "jd_generator",
+                "name": "Job Description Generator",
+                "status": "HEALTHY",
+                "taskType": "jd_generation",
+                "provider": "ollama",
+                "model": "llama3.2:3b",
+                "lastSuccessAt": "2026-10-21T15:23:32.482867+00:00",
+                "recentFailureCount": 0
+            },
+            {
+                "id": "resume_parser",
+                "name": "Resume Parser (Async Worker)",
+                "status": "HEALTHY",
+                "taskType": "resume_parsing",
+                "provider": "ollama",
+                "model": "llama3.2:3b",
+                "lastSuccessAt": "2026-10-21T15:27:15.169380+00:00",
+                "recentFailureCount": 0
+            },
+            {
+                "id": "match_engine",
+                "name": "Match Engine (Vector Similarity)",
+                "status": "HEALTHY",
+                "taskType": "match_scoring",
+                "provider": "Vector Engine (Local)",
+                "model": "Cosine Semantic Matcher",
+                "recentFailureCount": 0
+            },
+            {
+                "id": "chatbot",
+                "name": "Pre-Screening Chatbot",
+                "status": "HEALTHY",
+                "taskType": "chatbot_message",
+                "provider": "ollama",
+                "model": "llama3.2:3b",
+                "recentFailureCount": 0
+            },
+            {
+                "id": "interview_ai",
+                "name": "Interview AI (Q&A & Evaluator)",
+                "status": "HEALTHY",
+                "taskType": "interview_ai",
+                "provider": "ollama",
+                "model": "llama3.2:3b",
+                "recentFailureCount": 0
+            },
+            {
+                "id": "decision_engine",
+                "name": "Decision Engine (Composite)",
+                "status": "HEALTHY",
+                "taskType": "decision_finalize",
+                "provider": "Rule Engine (Deterministic)",
+                "model": "Weighted Scoring Model",
+                "recentFailureCount": 0
+            }
+        ],
+        "providers": {
+            "activeProvider": "ollama",
+            "activeModel": "llama3.2:3b",
+            "ollama": {
+                "name": "Ollama (Local LLM)",
+                "isConfigured": true,
+                "reachable": true,
+                "model": "llama3.2:3b"
+            },
+            "gemini": {
+                "name": "Google Gemini API",
+                "isConfigured": false,
+                "keyMasked": "Not Configured",
+                "model": "gemini-1.5-flash"
+            },
+            "groq": {
+                "name": "Groq Cloud API",
+                "isConfigured": false,
+                "keyMasked": "Not Configured",
+                "model": "openai/gpt-oss-20b"
+            }
+        },
+        "environment": {},
+        "statusReasonCode": "HEALTHY",
+        "statusMessage": "AI Engine and all modules operational",
+        "lastSuccessfulPoll": "2026-10-21T20:17:25.005499Z",
+        "lastAttempt": "2026-10-21T20:17:25.005499Z",
+        "consecutiveFailures": 0
+    },
+    "timestamp": "2026-10-22T01:47:32.402944"
+}
+
+
+
+
+
+2. Platform Metrics & Analytics
+Purpose: Provides aggregate system analytics for administrative dashboards, including total registered users, active recruiters and candidates, daily active users (DAU), AI latency percentiles, and API traffic volume.
+Method: GET
+URL: http://localhost:8080/admin/platform-metrics?range=today
+Query Parameters:
+range (optional): today, 7d, or 30d (defaults to today).
+Headers:
+Authorization: Bearer <accessToken>
+Expected Status: 200 OK
+Key Response Fields:
+overview: Total users, jobs count, applications count.
+aiPerformance: Average response latency, success rate percentage.
+systemHealth: CPU, memory, and database connection pool statistics.
+
+
+
+
+{
+    "success": true,
+    "message": "Platform metrics retrieved successfully",
+    "data": {
+        "range": "today",
+        "windowStart": "2026-10-22T00:00:00+05:30",
+        "windowEnd": "2026-10-22T01:49:40.086846+05:30",
+        "generatedAt": "2026-10-21T20:19:40.112764Z",
+        "source": "admin_metrics_service",
+        "environment": "development",
+        "lastUpdatedAt": "2026-10-21T20:19:40.112764Z",
+        "cached": false,
+        "overview": {
+            "totalUsers": 83,
+            "candidatesCount": 2,
+            "recruitersCount": 27,
+            "adminsCount": 53,
+            "subAdminsCount": 1,
+            "activeUsersCount": 57,
+            "deactivatedUsersCount": 26,
+            "signupsToday": 0,
+            "signups7Days": 29,
+            "signups30Days": 83,
+            "activeUsers24h": 3,
+            "activeUsers7d": 4,
+            "activeUsers30d": 4,
+            "totalJobs": 6,
+            "openJobs": 6,
+            "totalApplications": 7,
+            "avgApplicationsPerJob": 1.2,
+            "avgApplicationsPerOpenJob": 1.2,
+            "avgDailySignups": 2.8,
+            "avgDailyActiveUsers": 0.1,
+            "totalJobsPosted": 6
+        },
+        "timeSeries": [
+            {
+                "date": "2026-10-22",
+                "signups": 0,
+                "activeUsers": 1,
+                "apiRequests": 9,
+                "apiErrors": 1,
+                "serverErrors": 0,
+                "clientErrors": 1,
+                "errorRate": 11.1,
+                "avgLatencyMs": 541.1,
+                "p95LatencyMs": null,
+                "hasData": true,
+                "aiCalls": 0,
+                "aiCallsByModule": {}
+            }
+        ],
+        "aiPerformance": {
+            "range": "today",
+            "windowStart": "2026-10-22T00:00:00+05:30",
+            "windowEnd": "2026-10-22T01:49:40.086846+05:30",
+            "generatedAt": "2026-10-21T20:19:40.089177+00:00",
+            "source": "llm_call_log.jsonl",
+            "callsToday": 0,
+            "callsThisWeek": 4,
+            "totalCalls": 0,
+            "allTimeCalls": 59,
+            "successCount": 0,
+            "failureCount": 0,
+            "providerSplit": {},
+            "moduleAverages": [],
+            "geminiQuota": {
+                "provider": "gemini",
+                "tier": "Free Tier",
+                "dailyLimit": 250,
+                "usedToday": 0,
+                "remainingToday": 250,
+                "percentageUsed": 0,
+                "configured": false,
+                "isConfigured": false
+            },
+            "recentFailures": []
+        },
+        "systemHealth": {
+            "backendUptimeSeconds": 1596,
+            "engineUptimeSeconds": null,
+            "environment": "development",
+            "backendStartedAt": "2026-10-21T19:53:17.191611400Z",
+            "databaseConnectivity": "UP",
+            "aiEngineReachability": "HEALTHY",
+            "statusReasonCode": "HEALTHY",
+            "statusMessage": "AI Engine and all modules operational",
+            "lastSuccessfulPoll": "2026-10-21T20:18:55.006505300Z",
+            "consecutiveFailures": 0,
+            "emailSmtpConfigured": true,
+            "emailMode": "SMTP",
+            "emailLastSuccessfulSend": null,
+            "emailRecentFailureCount": 0,
+            "lastHealthPollAt": "2026-10-21T20:18:55.006505300Z",
+            "modules": [
+                {
+                    "id": "jd_generator",
+                    "name": "Job Description Generator",
+                    "status": "HEALTHY",
+                    "provider": "ollama",
+                    "model": "llama3.2:3b",
+                    "lastSuccessAt": "2026-10-21T15:23:32.482867+00:00",
+                    "lastFailureAt": null,
+                    "durationInCurrentStateSeconds": 1582,
+                    "error": null
+                },
+                {
+                    "id": "resume_parser",
+                    "name": "Resume Parser (Async Worker)",
+                    "status": "HEALTHY",
+                    "provider": "ollama",
+                    "model": "llama3.2:3b",
+                    "lastSuccessAt": "2026-10-21T15:27:15.169380+00:00",
+                    "lastFailureAt": null,
+                    "durationInCurrentStateSeconds": 1582,
+                    "error": null
+                },
+                {
+                    "id": "match_engine",
+                    "name": "Match Engine (Vector Similarity)",
+                    "status": "HEALTHY",
+                    "provider": "Vector Engine (Local)",
+                    "model": "Cosine Semantic Matcher",
+                    "lastSuccessAt": null,
+                    "lastFailureAt": null,
+                    "durationInCurrentStateSeconds": 1582,
+                    "error": null
+                },
+                {
+                    "id": "chatbot",
+                    "name": "Pre-Screening Chatbot",
+                    "status": "HEALTHY",
+                    "provider": "ollama",
+                    "model": "llama3.2:3b",
+                    "lastSuccessAt": null,
+                    "lastFailureAt": null,
+                    "durationInCurrentStateSeconds": 1582,
+                    "error": null
+                },
+                {
+                    "id": "interview_ai",
+                    "name": "Interview AI (Q&A & Evaluator)",
+                    "status": "HEALTHY",
+                    "provider": "ollama",
+                    "model": "llama3.2:3b",
+                    "lastSuccessAt": null,
+                    "lastFailureAt": null,
+                    "durationInCurrentStateSeconds": 1582,
+                    "error": null
+                },
+                {
+                    "id": "decision_engine",
+                    "name": "Decision Engine (Composite)",
+                    "status": "HEALTHY",
+                    "provider": "Rule Engine (Deterministic)",
+                    "model": "Weighted Scoring Model",
+                    "lastSuccessAt": null,
+                    "lastFailureAt": null,
+                    "durationInCurrentStateSeconds": 1582,
+                    "error": null
+                }
+            ]
+        },
+        "appPerformance": {
+            "overallAvgResponseTimeMs": 541.1,
+            "totalRequests": 9,
+            "totalErrors": 1,
+            "overallErrorRate": 11.1,
+            "endpointGroups": [
+                {
+                    "groupName": "Authentication & Identity",
+                    "requestCount": 4,
+                    "errorCount": 1,
+                    "avgResponseTimeMs": 233.3,
+                    "errorRate": 25,
+                    "avgLatencyMs": 233.3,
+                    "group": "Authentication & Identity",
+                    "totalRequests": 4
+                },
+                {
+                    "groupName": "General Platform APIs",
+                    "requestCount": 3,
+                    "errorCount": 0,
+                    "avgResponseTimeMs": 1287.3,
+                    "errorRate": 0,
+                    "avgLatencyMs": 1287.3,
+                    "group": "General Platform APIs",
+                    "totalRequests": 3
+                },
+                {
+                    "groupName": "Admin & Telemetry",
+                    "requestCount": 2,
+                    "errorCount": 0,
+                    "avgResponseTimeMs": 37.5,
+                    "errorRate": 0,
+                    "avgLatencyMs": 37.5,
+                    "group": "Admin & Telemetry",
+                    "totalRequests": 2
+                },
+                {
+                    "groupName": "Job Management & Search",
+                    "requestCount": 0,
+                    "errorCount": 0,
+                    "avgResponseTimeMs": 0,
+                    "errorRate": 0,
+                    "avgLatencyMs": 0,
+                    "group": "Job Management & Search",
+                    "totalRequests": 0
+                },
+                {
+                    "groupName": "Candidate Portal",
+                    "requestCount": 0,
+                    "errorCount": 0,
+                    "avgResponseTimeMs": 0,
+                    "errorRate": 0,
+                    "avgLatencyMs": 0,
+                    "group": "Candidate Portal",
+                    "totalRequests": 0
+                },
+                {
+                    "groupName": "Recruiter Pipeline",
+                    "requestCount": 0,
+                    "errorCount": 0,
+                    "avgResponseTimeMs": 0,
+                    "errorRate": 0,
+                    "avgLatencyMs": 0,
+                    "group": "Recruiter Pipeline",
+                    "totalRequests": 0
+                },
+                {
+                    "groupName": "Applications & ATS",
+                    "requestCount": 0,
+                    "errorCount": 0,
+                    "avgResponseTimeMs": 0,
+                    "errorRate": 0,
+                    "avgLatencyMs": 0,
+                    "group": "Applications & ATS",
+                    "totalRequests": 0
+                }
+            ]
+        }
+    },
+    "timestamp": "2026-10-22T01:49:40.1144443"
+}
+
+
+3. LLM Usage & Quota Statistics
+Purpose: Tracks AI engine token volumes, call counts per task type, average response latencies, and quota consumption across active LLM providers.
+Method: GET
+URL: http://localhost:8080/admin/stats?range=all
+Query Parameters:
+range (optional): today, week, or all (defaults to all).
+Headers:
+Authorization: Bearer <accessToken>
+Expected Status: 200 OK
+Key Response Fields:
+totalCalls: Total LLM invocations executed.
+providers[]: Breakdown of calls handled by Ollama, Gemini, or Groq.
+moduleBreakdown[]: Call counts and average latency per AI module.
+
+{
+    "success": true,
+    "message": "LLM statistics retrieved successfully",
+    "data": {
+        "available": true,
+        "range": "all",
+        "windowEnd": "2026-10-22T01:53:54.315455+05:30",
+        "generatedAt": "2026-10-21T20:23:54.316624+00:00",
+        "source": "llm_call_log.jsonl",
+        "totalCalls": 59,
+        "allTimeCalls": 59,
+        "todayCalls": 0,
+        "weekCalls": 4,
+        "failedCalls": 0,
+        "successRate": 100,
+        "avgLatencySeconds": 80.13,
+        "p50LatencySeconds": 70.46,
+        "p95LatencySeconds": 153.22,
+        "unknownTimeCount": 45,
+        "quota": {
+            "provider": "gemini",
+            "tier": "Free Tier",
+            "dailyLimit": 250,
+            "usedToday": 0,
+            "remainingToday": 250,
+            "percentageUsed": 0,
+            "configured": false,
+            "isConfigured": false
+        },
+        "providerDistribution": [
+            {
+                "provider": "OLLAMA",
+                "calls": 59,
+                "callCount": 59,
+                "percentage": 100,
+                "avgLatencySeconds": 80.13,
+                "failedCount": 0
+            }
+        ],
+        "moduleBreakdown": [
+            {
+                "id": "jd_generator",
+                "name": "Job Description Generator",
+                "module": "jd_generator",
+                "moduleName": "Job Description Generator",
+                "calls": 34,
+                "callCount": 34,
+                "percentage": 57.6,
+                "avgLatencySeconds": 67.04,
+                "failedCount": 0
+            },
+            {
+                "id": "resume_parser",
+                "name": "Resume Parser",
+                "module": "resume_parser",
+                "moduleName": "Resume Parser",
+                "calls": 25,
+                "callCount": 25,
+                "percentage": 42.4,
+                "avgLatencySeconds": 97.93,
+                "failedCount": 0
+            }
+        ]
+    },
+    "timestamp": "2026-10-22T01:53:54.343319"
+}
+
+
+
+
+
+4. Provider & API Key Status
+Purpose: Displays the status and connection readiness of LLM providers (Ollama local instance, Google Gemini API, Groq Cloud API) with masked secret keys for security compliance.
+Method: GET
+URL: http://localhost:8080/admin/providers
+Headers:
+Authorization: Bearer <accessToken>
+Expected Status: 200 OK
+Key Response Fields:
+activeProvider: Name of the provider currently handling live traffic.
+ollama, gemini, groq: Readiness status (isConfigured, reachable, masked keys).
+Category B: AI Call Logs & Auditing
+These endpoints allow administrators to inspect individual AI transactions, debug parsing or scoring anomalies, and investigate failures.
+
+{
+    "success": true,
+    "message": "Provider configuration retrieved successfully",
+    "data": {
+        "activeProvider": "ollama",
+        "activeModel": "llama3.2:3b",
+        "ollama": {
+            "name": "Ollama (Local LLM)",
+            "isConfigured": true,
+            "reachable": true,
+            "model": "llama3.2:3b"
+        },
+        "gemini": {
+            "name": "Google Gemini API",
+            "isConfigured": false,
+            "keyMasked": "Not Configured",
+            "model": "gemini-1.5-flash"
+        },
+        "groq": {
+            "name": "Groq Cloud API",
+            "isConfigured": false,
+            "keyMasked": "Not Configured",
+            "model": "openai/gpt-oss-20b"
+        }
+    },
+    "timestamp": "2026-10-22T01:55:28.6570227"
+}
+
+
+
+
+
+
+5. Search & Query AI Call Logs
+Purpose: Searchable, paginated audit log for AI engine executions. Allows filtering by task type, status (SUCCESS/FAILURE), provider, date range, or correlation ID.
+Method: GET
+URL: http://localhost:8080/admin/logs?page=1&size=10
+Query Parameters:
+page (optional): Page number (starts at 1).
+size (optional): Items per page (default: 20, max: 100).
+status (optional): SUCCESS or FAILURE.
+taskType (optional): jd_generation, resume_parsing, match_scoring, chatbot_message, interview_ai.
+query (optional): Free-text search term.
+Headers:
+Authorization: Bearer <accessToken>
+Expected Status: 200 OK
+Key Response Fields:
+logs[]: List of entries with timestamps, latency in ms, token usage, and sanitized input/output previews.
+
+
+{
+    "success": true,
+    "message": "Call logs retrieved successfully",
+    "data": {
+        "available": true,
+        "items": [
+            {
+                "id": "b91982c5-7379-48da-8368-7fc690453fbe",
+                "timestamp": "2026-10-21T15:27:15.169380+00:00",
+                "taskType": "resume_parse",
+                "provider": "ollama",
+                "status": "SUCCESS",
+                "latencySeconds": 153.22,
+                "attempt": 1,
+                "promptPreview": "You are an expert technical resume parsing engine. Read the resume text below and extract comprehensive, structured information grounded strictly in the provided text.\n\nReturn ONLY valid JSON. No expl",
+                "responsePreview": "{\n  \"skills\": [\"Java\", \"JavaScript\", \"SQL\", \"Spring Boot\", \"Spring MVC\", \"Spring Security\", \"Hibernate\", \"JDBC\", \"REST APIs\", \"JWT\", \"OAuth\", \"React.js\", \"HTML5\", \"CSS3\", \"Tailwind CSS\", \"Git\", \"GitHu"
+            },
+            {
+                "id": "0f522e88-a2de-4c91-8b96-1ea3f585fdc8",
+                "timestamp": "2026-10-21T15:23:32.482867+00:00",
+                "taskType": "jd_generate",
+                "provider": "ollama",
+                "status": "SUCCESS",
+                "latencySeconds": 63.1,
+                "attempt": 1,
+                "promptPreview": "You are an expert technical recruiter and talent strategist. Given a job title, role family, experience level, baseline skills, and optional description, generate an accurate, level-tailored job posti",
+                "responsePreview": "{\n  \"description\": \"Join our team of backend developers and contribute to the design, development, and deployment of scalable and secure Java-based applications. We're looking for a mid-level develope"
+            },
+            {
+                "id": "7c9f2145-ec43-4f26-b42b-4b6b0a4b0eda",
+                "timestamp": "2026-10-21T15:22:15.035640+00:00",
+                "taskType": "jd_generate",
+                "provider": "ollama",
+                "status": "SUCCESS",
+                "latencySeconds": 73.46,
+                "attempt": 1,
+                "promptPreview": "You are an expert technical recruiter and talent strategist. Given a job title, role family, experience level, baseline skills, and optional description, generate an accurate, level-tailored job posti",
+                "responsePreview": "{\n  \"description\": \"Join our team of backend developers and contribute to the design, development, and deployment of scalable and secure Java-based applications. We're looking for a mid-level develope"
+            },
+            {
+                "id": "765873d4-bf7f-4b3b-bc33-f5456f71435b",
+                "timestamp": "2026-10-15T13:02:04.335794+00:00",
+                "taskType": "resume_parse",
+                "provider": "ollama",
+                "status": "SUCCESS",
+                "latencySeconds": 134.25,
+                "attempt": 2,
+                "promptPreview": "You are an expert technical resume parsing engine. Read the resume text below and extract comprehensive, structured information grounded strictly in the provided text.\n\nReturn ONLY valid JSON. No expl",
+                "responsePreview": "{\n  \"skills\": [\"Java\", \"JavaScript\", \"SQL\", \"Spring Boot\", \"Spring MVC\", \"Spring Security\", \"Spring Data JPA\", \"Hibernate\", \"JDBC\", \"REST APIs\", \"JWT\", \"OAuth\", \"React.js\", \"HTML5\", \"CSS3\", \"Tailwind "
+            },
+            {
+                "id": "5e3fcef2-d67e-418f-8fb3-4f10d29e6ae0",
+                "timestamp": "2026-10-14T20:14:31.182252+00:00",
+                "taskType": "jd_generate",
+                "provider": "ollama",
+                "status": "SUCCESS",
+                "latencySeconds": 68.64,
+                "attempt": 1,
+                "promptPreview": "You are an expert technical recruiter and talent strategist. Given a job title, role family, experience level, baseline skills, and optional description, generate an accurate, level-tailored job posti",
+                "responsePreview": "{\n  \"description\": \"Join our team of Java developers working on backend applications with a focus on scalability, security, and performance. We're looking for a mid-level developer to contribute to th"
+            },
+            {
+                "id": "dcca0ea9-fe15-4742-811e-51d1ed285fa8",
+                "timestamp": "2026-10-14T20:11:51.320481+00:00",
+                "taskType": "jd_generate",
+                "provider": "ollama",
+                "status": "SUCCESS",
+                "latencySeconds": 52.43,
+                "attempt": 1,
+                "promptPreview": "You are an expert technical recruiter and talent strategist. Given a job title, role family, experience level, baseline skills, and optional description, generate an accurate, level-tailored job posti",
+                "responsePreview": "{\n  \"description\": \"Join our Java Backend Development team and contribute to building scalable, efficient, and secure backend applications. As an Entry-level Java Backend Developer, you will work clos"
+            },
+            {
+                "id": "56246bbd-796f-40d6-9cdd-86b9c5389c45",
+                "timestamp": "2026-10-14T19:43:29.010075+00:00",
+                "taskType": "jd_generate",
+                "provider": "ollama",
+                "status": "SUCCESS",
+                "latencySeconds": 64.51,
+                "attempt": 1,
+                "promptPreview": "You are an expert technical recruiter and talent strategist. Given a job title, role family, experience level, baseline skills, and optional description, generate an accurate, level-tailored job posti",
+                "responsePreview": "{\n  \"description\": \"Join our team of experienced Java developers and contribute to the design and implementation of scalable, high-performance backend systems. As a Senior Java Backend Developer, you "
+            },
+            {
+                "id": "18ff471d-f3ee-45fe-bf54-040aabb5b2ff",
+                "timestamp": "2026-10-14T19:42:01.957994+00:00",
+                "taskType": "jd_generate",
+                "provider": "ollama",
+                "status": "SUCCESS",
+                "latencySeconds": 51.18,
+                "attempt": 1,
+                "promptPreview": "You are an expert technical recruiter and talent strategist. Given a job title, role family, experience level, baseline skills, and optional description, generate an accurate, level-tailored job posti",
+                "responsePreview": "{\n  \"description\": \"Join our Java Backend Development team and contribute to building scalable, efficient, and secure backend applications. As an Entry-level Java Backend Developer, you will work clos"
+            },
+            {
+                "id": "49f2fd46-eeff-4262-8555-652b1c94d530",
+                "timestamp": "2026-10-14T18:40:04.282217+00:00",
+                "taskType": "resume_parse",
+                "provider": "ollama",
+                "status": "SUCCESS",
+                "latencySeconds": 109.34,
+                "attempt": 1,
+                "promptPreview": "You are an expert technical resume parsing engine. Read the resume text below and extract comprehensive, structured information grounded strictly in the provided text.\n\nReturn ONLY valid JSON. No expl",
+                "responsePreview": "{\n  \"skills\": [\"Java\", \"JavaScript\", \"SQL\", \"Spring Boot\", \"Spring MVC\", \"Spring Security\", \"Hibernate\", \"JDBC\", \"REST APIs\", \"JWT\", \"OAuth\", \"React.js\", \"HTML5\", \"CSS3\", \"Tailwind CSS\", \"Git\", \"GitHu"
+            },
+            {
+                "id": "0005b98c-33a7-4392-aab2-b05a9272b5d7",
+                "timestamp": "2026-10-14T18:36:59.300074+00:00",
+                "taskType": "resume_parse",
+                "provider": "ollama",
+                "status": "SUCCESS",
+                "latencySeconds": 77.91,
+                "attempt": 1,
+                "promptPreview": "You are an expert technical resume parsing engine. Read the resume text below and extract comprehensive, structured information grounded strictly in the provided text.\n\nReturn ONLY valid JSON. No expl",
+                "responsePreview": "{\n  \"skills\": [\"Java\", \"Spring Boot\", \"REST APIs\", \"MySQL\", \"PostgreSQL\", \"Git\", \"GitHub\", \"Maven\", \"JUnit\", \"Agile\", \"SDLC\", \"Microservices\", \"Multithreading\", \"Design Patterns\", \"OOP\", \"DSA\", \"DBMS\""
+            }
+        ],
+        "totalElements": 59,
+        "page": 1,
+        "size": 10,
+        "totalPages": 6
+    },
+    "timestamp": "2026-10-22T02:04:20.5776961"
+}
+
+
+
+
+
+
+
+6. Get Single AI Call Log Detail
+Purpose: Fetches the complete, detailed record of a specific AI transaction, including full prompt payloads, raw engine outputs, and sanitized error messages if an error occurred.
+Method: GET
+URL: http://localhost:8080/admin/logs/{logId}
+Path Parameter:
+logId: UUID string obtained from the GET /admin/logs response.
+Headers:
+Authorization: Bearer <accessToken>
+Expected Status: 200 OK (or 404 Not Found if ID does not exist).
+Category C: User & Access Management
+These endpoints allow administrators to manage accounts, enforce security policies, assign roles, and provision staff.
+
+
+
+Get -- http://localhost:8080/admin/logs/7c9f2145-ec43-4f26-b42b-4b6b0a4b0eda
+
+{
+    "success": true,
+    "message": "Call log entry retrieved successfully",
+    "data": {
+        "id": "7c9f2145-ec43-4f26-b42b-4b6b0a4b0eda",
+        "timestamp": "2026-10-21T15:22:15.035640+00:00",
+        "taskType": "jd_generate",
+        "provider": "ollama",
+        "status": "SUCCESS",
+        "latencySeconds": 73.46,
+        "attempt": 1,
+        "promptPreview": "You are an expert technical recruiter and talent strategist. Given a job title, role family, experience level, baseline skills, and optional description, generate an accurate, level-tailored job posti",
+        "responsePreview": "{\n  \"description\": \"Join our team of backend developers and contribute to the design, development, and deployment of scalable and secure Java-based applications. We're looking for a mid-level develope"
+    },
+    "timestamp": "2026-10-22T02:05:59.3723027"
+}
+
+
+
+
+7. List System Users
+Purpose: Returns a paginated list of all registered accounts (candidates, recruiters, sub-admins, admins) with search and filter capabilities.
+Method: GET
+URL: http://localhost:8080/admin/users?page=0&size=10
+Query Parameters:
+page (optional): Page number (0-indexed).
+size (optional): Page size (default: 10, max: 100).
+role (optional): ROLE_ADMIN, ROLE_SUB_ADMIN, ROLE_RECRUITER, ROLE_CANDIDATE.
+enabled (optional): true or false.
+search (optional): Search by first name, last name, or email.
+Headers:
+Authorization: Bearer <accessToken>
+Expected Status: 200 OK
+Action: Copy a userId (UUID) from this list to test the role and status update endpoints below.
+
+
+
+{
+    "success": true,
+    "message": "User accounts retrieved successfully",
+    "data": {
+        "content": [
+            {
+                "id": "c1207a3f-9fdc-4b63-9548-7f030af4add1",
+                "firstName": "Active",
+                "lastName": "Admin",
+                "email": "test-deact-ced13cec-1ba7-4f0c-8ac0-f221193d6c8b@vionsys.com",
+                "phoneNumber": null,
+                "role": "ROLE_ADMIN",
+                "enabled": false,
+                "accountNonLocked": true,
+                "failedLoginAttempts": 0,
+                "authProvider": "LOCAL",
+                "createdAt": "2026-10-21T17:48:25.550337",
+                "updatedAt": "2026-10-21T17:48:25.570169",
+                "lastLoginAt": null,
+                "mustChangePassword": false
+            },
+            {
+                "id": "d7bfbf45-ee56-4ce7-9c86-f1625d0cfe3e",
+                "firstName": "Locked",
+                "lastName": "Admin",
+                "email": "test-lock-e08b06bd-8f8d-4a06-ad29-55bd824d9e01@vionsys.com",
+                "phoneNumber": null,
+                "role": "ROLE_ADMIN",
+                "enabled": true,
+                "accountNonLocked": false,
+                "failedLoginAttempts": 0,
+                "authProvider": "LOCAL",
+                "createdAt": "2026-10-21T17:48:25.457556",
+                "updatedAt": "2026-10-21T17:48:25.476692",
+                "lastLoginAt": null,
+                "mustChangePassword": false
+            },
+            {
+                "id": "2c6fca6a-f81e-4f85-a5ac-4e42c61ff6df",
+                "firstName": "Demoted",
+                "lastName": "Admin",
+                "email": "test-rolechange-ba8efbd7-2cf7-45fa-a08c-f12f681b4e22@vionsys.com",
+                "phoneNumber": null,
+                "role": "ROLE_RECRUITER",
+                "enabled": true,
+                "accountNonLocked": true,
+                "failedLoginAttempts": 0,
+                "authProvider": "LOCAL",
+                "createdAt": "2026-10-21T17:48:25.174623",
+                "updatedAt": "2026-10-21T17:48:25.42158",
+                "lastLoginAt": null,
+                "mustChangePassword": false
+            },
+            {
+                "id": "375b516b-2179-44fc-89e4-264ce226f40c",
+                "firstName": "Active",
+                "lastName": "Admin",
+                "email": "test-deact-ba8a25a2-79bc-437c-af3a-426121404904@vionsys.com",
+                "phoneNumber": null,
+                "role": "ROLE_ADMIN",
+                "enabled": false,
+                "accountNonLocked": true,
+                "failedLoginAttempts": 0,
+                "authProvider": "LOCAL",
+                "createdAt": "2026-10-21T17:45:53.453552",
+                "updatedAt": "2026-10-21T17:45:53.471566",
+                "lastLoginAt": null,
+                "mustChangePassword": false
+            },
+            {
+                "id": "526cc80d-8690-4d75-bfe7-86147291436d",
+                "firstName": "Locked",
+                "lastName": "Admin",
+                "email": "test-lock-74fcb44e-dd2f-4d40-9691-8608442eec9f@vionsys.com",
+                "phoneNumber": null,
+                "role": "ROLE_ADMIN",
+                "enabled": true,
+                "accountNonLocked": false,
+                "failedLoginAttempts": 0,
+                "authProvider": "LOCAL",
+                "createdAt": "2026-10-21T17:45:53.354966",
+                "updatedAt": "2026-10-21T17:45:53.37057",
+                "lastLoginAt": null,
+                "mustChangePassword": false
+            },
+            {
+                "id": "d0a48c08-075e-4d91-a27a-d78349a69071",
+                "firstName": "Demoted",
+                "lastName": "Admin",
+                "email": "test-rolechange-6c8418bc-e293-48b8-8c95-f9fc2b3a10e5@vionsys.com",
+                "phoneNumber": null,
+                "role": "ROLE_RECRUITER",
+                "enabled": true,
+                "accountNonLocked": true,
+                "failedLoginAttempts": 0,
+                "authProvider": "LOCAL",
+                "createdAt": "2026-10-21T17:45:53.086852",
+                "updatedAt": "2026-10-21T17:45:53.324307",
+                "lastLoginAt": null,
+                "mustChangePassword": false
+            },
+            {
+                "id": "0ec12aa4-d8ed-4d96-b273-8954fe097cd2",
+                "firstName": "Mohit",
+                "lastName": "Chouhan",
+                "email": "mohitpc@gmail.com",
+                "phoneNumber": null,
+                "role": "ROLE_SUB_ADMIN",
+                "enabled": true,
+                "accountNonLocked": true,
+                "failedLoginAttempts": 0,
+                "authProvider": "LOCAL",
+                "createdAt": "2026-10-16T22:08:20.245092",
+                "updatedAt": "2026-10-16T22:08:20.245092",
+                "lastLoginAt": null,
+                "mustChangePassword": true
+            },
+            {
+                "id": "87c87bdf-fb9e-4a0e-9a17-fd08f11684bf",
+                "firstName": "Active",
+                "lastName": "Admin",
+                "email": "test-deact-da5a1afb-b775-4862-a2c7-56f4c4fcc74a@vionsys.com",
+                "phoneNumber": null,
+                "role": "ROLE_ADMIN",
+                "enabled": false,
+                "accountNonLocked": true,
+                "failedLoginAttempts": 0,
+                "authProvider": "LOCAL",
+                "createdAt": "2026-10-16T21:33:14.498316",
+                "updatedAt": "2026-10-16T21:33:14.515589",
+                "lastLoginAt": null,
+                "mustChangePassword": false
+            },
+            {
+                "id": "32d64231-e009-4e18-b508-560f679172c5",
+                "firstName": "Locked",
+                "lastName": "Admin",
+                "email": "test-lock-b82d3c7a-2463-49fc-b4b5-dd6f48eddea3@vionsys.com",
+                "phoneNumber": null,
+                "role": "ROLE_ADMIN",
+                "enabled": true,
+                "accountNonLocked": false,
+                "failedLoginAttempts": 0,
+                "authProvider": "LOCAL",
+                "createdAt": "2026-10-16T21:33:14.419819",
+                "updatedAt": "2026-10-16T21:33:14.434898",
+                "lastLoginAt": null,
+                "mustChangePassword": false
+            },
+            {
+                "id": "dc43b771-14a9-420a-ada9-7b5eb725c33d",
+                "firstName": "Demoted",
+                "lastName": "Admin",
+                "email": "test-rolechange-b0a9d04e-1655-400a-85a0-fba12355fc09@vionsys.com",
+                "phoneNumber": null,
+                "role": "ROLE_RECRUITER",
+                "enabled": true,
+                "accountNonLocked": true,
+                "failedLoginAttempts": 0,
+                "authProvider": "LOCAL",
+                "createdAt": "2026-10-16T21:33:14.112633",
+                "updatedAt": "2026-10-16T21:33:14.388078",
+                "lastLoginAt": null,
+                "mustChangePassword": false
+            }
+        ],
+        "pageable": {
+            "pageNumber": 0,
+            "pageSize": 10,
+            "sort": {
+                "empty": false,
+                "sorted": true,
+                "unsorted": false
+            },
+            "offset": 0,
+            "paged": true,
+            "unpaged": false
+        },
+        "last": false,
+        "totalElements": 83,
+        "totalPages": 9,
+        "size": 10,
+        "number": 0,
+        "sort": {
+            "empty": false,
+            "sorted": true,
+            "unsorted": false
+        },
+        "first": true,
+        "numberOfElements": 10,
+        "empty": false
+    },
+    "timestamp": "2026-10-22T02:07:06.6281801"
+}
+
+
+
+
+
+
+
+
+8. Create Sub-Administrator Account
+Purpose: Provisions a new Sub-Admin user. The sub-admin is assigned ROLE_SUB_ADMIN and has a mustChangePassword=true flag enforced, requiring them to reset their temporary password on first sign-in.
+Method: POST
+URL: http://localhost:8080/admin/sub-admins
+Headers:
+Authorization: Bearer <accessToken>
+Content-Type: application/json
+Body (raw -> JSON):
+json
+{
+  "firstName": "Taylor",
+  "lastName": "Vance",
+  "email": "taylor.vance@vionsys.com",
+  "password": "TempPassword@2026",
+  "confirmPassword": "TempPassword@2026"
+}
+Expected Status: 200 OK
+Key Validation Rules:
+First name, last name, and valid email required.
+Password must be at least 8 characters and match confirmPassword.
+
+
+
+
+Post -- http://localhost:8080/admin/sub-admins
+
+
+{
+    "success": true,
+    "message": "Sub-admin account created successfully",
+    "data": {
+        "id": "d8c8de56-7d5e-4dc9-be17-2e44ad9dd568",
+        "firstName": "Taylor",
+        "lastName": "Vance",
+        "email": "taylor.vance@vionsys.com",
+        "phoneNumber": null,
+        "role": "ROLE_SUB_ADMIN",
+        "enabled": true,
+        "accountNonLocked": true,
+        "failedLoginAttempts": 0,
+        "authProvider": "LOCAL",
+        "createdAt": "2026-10-22T02:08:19.4470419",
+        "updatedAt": "2026-10-22T02:08:19.4470419",
+        "lastLoginAt": null,
+        "mustChangePassword": true
+    },
+    "timestamp": "2026-10-22T02:08:19.4649181"
+
+
+
+
+
+
+
+
+9. Update User Role
+Purpose: Changes the role of a user (e.g. promoting a Candidate to a Recruiter, or Recruiter to Admin). Includes protection against demoting the last remaining active Admin.
+Method: PUT
+URL: http://localhost:8080/admin/users/{userId}/role
+Path Parameter:
+userId: Replace with a valid User UUID (from GET /admin/users).
+Headers:
+Authorization: Bearer <accessToken>
+Content-Type: application/json
+Body (raw -> JSON):
+json
+{
+  "role": "ROLE_RECRUITER"
+}
+Allowed Values: ROLE_CANDIDATE, ROLE_RECRUITER, ROLE_SUB_ADMIN, ROLE_ADMIN.
+Expected Status: 200 OK
+
+
+{
+    "success": true,
+    "message": "User role updated successfully",
+    "data": {
+        "id": "375b516b-2179-44fc-89e4-264ce226f40c",
+        "firstName": "Active",
+        "lastName": "Admin",
+        "email": "test-deact-ba8a25a2-79bc-437c-af3a-426121404904@vionsys.com",
+        "phoneNumber": null,
+        "role": "ROLE_RECRUITER",
+        "enabled": false,
+        "accountNonLocked": true,
+        "failedLoginAttempts": 0,
+        "authProvider": "LOCAL",
+        "createdAt": "2026-10-21T17:45:53.453552",
+        "updatedAt": "2026-10-22T02:19:10.0924367",
+        "lastLoginAt": null,
+        "mustChangePassword": false
+    },
+    "timestamp": "2026-10-22T02:19:10.1077545"
+}
+
+
+
+
+
+10. Update User Status (Activate, Deactivate, Lock, Unlock)
+Purpose: Soft-deactivates an account (enabled: false) or locks an account due to security concerns (accountNonLocked: false). Deactivated users cannot log in.
+Method: PUT
+URL: http://localhost:8080/admin/users/{userId}/status
+Path Parameter:
+userId: Replace with a valid User UUID.
+Headers:
+Authorization: Bearer <accessToken>
+Content-Type: application/json
+Body (raw -> JSON):
+json
+{
+  "enabled": true,
+  "accountNonLocked": true
+}
+Expected Status: 200 OK
+Protection Note: The system prevents an admin from locking or disabling their own current account.
+
+
+
+
+Put -- http://localhost:8080/admin/users/d8c8de56-7d5e-4dc9-be17-2e44ad9dd568/status
+
+{
+    "success": true,
+    "message": "User account status updated successfully",
+    "data": {
+        "id": "d8c8de56-7d5e-4dc9-be17-2e44ad9dd568",
+        "firstName": "Taylor",
+        "lastName": "Vance",
+        "email": "taylor.vance@vionsys.com",
+        "phoneNumber": null,
+        "role": "ROLE_SUB_ADMIN",
+        "enabled": true,
+        "accountNonLocked": true,
+        "failedLoginAttempts": 0,
+        "authProvider": "LOCAL",
+        "createdAt": "2026-10-22T02:08:19.447042",
+        "updatedAt": "2026-10-22T02:08:19.447042",
+        "lastLoginAt": null,
+        "mustChangePassword": true
+    },
+    "timestamp": "2026-10-22T02:11:09.8471248"
+}
+}
+
+
+
+
+11. Change Password
+Purpose: Allows an authenticated administrator or sub-administrator to update their password.
+Method: POST
+URL: http://localhost:8080/admin/change-password
+Headers:
+Authorization: Bearer <accessToken>
+Content-Type: application/json
+Body (raw -> JSON):
+json
+{
+  "currentPassword": "Password@123",
+  "newPassword": "NewSecurePassword@123",
+  "confirmPassword": "NewSecurePassword@123"
+}
+Expected Status: 200 OK (Note: If you run this on admin@vionsys.com, your subsequent logins will require the new password).
+Category D: Diagnostics & Audit Trail
+
+
+
+{
+    "success": true,
+    "message": "Password changed successfully",
+    "data": "Password changed successfully",
+    "timestamp": "2026-10-22T02:21:29.3133324"
+}
+
+
+
+12. Administrative Action Audit Logs
+Purpose: Immutable audit log recording every administrative action (e.g. who changed which user's role, who enabled/disabled an account, timestamps, and IP addresses).
+Method: GET
+URL: http://localhost:8080/admin/audit?page=0&size=20
+Query Parameters:
+page (optional): Page index (0-indexed).
+size (optional): Items per page (default: 20).
+Headers:
+Authorization: Bearer <accessToken>
+Expected Status: 200 OK
+Observation: If you executed PUT /admin/users/{userId}/role or PUT /admin/users/{userId}/status in previous steps, this endpoint will display records of those exact changes.
+
+
+
+
+{
+    "success": true,
+    "message": "Admin audit trail retrieved successfully",
+    "data": {
+        "content": [
+            {
+                "id": "a92951c7-5770-4eb5-935d-c02e476dc77b",
+                "actorUserId": "9f3c9db7-3016-467e-bd0b-c1e2b0e7360e",
+                "actorEmail": "admin@vionsys.com",
+                "action": "CHANGE_PASSWORD",
+                "targetUserId": "9f3c9db7-3016-467e-bd0b-c1e2b0e7360e",
+                "oldValue": "mustChangePassword=false",
+                "newValue": "mustChangePassword=false",
+                "createdAt": "2026-10-22T02:21:29.308352"
+            },
+            {
+                "id": "a5dd89ef-6fc3-4261-936e-b513adbc0c0c",
+                "actorUserId": "9f3c9db7-3016-467e-bd0b-c1e2b0e7360e",
+                "actorEmail": "admin@vionsys.com",
+                "action": "UPDATE_ROLE",
+                "targetUserId": "375b516b-2179-44fc-89e4-264ce226f40c",
+                "oldValue": "role=ROLE_ADMIN",
+                "newValue": "role=ROLE_RECRUITER",
+                "createdAt": "2026-10-22T02:19:10.099593"
+            },
+            {
+                "id": "f1e8ba79-2677-4f77-be7c-0399d0aa3ec7",
+                "actorUserId": "9f3c9db7-3016-467e-bd0b-c1e2b0e7360e",
+                "actorEmail": "admin@vionsys.com",
+                "action": "UPDATE_STATUS",
+                "targetUserId": "d8c8de56-7d5e-4dc9-be17-2e44ad9dd568",
+                "oldValue": "enabled=true, accountNonLocked=true",
+                "newValue": "enabled=true, accountNonLocked=true",
+                "createdAt": "2026-10-22T02:11:09.843113"
+            },
+            {
+                "id": "ec973598-60b4-4738-833f-158439708a7e",
+                "actorUserId": "9f3c9db7-3016-467e-bd0b-c1e2b0e7360e",
+                "actorEmail": "admin@vionsys.com",
+                "action": "CREATE_SUB_ADMIN",
+                "targetUserId": "d8c8de56-7d5e-4dc9-be17-2e44ad9dd568",
+                "newValue": "email=taylor.vance@vionsys.com, role=ROLE_SUB_ADMIN, mustChangePassword=true",
+                "createdAt": "2026-10-22T02:08:19.447042"
+            },
+            {
+                "id": "eaf98e16-e213-411e-80d8-b31f3b74e601",
+                "actorUserId": "9f3c9db7-3016-467e-bd0b-c1e2b0e7360e",
+                "actorEmail": "admin@vionsys.com",
+                "action": "VIEW_CALL_LOG",
+                "newValue": "logId=7c9f2145-ec43-4f26-b42b-4b6b0a4b0eda",
+                "createdAt": "2026-10-22T02:05:59.370601"
+            },
+            {
+                "id": "a7d549e9-909c-40e4-8b0b-393189c6aaa1",
+                "actorUserId": "9f3c9db7-3016-467e-bd0b-c1e2b0e7360e",
+                "actorEmail": "admin@vionsys.com",
+                "action": "VIEW_CALL_LOGS",
+                "newValue": "query=null, taskType=null, status=null, provider=null, from=null, to=null, correlationId=null, candidateRef=null, page=1, size=10",
+                "createdAt": "2026-10-22T02:04:20.524472"
+            },
+            {
+                "id": "b6f7c432-1bb4-42a9-937f-4384b907eda9",
+                "actorUserId": "9f3c9db7-3016-467e-bd0b-c1e2b0e7360e",
+                "actorEmail": "admin@vionsys.com",
+                "action": "VIEW_CALL_LOG",
+                "newValue": "logId=0005b98c-33a7-4392-aab2-b05a9272b5d7",
+                "createdAt": "2026-10-22T02:01:44.690216"
+            },
+            {
+                "id": "6d2a2456-ba07-4a34-a65c-f7d82054c99a",
+                "actorUserId": "9f3c9db7-3016-467e-bd0b-c1e2b0e7360e",
+                "actorEmail": "admin@vionsys.com",
+                "action": "VIEW_CALL_LOGS",
+                "newValue": "query=null, taskType=null, status=null, provider=null, from=null, to=null, correlationId=null, candidateRef=null, page=1, size=10",
+                "createdAt": "2026-10-22T02:01:33.65281"
+            },
+            {
+                "id": "770dd86d-fdf3-4ee1-a311-a6f30b7fe5ae",
+                "actorUserId": "9f3c9db7-3016-467e-bd0b-c1e2b0e7360e",
+                "actorEmail": "admin@vionsys.com",
+                "action": "CREATE_SUB_ADMIN",
+                "targetUserId": "0ec12aa4-d8ed-4d96-b273-8954fe097cd2",
+                "newValue": "email=mohitpc@gmail.com, role=ROLE_SUB_ADMIN, mustChangePassword=true",
+                "createdAt": "2026-10-16T22:08:20.247092"
+            }
+        ],
+        "pageable": {
+            "pageNumber": 0,
+            "pageSize": 20,
+            "sort": {
+                "empty": true,
+                "sorted": false,
+                "unsorted": true
+            },
+            "offset": 0,
+            "paged": true,
+            "unpaged": false
+        },
+        "last": true,
+        "totalElements": 9,
+        "totalPages": 1,
+        "size": 20,
+        "number": 0,
+        "sort": {
+            "empty": true,
+            "sorted": false,
+            "unsorted": true
+        },
+        "first": true,
+        "numberOfElements": 9,
+        "empty": false
+    },
+    "timestamp": "2026-10-22T02:22:25.9817876"
+}
+
+
+
+
+
+13. Test Outbound Email Delivery (SMTP Diagnostic)
+Purpose: Allows administrators to verify SMTP configuration and test if notifications can reach external email providers without triggering real recruitment workflow emails.
+Method: POST
+URL: http://localhost:8080/admin/email/test?recipientEmail=your-test-email@example.com
+Query Parameter:
+recipientEmail: Destination email address.
+Headers:
+Authorization: Bearer <accessToken>
+Expected Status: 200 OK
+Response Details: Returns connection status, SMTP host used, and delivery outcome.

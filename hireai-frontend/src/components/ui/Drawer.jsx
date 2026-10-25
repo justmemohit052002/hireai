@@ -79,6 +79,11 @@ export const Drawer = ({
                     {/* Header */}
                     {header ? (
                       <div className="relative px-5 sm:px-7 py-4 sm:py-5 border-b border-border bg-surface shrink-0">
+                        {!title && (
+                          <DialogPrimitive.Title className="sr-only">
+                            Details Dialog
+                          </DialogPrimitive.Title>
+                        )}
                         {header}
                         <DialogPrimitive.Close className="absolute top-4 right-4 sm:top-5 sm:right-5 rounded-xl p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground transition-colors cursor-pointer">
                           <X className="w-5 h-5" />
@@ -87,9 +92,13 @@ export const Drawer = ({
                     ) : (title || description) ? (
                       <div className="flex items-center justify-between px-5 sm:px-7 py-4 sm:py-5 border-b border-border bg-surface shrink-0">
                         <div>
-                          {title && (
+                          {title ? (
                             <DialogPrimitive.Title className="text-lg sm:text-xl font-bold font-heading text-foreground">
                               {title}
+                            </DialogPrimitive.Title>
+                          ) : (
+                            <DialogPrimitive.Title className="sr-only">
+                              Details Dialog
                             </DialogPrimitive.Title>
                           )}
                           {description && (
@@ -103,9 +112,14 @@ export const Drawer = ({
                         </DialogPrimitive.Close>
                       </div>
                     ) : (
-                      <DialogPrimitive.Close className="absolute top-4 right-4 z-20 rounded-xl p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground transition-colors cursor-pointer">
-                        <X className="w-5 h-5" />
-                      </DialogPrimitive.Close>
+                      <>
+                        <DialogPrimitive.Title className="sr-only">
+                          Details Dialog
+                        </DialogPrimitive.Title>
+                        <DialogPrimitive.Close className="absolute top-4 right-4 z-20 rounded-xl p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground transition-colors cursor-pointer">
+                          <X className="w-5 h-5" />
+                        </DialogPrimitive.Close>
+                      </>
                     )}
 
                     {/* Content */}
@@ -147,6 +161,11 @@ export const Drawer = ({
                   {/* Header */}
                   {header ? (
                     <div className="relative px-5 sm:px-6 py-4 border-b border-border shrink-0">
+                      {!title && (
+                        <DialogPrimitive.Title className="sr-only">
+                          Details Drawer
+                        </DialogPrimitive.Title>
+                      )}
                       {header}
                       <DialogPrimitive.Close className="absolute top-4 right-4 rounded-xl p-2 text-muted-foreground hover:bg-surface-2 hover:text-foreground transition-colors cursor-pointer">
                         <X className="w-5 h-5" />
@@ -155,9 +174,13 @@ export const Drawer = ({
                   ) : (title || description) ? (
                     <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-border shrink-0">
                       <div>
-                        {title && (
+                        {title ? (
                           <DialogPrimitive.Title className="text-lg sm:text-xl font-bold font-heading text-foreground">
                             {title}
+                          </DialogPrimitive.Title>
+                        ) : (
+                          <DialogPrimitive.Title className="sr-only">
+                            Details Drawer
                           </DialogPrimitive.Title>
                         )}
                         {description && (
@@ -170,7 +193,11 @@ export const Drawer = ({
                         <X className="w-5 h-5" />
                       </DialogPrimitive.Close>
                     </div>
-                  ) : null}
+                  ) : (
+                    <DialogPrimitive.Title className="sr-only">
+                      Details Drawer
+                    </DialogPrimitive.Title>
+                  )}
 
                   {/* Content */}
                   <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-6">{children}</div>

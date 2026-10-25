@@ -31,14 +31,13 @@ const SLIDES = [
       'Unlike keyword-stuffing legacy ATS filters, HireAI evaluates candidate repositories, semantic skill overlap, and verified system scale. Recruiters see exactly why an applicant is shortlisted.',
     statValue: '96.4%',
     statLabel: 'Semantic Match Precision',
-    candidate: {
-      name: 'Mohit Singh Chouhan',
-      role: 'Senior Full-Stack Engineer',
-      experience: 'Ex-Vionsys | 5+ Years Exp',
+    matrix: {
+      title: 'Technical Competency Matrix',
+      subtitle: 'Full-Stack & Distributed Systems Specification',
       score: 96,
       skills: ['React', 'Java', 'Spring Boot', 'PostgreSQL', 'Docker', 'AWS'],
-      notes: 'Strong alignment with distributed backend requirements and modern reactive frontend stack.',
-      appliedTo: 'Associate Software Developer @ HCL',
+      notes: 'Objective alignment with distributed backend microservices, relational data schemas, and reactive component architecture.',
+      rubric: 'Standardized Engineering Rubric',
     },
   },
   {
@@ -204,27 +203,27 @@ export const LandingShowcaseCarousel = () => {
 
           {/* Interactive UI Preview (7 cols) */}
           <div className="lg:col-span-7">
-            {/* Slide 1: Neural ATS Candidate Card */}
-            {current.id === 'ats-matching' && current.candidate && (
+            {/* Slide 1: Neural ATS Objective Match Matrix */}
+            {current.id === 'ats-matching' && current.matrix && (
               <div className="p-5 sm:p-6 rounded-xl bg-background border border-border space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-border/80">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-brand-navy text-white flex items-center justify-center font-bold text-sm">
-                      MC
+                    <div className="w-10 h-10 rounded-xl bg-brand-blue/15 text-brand-blue flex items-center justify-center font-bold">
+                      <Code2 className="w-5 h-5" />
                     </div>
                     <div>
                       <h4 className="font-bold text-sm text-foreground">
-                        {current.candidate.name}
+                        {current.matrix.title}
                       </h4>
                       <p className="text-xs text-muted-foreground">
-                        {current.candidate.experience}
+                        {current.matrix.subtitle}
                       </p>
                     </div>
                   </div>
 
                   <span className="px-3 py-1 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-mono font-bold text-xs flex items-center gap-1 border border-emerald-500/25">
                     <CheckCircle2 className="w-3 h-3" />
-                    {current.candidate.score}% ATS Match
+                    {current.matrix.score}% ATS Match
                   </span>
                 </div>
 
@@ -233,7 +232,7 @@ export const LandingShowcaseCarousel = () => {
                     Verified Competencies Matched
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {current.candidate.skills.map((skill) => (
+                    {current.matrix.skills.map((skill) => (
                       <span
                         key={skill}
                         className="px-2.5 py-1 rounded-lg text-xs font-medium bg-surface border border-border text-foreground flex items-center gap-1"
@@ -246,16 +245,16 @@ export const LandingShowcaseCarousel = () => {
                 </div>
 
                 <div className="p-3.5 rounded-lg bg-surface border border-border text-xs text-muted-foreground">
-                  <strong className="text-foreground">AI Review Note:</strong> {current.candidate.notes}
+                  <strong className="text-foreground">AI Evaluation Note:</strong> {current.matrix.notes}
                 </div>
 
                 <div className="flex items-center justify-between pt-1 text-xs">
                   <span className="text-muted-foreground flex items-center gap-1">
                     <Building2 className="w-3.5 h-3.5 text-brand-blue" />
-                    {current.candidate.appliedTo}
+                    {current.matrix.rubric}
                   </span>
                   <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-                    <UserCheck className="w-3.5 h-3.5" /> Shortlisted
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Shortlist Threshold Met
                   </span>
                 </div>
               </div>

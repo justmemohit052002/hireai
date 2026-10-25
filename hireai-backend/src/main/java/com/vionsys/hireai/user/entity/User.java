@@ -3,6 +3,7 @@ package com.vionsys.hireai.user.entity;
 import java.util.UUID;
 
 import com.vionsys.hireai.common.base.BaseEntity;
+import com.vionsys.hireai.common.enums.RoleType;
 import com.vionsys.hireai.role.entity.Role;
 
 import jakarta.persistence.Column;
@@ -12,6 +13,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 import lombok.AllArgsConstructor;
@@ -49,14 +54,12 @@ public class User extends BaseEntity {
     @Builder.Default
     private Boolean passwordSet = true;
 
-    @Column(name = "phone_number", length = 30)
+    @Column(name = "phone_number", length = 20)
     private String phoneNumber;
 
-    @Column(name = "enabled", nullable = false)
     @Builder.Default
-    private Boolean enabled = true;
+    private Boolean enabled = false;
 
-    @Column(name = "account_non_locked", nullable = false)
     @Builder.Default
     private Boolean accountNonLocked = true;
 
@@ -114,4 +117,68 @@ public class User extends BaseEntity {
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    @Builder.Default
+    private java.util.Set<Role> roles = new java.util.HashSet<>();
+
+    public java.util.Set<Role> getRoles() {
+        if (roles == null) {
+            roles = new java.util.HashSet<>();
+        }
+        return roles;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+        if (role != null) {
+            getRoles().add(role);
+        }
+    }
+
+    public void addRole(Role role) {
+        if (role != null) {
+            getRoles().add(role);
+        }
+    }
+
+    public boolean hasRole(RoleType roleType) {
+        if (roleType == null) {
+            return false;
+        }
+        if (role != null && role.getName() == roleType) {
+            return true;
+        }
+        if (roles != null) {
+            return roles.stream().anyMatch(r -> r.getName() == roleType);
+        }
+        return false;
+    }
+
+    public java.util.List<String> getRoleNames() {
+        java.util.Set<String> set = new java.util.LinkedHashSet<>();
+        if (roles != null) {
+            roles.forEach(r -> {
+                if (r.getName() != null) {
+                    set.add(r.getName().name());
+                }
+            });
+        }
+        if (role != null && role.getName() != null) {
+            set.add(role.getName().name());
+        }
+        return new java.util.ArrayList<>(set);
+    }
+
+    @PrePersist
+    @PreUpdate
+    public void syncRoles() {
+        if (this.role != null) {
+            getRoles().add(this.role);
+        }
+    }
 }

@@ -115,6 +115,9 @@ public class SecurityConfig {
                         // PUBLIC APIs
                         // =====================================================
 
+                        .requestMatchers(HttpMethod.POST, "/auth/switch-role", "/auth/add-role")
+                        .authenticated()
+
                         .requestMatchers("/auth/**", "/error", "/ws/chat/**")
                         .permitAll()
 
