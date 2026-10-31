@@ -354,7 +354,8 @@ class AdminSecurityTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());
 
-        // Demote user to recruiter in database
+        // Demote user to recruiter in database (explicitly remove admin role from roles set)
+        testUser.getRoles().removeIf(r -> r.getName() == RoleType.ROLE_ADMIN);
         testUser.setRole(recruiterRole);
         userRepository.save(testUser);
 

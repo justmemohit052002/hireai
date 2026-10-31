@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -38,6 +39,7 @@ public class SecurityConfig {
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final com.vionsys.hireai.security.ratelimit.RateLimitingFilter rateLimitingFilter;
     private final MustChangePasswordFilter mustChangePasswordFilter;
+    private final Environment environment;
 
     @Value("${app.cors.allowed-origins:http://localhost:5173}")
     private String allowedOrigins;
@@ -47,12 +49,14 @@ public class SecurityConfig {
             JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
             JwtAccessDeniedHandler jwtAccessDeniedHandler,
             com.vionsys.hireai.security.ratelimit.RateLimitingFilter rateLimitingFilter,
-            MustChangePasswordFilter mustChangePasswordFilter) {
+            MustChangePasswordFilter mustChangePasswordFilter,
+            Environment environment) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
         this.jwtAccessDeniedHandler = jwtAccessDeniedHandler;
         this.rateLimitingFilter = rateLimitingFilter;
         this.mustChangePasswordFilter = mustChangePasswordFilter;
+        this.environment = environment;
     }
 
     @Bean
@@ -91,6 +95,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
             throws Exception {
 
+        boolean isDevProfile = environment != null && Arrays.asList(environment.getActiveProfiles()).contains("dev");
+
         http
                 // Enable CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -109,97 +115,93 @@ public class SecurityConfig {
                                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                                 .accessDeniedHandler(jwtAccessDeniedHandler))
 
-                .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(auth -> {
 
-                        // =====================================================
-                        // PUBLIC APIs
-                        // =====================================================
+                    // =====================================================
+                    // PUBLIC APIs
+                    // =====================================================
 
-                        .requestMatchers(HttpMethod.POST, "/auth/switch-role", "/auth/add-role")
-                        .authenticated()
+                    auth.requestMatchers(HttpMethod.POST, "/auth/switch-role", "/auth/add-role")
+                            .authenticated()
+                            .requestMatchers("/auth/**", "/error", "/ws/chat/**")
+                            .permitAll();
 
-                        .requestMatchers("/auth/**", "/error", "/ws/chat/**")
-                        .permitAll()
-
-                        // Swagger / OpenAPI
-                        .requestMatchers(
+                    // Swagger / OpenAPI (Allowed strictly in dev profile)
+                    if (isDevProfile) {
+                        auth.requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**")
-                        .permitAll()
+                                .permitAll();
+                    }
 
+                    // =====================================================
+                    // CANDIDATE & SHARED JOB ENDPOINTS
+                    // =====================================================
 
-                        // =====================================================
-                        // CANDIDATE & SHARED JOB ENDPOINTS
-                        // =====================================================
+                    // Candidate apply to job
+                    auth.requestMatchers(HttpMethod.POST, "/jobs/*/apply")
+                            .hasRole("CANDIDATE")
 
-                        // Candidate apply to job
-                        .requestMatchers(HttpMethod.POST, "/jobs/*/apply")
-                        .hasRole("CANDIDATE")
+                            // Browse open jobs
+                            .requestMatchers(HttpMethod.GET, "/jobs/open")
+                            .hasAnyRole("CANDIDATE", "RECRUITER", "ADMIN")
 
-                        // Browse open jobs
-                        .requestMatchers(HttpMethod.GET, "/jobs/open")
-                        .hasAnyRole("CANDIDATE", "RECRUITER", "ADMIN")
+                            // =====================================================
+                            // ADMIN APIs
+                            // =====================================================
 
+                            .requestMatchers("/admin", "/admin/**")
+                            .hasAnyRole("ADMIN", "SUB_ADMIN")
 
-                        // =====================================================
-                        // ADMIN APIs
-                        // =====================================================
+                            // =====================================================
+                            // RECRUITER APIs
+                            // =====================================================
 
-                        .requestMatchers("/admin", "/admin/**")
-                        .hasAnyRole("ADMIN", "SUB_ADMIN")
+                            // Public Profile Photos & Static Image Assets (enables browser <img> tag rendering without JWT headers)
+                            .requestMatchers(HttpMethod.GET,
+                                    "/candidates/*/profile/photo",
+                                    "/recruiter/profile/*/photo",
+                                    "/users/*/avatar",
+                                    "/uploads/profile-photos/**")
+                            .permitAll()
 
+                            .requestMatchers("/recruiter/**")
+                            .hasAnyRole("RECRUITER", "ADMIN")
 
-                        // =====================================================
-                        // RECRUITER APIs
-                        // =====================================================
+                            // Candidate management APIs (Recruiters and Admins)
+                            .requestMatchers("/candidates", "/candidates/**")
+                            .hasAnyRole("RECRUITER", "ADMIN")
 
-                        // Public Profile Photos & Static Image Assets (enables browser <img> tag rendering without JWT headers)
-                        .requestMatchers(HttpMethod.GET,
-                                "/candidates/*/profile/photo",
-                                "/recruiter/profile/*/photo",
-                                "/users/*/avatar",
-                                "/uploads/profile-photos/**")
-                        .permitAll()
+                            // Job management APIs (Recruiters and Admins)
+                            .requestMatchers("/jobs", "/jobs/**")
+                            .hasAnyRole("RECRUITER", "ADMIN")
 
-                        .requestMatchers("/recruiter/**")
-                        .hasAnyRole("RECRUITER", "ADMIN")
+                            // =====================================================
+                            // CANDIDATE APIs
+                            // =====================================================
 
-                        // Candidate management APIs (Recruiters and Admins)
-                        .requestMatchers("/candidates", "/candidates/**")
-                        .hasAnyRole("RECRUITER", "ADMIN")
+                            // Candidate's own profile/self-service & applications APIs
+                            .requestMatchers("/candidate/**")
+                            .hasRole("CANDIDATE")
 
-                        // Job management APIs (Recruiters and Admins)
-                        .requestMatchers("/jobs", "/jobs/**")
-                        .hasAnyRole("RECRUITER", "ADMIN")
+                            // =====================================================
+                            // JOB APPLICATIONS & USER SELF-SERVICE
+                            // =====================================================
 
+                            .requestMatchers("/applications/**")
+                            .authenticated()
 
-                        // =====================================================
-                        // CANDIDATE APIs
-                        // =====================================================
+                            // =====================================================
+                            // USER SELF-SERVICE & OTHER AUTHENTICATED APIS
+                            // =====================================================
 
-                        // Candidate's own profile/self-service & applications APIs
-                        .requestMatchers("/candidate/**")
-                        .hasRole("CANDIDATE")
+                            .requestMatchers("/users/**", "/api/v1/users/**", "/api/users/**", "/test")
+                            .authenticated()
 
-
-                        // =====================================================
-                        // JOB APPLICATIONS & USER SELF-SERVICE
-                        // =====================================================
-
-                        .requestMatchers("/applications/**")
-                        .authenticated()
-
-
-                        // =====================================================
-                        // USER SELF-SERVICE & OTHER AUTHENTICATED APIS
-                        // =====================================================
-
-                        .requestMatchers("/users/**", "/api/v1/users/**", "/api/users/**", "/test")
-                        .authenticated()
-
-                        .anyRequest()
-                        .authenticated())
+                            .anyRequest()
+                            .authenticated();
+                })
 
                 // JWT filter must run before Spring's default
                 // username/password authentication filter
