@@ -128,8 +128,10 @@ hireai.mail.retry-delay-ms=1000
 hireai.mail.fail-fast-on-missing-credentials=false
 
 # ===============================
-# Swagger / OpenAPI UI Configuration
+# Swagger / OpenAPI UI Configuration (Disabled in production / default)
 # ===============================
+springdoc.api-docs.enabled=false
+springdoc.swagger-ui.enabled=false
 springdoc.api-docs.path=/v3/api-docs
 springdoc.swagger-ui.path=/swagger-ui.html
 springdoc.swagger-ui.operations-sorter=method

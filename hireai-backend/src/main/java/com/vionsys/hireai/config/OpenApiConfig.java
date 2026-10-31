@@ -9,8 +9,10 @@ import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 @Configuration
+@Profile("dev")
 public class OpenApiConfig {
 
     private static final String SECURITY_SCHEME_NAME = "bearerAuth";
@@ -19,8 +21,8 @@ public class OpenApiConfig {
     public OpenAPI hireAiOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("HireAI Platform REST API")
-                        .description("Production-grade AI-powered Recruitment, ATS Resume Match Scoring, and Job Application Workflow Engine API.")
+                        .title("HireAI API")
+                        .description("HireAI recruitment, ATS resume matching, and job application workflow REST API.")
                         .version("v1.0.0")
                         .contact(new Contact()
                                 .name("HireAI Engineering Team")
